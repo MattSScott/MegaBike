@@ -650,7 +650,7 @@ func (bb *BaseBiker) HandleVoteAllocationMessage(msg VoteAllocationMessage) {
 }
 
 // this function is going to be called by the server to instantiate bikers in the MVP
-func GetIBaseBiker(totColours utils.Colour, bikeId uuid.UUID) IBaseBiker {
+func GetIBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) IBaseBiker {
 	return &BaseBiker{
 		BaseAgent:    baseAgent.NewBaseAgent[IBaseBiker](),
 		soughtColour: utils.GenerateRandomColour(),
@@ -658,17 +658,19 @@ func GetIBaseBiker(totColours utils.Colour, bikeId uuid.UUID) IBaseBiker {
 		energyLevel:  1.0,
 		points:       0,
 		GroupID:      0,
+		gameState:    gameState,
 	}
 }
 
 // this function will be used by GetTeamAgent to get the ref to the BaseBiker
-func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID) *BaseBiker {
+func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) *BaseBiker {
 	return &BaseBiker{
 		BaseAgent:    baseAgent.NewBaseAgent[IBaseBiker](),
 		soughtColour: utils.GenerateRandomColour(),
-		onBike:       true,
+		onBike:       false,
 		energyLevel:  1.0,
 		points:       0,
 		GroupID:      0,
+		gameState:    gameState,
 	}
 }

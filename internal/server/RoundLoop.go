@@ -11,21 +11,13 @@ import (
 )
 
 func (s *Server) RunRoundLoop() {
-	// Capture dump of starting state
-	gameState := s.NewGameStateDump(0)
-	s.UpdateGameStates()
-
 	// get destination bikes from bikers not on bike
 	s.SetDestinationBikes()
-
 	// take care of agents that want to leave the bike and of the acceptance/ expulsion process
-	s.RunBikeSwitch(gameState)
-
+	s.RunBikeSwitch()
 	// get the direction decisions and pedalling forces
 	s.RunActionProcess()
-
 	// The Awdi makes a decision
-	s.awdi.UpdateGameState(gameState)
 
 	// Move the mega bikes
 	for _, bike := range s.megaBikes {
@@ -37,8 +29,6 @@ func (s *Server) RunRoundLoop() {
 	// Move the awdi
 	s.MovePhysicsObject(s.awdi)
 
-	s.UpdateGameStates()
-
 	// Lootbox Distribution
 	s.LootboxCheckAndDistributions()
 
@@ -49,7 +39,6 @@ func (s *Server) RunRoundLoop() {
 	// Check Awdi collision
 	s.AwdiCollisionCheck()
 	s.unaliveAgents()
-	s.UpdateGameStates()
 
 	// if the leader dies hold new elections
 	for _, bike := range s.GetMegaBikes() {
@@ -78,28 +67,20 @@ func (s *Server) RunRoundLoop() {
 }
 
 // handles bikers leaving the bike, potential kick outs and the acceptance process (in this order)
-func (s *Server) RunBikeSwitch(gameState GameStateDump) {
+func (s *Server) RunBikeSwitch() {
 	inLimbo := make([]uuid.UUID, 0)
 
 	// check if agents want ot leave the bike on this round
-	changeBike := s.GetLeavingDecisions(gameState)
+	changeBike := s.GetLeavingDecisions()
 	inLimbo = append(inLimbo, changeBike...)
-
-	// update gamestate as it has changed
-	s.UpdateGameStates()
 
 	//process the kickout request
 	kickedOff := s.HandleKickoutProcess()
-
-	// update gamestate as it has changed
-	s.UpdateGameStates()
 	inLimbo = append(inLimbo, kickedOff...)
 
 	// process the joining request
 	s.ProcessJoiningRequests(inLimbo)
 
-	// update gamestate as it has changed
-	s.UpdateGameStates()
 }
 
 // handles the kick out process according to each bike's governance
@@ -107,6 +88,11 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 	allKicked := make([]uuid.UUID, 0)
 	for _, bike := range s.GetMegaBikes() {
 		agents := bike.GetAgents()
+
+		if bike.GetRuler() == uuid.Nil {
+			continue
+		}
+
 		if len(agents) != 0 {
 
 			agentsVotes := make([]uuid.UUID, 0)
@@ -148,7 +134,6 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 					leaderKickedOut = true
 				}
 			}
-			s.UpdateGameStates()
 
 			// new elections if needed
 			if leaderKickedOut && len(bike.GetAgents()) != 0 && bike.GetGovernance() == utils.Leadership {
@@ -162,11 +147,11 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 }
 
 // get list of agents that want to leave their bike in current round
-func (s *Server) GetLeavingDecisions(gameState objects.IGameState) []uuid.UUID {
+func (s *Server) GetLeavingDecisions() []uuid.UUID {
 	leavingAgents := make([]uuid.UUID, 0)
 	for agentId, agent := range s.GetAgentMap() {
 		if agent.GetBikeStatus() {
-			agent.UpdateGameState(gameState)
+			// agent.UpdateGameState(gameState)
 			agent.UpdateAgentInternalState()
 			switch agent.DecideAction() {
 			case objects.Pedal:
@@ -186,7 +171,7 @@ func (s *Server) GetLeavingDecisions(gameState objects.IGameState) []uuid.UUID {
 		}
 	}
 
-	s.UpdateGameStates()
+	// s.UpdateGameStates()
 	// if ruler has left the bike will need to run elections
 	for _, bike := range s.GetMegaBikes() {
 		if slices.Contains(leavingAgents, bike.GetRuler()) && len(bike.GetAgents()) != 0 {
@@ -205,6 +190,8 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 	// 1. group agents that have onBike = false by the bike they are trying to join
 	bikeRequests := s.GetJoiningRequests(inLimbo)
 
+	// panic(s.megaBikes)
+
 	// 2. pass to agents on each of the desired bikes a list of all agents trying to join
 	for bikeID, pendingAgents := range bikeRequests {
 		agents := s.megaBikes[bikeID].GetAgents()
@@ -220,7 +207,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 					break
 				}
 			}
-			s.UpdateGameStates() // agents need an updated game state if they want to have elections
+			// s.UpdateGameStates() // agents need an updated game state if they want to have elections
 			// if the governance of the bike is ruler led an election needs to be held
 			gov := s.megaBikes[bikeID].GetGovernance()
 			if gov == utils.Dictatorship || gov == utils.Leadership {
@@ -292,6 +279,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 func (s *Server) RunActionProcess() {
 
 	for _, bike := range s.GetMegaBikes() {
+
 		agents := bike.GetAgents()
 		if len(agents) == 0 {
 			continue
@@ -315,7 +303,10 @@ func (s *Server) RunActionProcess() {
 			}
 		case utils.Leadership:
 			// get weights from leader
-			leader := s.GetAgentMap()[bike.GetRuler()]
+			leader, ok := s.GetAgentMap()[bike.GetRuler()]
+			if !ok {
+				break
+			}
 			weights := leader.DecideWeights(utils.Direction)
 			direction = s.RunDemocraticAction(bike, weights)
 			for _, agent := range agents {
@@ -431,7 +422,10 @@ func (s *Server) LootboxCheckAndDistributions() {
 
 					case utils.Leadership:
 						// get the map of weights from the leader
-						leader := s.GetAgentMap()[megabike.GetRuler()]
+						leader, ok := s.GetAgentMap()[megabike.GetRuler()]
+						if !ok {
+							break
+						}
 						weights := leader.DecideWeights(utils.Allocation)
 					outer:
 						for id := range weights {
@@ -489,6 +483,9 @@ func (s *Server) SetDestinationBikes() {
 	for _, agent := range s.GetAgentMap() {
 		if !agent.GetBikeStatus() {
 			targetBike := agent.ChangeBike()
+			if targetBike == uuid.Nil { // agent didn't specify bike
+				continue
+			}
 			if _, ok := s.megaBikes[targetBike]; !ok {
 				panic("agent requested a bike that doesn't exist")
 			}

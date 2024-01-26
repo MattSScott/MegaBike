@@ -10,8 +10,9 @@ import (
 )
 
 func TestAwdiCollisionProcess(t *testing.T) {
-	it := 2
-	s := server.Initialize(it)
+	iterations := 2
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	nAgentToDelete := 0
 	for _, anyBike := range s.GetMegaBikes() {
 		agentsOnBike := anyBike.GetAgents()
@@ -51,13 +52,10 @@ func TestAwdiCollisionProcess(t *testing.T) {
 }
 
 func TestAwdiTargeting(t *testing.T) {
-	it := 1
-	s := server.Initialize(it)
+	iterations := 1
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 	i := 0
 	emptyBikeId := uuid.UUID{}
@@ -88,7 +86,6 @@ func TestAwdiTargeting(t *testing.T) {
 		}
 		i += 1
 	}
-	s.GetAwdi().UpdateGameState(gs)
 	s.GetAwdi().UpdateForce()
 	targetId := s.GetAwdi().GetTargetID()
 	fmt.Printf("Awdi is targeting {%s}\n", targetId)

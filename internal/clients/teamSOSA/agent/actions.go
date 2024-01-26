@@ -2,7 +2,7 @@ package agent
 
 import (
 	// "SOMAS2023/internal/clients/team2/agent"
-	"SOMAS2023/internal/clients/team2/modules"
+	"SOMAS2023/internal/clients/teamSOSA/modules"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
@@ -135,7 +135,6 @@ func (a *AgentTwo) DecideAllocation() voting.IdVoteMap {
 			}
 		}
 		if math.IsNaN(socialCapital[id]) {
-			// fmt.Println(socialCapital[id])
 			runtime.Breakpoint()
 			panic("dhsd")
 		}

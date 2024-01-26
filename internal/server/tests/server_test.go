@@ -10,8 +10,9 @@ import (
 
 func TestInitialize(t *testing.T) {
 
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
 	if len(s.GetAgentMap()) != server.BikerAgentCount {
 		t.Error("Agents not properly instantiated")
@@ -33,5 +34,8 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestRunGame(t *testing.T) {
-	server.Initialize(1).Start()
+	iterations := 2
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+	s.Start()
 }

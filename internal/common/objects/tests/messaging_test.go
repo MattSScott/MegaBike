@@ -3,6 +3,7 @@ package objects
 import (
 	obj "SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
+	"SOMAS2023/internal/server"
 	"testing"
 
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
@@ -18,9 +19,9 @@ type ExtendedBaseBiker struct {
 }
 
 // Produce new IExtendedBaseBiker
-func NewExtendedBaseBiker(agentId uuid.UUID) *ExtendedBaseBiker {
+func NewExtendedBaseBiker(agentId uuid.UUID, gameState obj.IGameState) *ExtendedBaseBiker {
 	return &ExtendedBaseBiker{
-		BaseBiker: obj.GetBaseBiker(utils.GenerateRandomColour(), uuid.New()),
+		BaseBiker: obj.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), gameState),
 	}
 }
 
@@ -77,8 +78,12 @@ func (ebb *ExtendedBaseBiker) CreateForcesMessage() obj.ForcesMessage {
 }
 
 func TestBaseBikerMessaging(t *testing.T) {
-	biker1 := NewExtendedBaseBiker(uuid.New())
-	biker2 := NewExtendedBaseBiker(uuid.New())
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+
+	biker1 := NewExtendedBaseBiker(uuid.New(), s)
+	biker2 := NewExtendedBaseBiker(uuid.New(), s)
 	var bikers []obj.IBaseBiker
 	bikers = append(bikers, biker1)
 
@@ -99,8 +104,12 @@ func TestBaseBikerMessaging(t *testing.T) {
 }
 
 func TestBaseBikerForcesMessaging(t *testing.T) {
-	biker1 := NewExtendedBaseBiker(uuid.New())
-	biker2 := NewExtendedBaseBiker(uuid.New())
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+
+	biker1 := NewExtendedBaseBiker(uuid.New(), s)
+	biker2 := NewExtendedBaseBiker(uuid.New(), s)
 	var bikers []obj.IBaseBiker
 	bikers = append(bikers, biker1)
 
@@ -110,9 +119,7 @@ func TestBaseBikerForcesMessaging(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		msgs1 := biker1.GetAllMessages(bikers)
 		msgs2 := biker2.GetAllMessages(bikers)
-		// fmt.Println("iteration ", i)
-		// fmt.Println("msg biker 1: ", msgs1)
-		// fmt.Println("msg biker 2: ", msgs2)
+
 		msgs1[0].InvokeMessageHandler(biker1)
 		msgs2[0].InvokeMessageHandler(biker2)
 

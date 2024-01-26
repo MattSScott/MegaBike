@@ -12,8 +12,10 @@ import (
 )
 
 func TestGetJoiningRequests(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+	s.FoundingInstitutions()
 
 	// 1: get two bike ids
 	targetBikes := make([]uuid.UUID, 2)
@@ -49,6 +51,7 @@ func TestGetJoiningRequests(t *testing.T) {
 
 	// 3. check that joining requests reflect the previous actions
 	bikeRequests := s.GetJoiningRequests(make([]uuid.UUID, 0))
+
 	if len(bikeRequests) != len(requests) {
 		t.Error("bike requests processed incorrectly: empty")
 	}
@@ -62,8 +65,10 @@ func TestGetJoiningRequests(t *testing.T) {
 }
 
 func TestGetJoiningRequestsWithLimbo(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+	s.FoundingInstitutions()
 
 	// 1: get two bike ids
 	targetBikes := make([]uuid.UUID, 2)
@@ -117,8 +122,11 @@ func TestGetJoiningRequestsWithLimbo(t *testing.T) {
 }
 
 func TestGetRandomID(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+	s.FoundingInstitutions()
+
 	bike := s.GetRandomBikeId()
 	_, exists := s.GetMegaBikes()[bike]
 	if !exists {
@@ -128,8 +136,11 @@ func TestGetRandomID(t *testing.T) {
 }
 
 func TestAddAgentToBike(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+	s.FoundingInstitutions()
+
 	bike := s.GetRandomBikeId()
 	var changedAgent uuid.UUID
 	for agentID, agent := range s.GetAgentMap() {

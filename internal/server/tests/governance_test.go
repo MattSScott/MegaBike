@@ -10,13 +10,10 @@ import (
 )
 
 func TestRulerElectionDictator(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 
 	// pass gamestate
@@ -37,13 +34,10 @@ func TestRulerElectionDictator(t *testing.T) {
 }
 
 func TestRulerElectionLeader(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 	// pass gamestate
 	var ruler uuid.UUID
@@ -63,13 +57,11 @@ func TestRulerElectionLeader(t *testing.T) {
 }
 
 func TestRunRulerActionDictator(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
+
 	s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
@@ -100,13 +92,10 @@ func TestRunRulerActionDictator(t *testing.T) {
 }
 
 func TestRunRulerActionLeader(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
@@ -136,13 +125,10 @@ func TestRunRulerActionLeader(t *testing.T) {
 }
 
 func TestRunDemocraticAction(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {

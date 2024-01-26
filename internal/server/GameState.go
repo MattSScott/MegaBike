@@ -29,6 +29,9 @@ func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UU
 		// don't process joining requests of agents in first round of limbo (ie the ones that have just left the bike)
 		if !agent.GetBikeStatus() && !slices.Contains(inLimbo, agentID) {
 			bike := agent.GetBike()
+			if bike == uuid.Nil {
+				continue
+			}
 			if ids, ok := bikeRequests[bike]; ok {
 				bikeRequests[bike] = append(ids, agentID)
 			} else {
@@ -41,9 +44,9 @@ func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UU
 
 // GetRandomBikeId returns the ID of a random bike.
 func (s *Server) GetRandomBikeId() uuid.UUID {
-	i, targetI := 0, rand.Intn(len(s.megaBikes))
+	i, targetI := 0, rand.Intn(len(s.GetMegaBikes()))
 	// Go doesn't have a sensible way to do this...
-	for id := range s.megaBikes {
+	for id := range s.GetMegaBikes() {
 		if i == targetI {
 			return id
 		}

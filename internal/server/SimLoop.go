@@ -20,7 +20,7 @@ func (s *Server) RunSimLoop(iterations int) []GameStateDump {
 
 	// run this for n iterations
 	gameStates := []GameStateDump{s.NewGameStateDump(-1)}
-	for i := 0; i < iterations; i++ {
+	for i := 0; i < 10; i++ {
 		s.RunRoundLoop()
 		gameStates = append(gameStates, s.NewGameStateDump(i))
 	}
@@ -80,7 +80,7 @@ func (s *Server) ResetGameState() {
 func (s *Server) FoundingInstitutions() {
 
 	// run founding messaging session
-	s.UpdateGameStates()
+	// s.UpdateGameStates()
 	s.RunMessagingSession()
 
 	// check which governance method is chosen for each biker
@@ -121,7 +121,9 @@ func (s *Server) FoundingInstitutions() {
 			}
 		}
 	}
-
+	// return
+	// TODO: debug following loop
+	// i := 0
 	for agent, governance := range s.foundingChoices {
 		// randomly select a biker from the bikers who chose this governance method
 		// add that biker to a megabike
@@ -142,11 +144,10 @@ func (s *Server) FoundingInstitutions() {
 		chosenBike := bikesAvailable[0]
 		// add agent to bike
 		agentInt := s.GetAgentMap()[agent]
-		agentInt.SetBike(chosenBike)
+		agentInt.SetBike(chosenBike) // BUGGY!!! (setting bike here massively slows down iterations)
+		agentInt.ToggleOnBike()
 		s.AddAgentToBike(agentInt)
 	}
-
-	s.UpdateGameStates()
 	// run election process for Leadership and Dictatorship bikes
 	for _, bike := range s.GetMegaBikes() {
 		gov := bike.GetGovernance()
@@ -156,8 +157,6 @@ func (s *Server) FoundingInstitutions() {
 			bike.SetRuler(ruler)
 		}
 	}
-
-	s.UpdateGameStates()
 
 }
 

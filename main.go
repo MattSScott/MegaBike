@@ -7,7 +7,8 @@ import (
 
 func main() {
 	fmt.Println("Hello Agents")
-	s := server.Initialize(10)
-	s.UpdateGameStates()
+	s := server.GenerateServer()
+	s.Initialize(10)
+	// s.UpdateGameStates()
 	s.Start()
 }

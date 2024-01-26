@@ -10,7 +10,8 @@ import (
 
 type IAwdi interface {
 	IPhysicsObject
-	UpdateGameState(state IGameState)
+	// UpdateGameState(state IGameState)
+	InjectGameState(gameState IGameState)
 	GetTargetID() uuid.UUID
 }
 
@@ -31,6 +32,10 @@ func GetIAwdi() IAwdi {
 	return &Awdi{
 		PhysicsObject: GetPhysicsObject(utils.MassAwdi),
 	}
+}
+
+func (a *Awdi) InjectGameState(gameState IGameState) {
+	a.gameState = gameState
 }
 
 // Calculates and returns the desired force of the awdi based on the current gamestate

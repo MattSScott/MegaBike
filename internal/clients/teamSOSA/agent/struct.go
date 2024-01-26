@@ -1,7 +1,7 @@
 package agent
 
 import (
-	"SOMAS2023/internal/clients/team2/modules"
+	"SOMAS2023/internal/clients/teamSOSA/modules"
 	"SOMAS2023/internal/common/objects"
 
 	"github.com/google/uuid"

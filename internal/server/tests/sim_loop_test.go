@@ -1,4 +1,4 @@
-package server
+package server_test
 
 import (
 	"SOMAS2023/internal/common/objects"
@@ -12,22 +12,22 @@ import (
 
 type MockBiker struct {
 	*objects.BaseBiker
-	ID             uuid.UUID
-	VoteMap        map[uuid.UUID]int
-	kickedOutCount int
-	governance     utils.Governance
-	ruler          uuid.UUID
-	point          int
-	BikeID         uuid.UUID
+	ID      uuid.UUID
+	VoteMap map[uuid.UUID]int
+	// kickedOutCount int
+	governance utils.Governance
+	// ruler          uuid.UUID
+	// point          int
+	BikeID uuid.UUID
 }
 
 type MegaBike struct {
-	agents         []Biker
-	kickedOutCount int
+	// agents         []Biker
+	// kickedOutCount int
 }
 
-func NewMockBiker() *MockBiker {
-	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New())
+func NewMockBiker(gameState objects.IGameState) *MockBiker {
+	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), gameState)
 
 	return &MockBiker{
 		BaseBiker: baseBiker,
@@ -74,8 +74,9 @@ func createMockBikers(s server.IBaseBikerServer, count int) []*MockBiker {
 
 func TestResetGameState(t *testing.T) {
 	OnlySpawnBaseBikers(t)
-	it := 2
-	s := server.Initialize(it)
+	iterations := 2
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	s.FoundingInstitutions()
 
 	// remove 4 agents from the map
@@ -91,7 +92,7 @@ func TestResetGameState(t *testing.T) {
 	// spawn 4 mock bikers and delete 4 normal bikers, as there might be some issues with the number of megabikes
 	mockBikers := make([]*MockBiker, 4)
 	for i := range mockBikers {
-		mockBiker := NewMockBiker()
+		mockBiker := NewMockBiker(s)
 		if i < 2 {
 			mockBiker.governance = utils.Democracy
 		} else {
@@ -101,17 +102,9 @@ func TestResetGameState(t *testing.T) {
 		mockBikers[i] = mockBiker
 	}
 
-	s.UpdateGameStates()
 	s.FoundingInstitutions()
 
-	s.UpdateGameStates()
-
 	s.ResetGameState()
-
-	gsNew := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gsNew)
-	}
 
 	for _, mockBiker := range mockBikers {
 		if mockBiker.GetBikeStatus() {
@@ -136,8 +129,9 @@ func TestResetGameState(t *testing.T) {
 func TestFoundingInstitutions(t *testing.T) {
 	OnlySpawnBaseBikers(t)
 
-	it := 2
-	s := server.Initialize(it)
+	iterations := 2
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
 	// remove 4 agents from the map
 	i := 0
@@ -151,7 +145,7 @@ func TestFoundingInstitutions(t *testing.T) {
 
 	mockBikers := make([]*MockBiker, 4)
 	for i := range mockBikers {
-		mockBiker := NewMockBiker()
+		mockBiker := NewMockBiker(s)
 		if i < 2 {
 			mockBiker.governance = utils.Democracy
 		} else {
@@ -160,10 +154,7 @@ func TestFoundingInstitutions(t *testing.T) {
 		s.AddAgent(mockBiker)
 		mockBikers[i] = mockBiker
 	}
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
+
 	s.FoundingInstitutions()
 
 	/* 	for _, agent := range s.GetAgentMap() {

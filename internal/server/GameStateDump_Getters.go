@@ -125,3 +125,6 @@ func (l LootBoxDump) GetColour() utils.Colour {
 func (a AwdiDump) GetTargetID() uuid.UUID {
 	return a.TargetBike
 }
+
+func (a AwdiDump) InjectGameState(gs objects.IGameState) {
+}

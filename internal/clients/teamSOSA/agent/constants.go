@@ -27,7 +27,7 @@ const (
 )
 
 const (
-	forgivenessFactor = 0.5 // Factor used in trustworthiness update calculations
+	ForgivenessFactor = 0.5 // Factor used in trustworthiness update calculations
 )
 
 // Constants related to decisions.

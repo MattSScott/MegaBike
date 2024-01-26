@@ -18,7 +18,6 @@ func Plurality(voteMap map[uuid.UUID]map[uuid.UUID]float64, voteWeight map[uuid.
 		Plurality:
 			Each voter selects one candidate and the candidate with the most first-placed votes is the winner.
 	*/
-
 	//initialise the votes with weights
 	var voteList []map[uuid.UUID]float64
 	for agent, votes := range voteMap {
@@ -35,7 +34,7 @@ func Plurality(voteMap map[uuid.UUID]map[uuid.UUID]float64, voteWeight map[uuid.
 	var winner uuid.UUID
 
 	for _, preference := range voteList {
-		var maxPreference float64
+		var maxPreference float64 = -1
 		var firstLootBoxChoice uuid.UUID
 		for lootBox, value := range preference {
 			if value > maxPreference {
@@ -47,7 +46,7 @@ func Plurality(voteMap map[uuid.UUID]map[uuid.UUID]float64, voteWeight map[uuid.
 	}
 
 	// final step: we need to find the winner with highest count number in map.
-	var maxVotes float64
+	var maxVotes float64 = -1
 
 	for lootBox, votes := range voteCount {
 		if votes > maxVotes {

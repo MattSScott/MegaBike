@@ -23,8 +23,8 @@ type MegaBike struct {
 	kickedOutCount int
 }
 
-func NewMockBiker() *MockBiker {
-	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New())
+func NewMockBiker(gameState objects.IGameState) *MockBiker {
+	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), gameState)
 
 	return &MockBiker{
 		BaseBiker: baseBiker,
@@ -65,8 +65,12 @@ func TestGetMegaBike(t *testing.T) {
 }
 
 func TestAddAgent(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+
 	mb := objects.GetMegaBike()
-	biker := NewMockBiker()
+	biker := NewMockBiker(s)
 
 	mb.AddAgent(biker)
 
@@ -80,9 +84,13 @@ func TestAddAgent(t *testing.T) {
 }
 
 func TestRemoveAgent(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+
 	mb := objects.GetMegaBike()
-	biker1 := NewMockBiker()
-	biker2 := NewMockBiker()
+	biker1 := NewMockBiker(s)
+	biker2 := NewMockBiker(s)
 
 	mb.AddAgent(biker1)
 	mb.AddAgent(biker2)
@@ -105,11 +113,15 @@ func TestRemoveAgent(t *testing.T) {
 }
 
 func TestUpdateMass(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+
 	mb := objects.GetMegaBike()
 	initialMass := mb.GetPhysicalState().Mass
 
-	mb.AddAgent(NewMockBiker())
-	mb.AddAgent(NewMockBiker())
+	mb.AddAgent(NewMockBiker(s))
+	mb.AddAgent(NewMockBiker(s))
 	mb.UpdateMass()
 
 	updatedMass := mb.GetPhysicalState().Mass
@@ -124,9 +136,13 @@ func TestUpdateMass(t *testing.T) {
 func TestUpdateOrientation(t *testing.T) {
 	// Scenario 0: No steering bikers
 	t.Run("Single Biker Test", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker1 := NewMockBiker()
-		biker2 := NewMockBiker()
+		biker1 := NewMockBiker(s)
+		biker2 := NewMockBiker(s)
 
 		turningDecision := utils.TurningDecision{
 			SteerBike:     false,
@@ -155,8 +171,12 @@ func TestUpdateOrientation(t *testing.T) {
 	})
 	// Scenario 1: Single Biker Test
 	t.Run("Single Biker Test", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker := NewMockBiker()
+		biker := NewMockBiker(s)
 
 		turningDecision := utils.TurningDecision{
 			SteerBike:     true,
@@ -184,9 +204,13 @@ func TestUpdateOrientation(t *testing.T) {
 
 	// Scenario 2: Biker doesn't want to steer
 	t.Run("Multiple Bikers Test", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker1 := NewMockBiker()
-		biker2 := NewMockBiker()
+		biker1 := NewMockBiker(s)
+		biker2 := NewMockBiker(s)
 
 		turningDecision1 := utils.TurningDecision{
 			SteerBike:     true,
@@ -230,10 +254,14 @@ func TestUpdateOrientation(t *testing.T) {
 
 	// Scenario 3: Three Bikers with Different Directions (expected 0.1)
 	t.Run("Three Bikers Different Directions", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker1 := NewMockBiker()
-		biker2 := NewMockBiker()
-		biker3 := NewMockBiker()
+		biker1 := NewMockBiker(s)
+		biker2 := NewMockBiker(s)
+		biker3 := NewMockBiker(s)
 
 		// Set unique forces for each biker
 		forces := []utils.Forces{
@@ -262,9 +290,13 @@ func TestUpdateOrientation(t *testing.T) {
 
 	// Scenario 4: Two Bikers, one with -1 and one with 1, expected orientation 1 or -1
 	t.Run("Two Bikers Opposite Forces", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker1 := NewMockBiker()
-		biker2 := NewMockBiker()
+		biker1 := NewMockBiker(s)
+		biker2 := NewMockBiker(s)
 
 		// Set forces for each biker
 		force1 := utils.Forces{
@@ -293,9 +325,13 @@ func TestUpdateOrientation(t *testing.T) {
 
 	// Scenario 5: Two Bikers, one with -0.6 (-108°) and one with 0.7 (126°), expected orientation 0.95 (−171°)
 	t.Run("Two Bikers Opposite Forces", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker1 := NewMockBiker()
-		biker2 := NewMockBiker()
+		biker1 := NewMockBiker(s)
+		biker2 := NewMockBiker(s)
 
 		// Set forces for each biker
 		force1 := utils.Forces{
@@ -324,9 +360,13 @@ func TestUpdateOrientation(t *testing.T) {
 
 	// Scenario 6: Two Bikers, one with -0.1 (-18°) and one with 0.2 (36°), expected orientation 0.05 (9°)
 	t.Run("Two Bikers Opposite Forces", func(t *testing.T) {
+		iterations := 3
+		s := server.GenerateServer()
+		s.Initialize(iterations)
+
 		mb := objects.GetMegaBike()
-		biker1 := NewMockBiker()
-		biker2 := NewMockBiker()
+		biker1 := NewMockBiker(s)
+		biker2 := NewMockBiker(s)
 
 		// Set forces for each biker
 		force1 := utils.Forces{
@@ -378,20 +418,17 @@ func TestGetSetGovernanceAndRuler(t *testing.T) {
 }
 
 func TestKickOutAgent(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	s.FoundingInstitutions()
 
 	mb := objects.GetMegaBike()
 
 	//biker1 := NewMockBiker(uuid.New(), map[uuid.UUID]int{ /* votes */ })
-	biker1 := NewMockBiker()
-	biker2 := NewMockBiker()
-	biker3 := NewMockBiker()
+	biker1 := NewMockBiker(s)
+	biker2 := NewMockBiker(s)
+	biker3 := NewMockBiker(s)
 	mb.AddAgent(biker1)
 	mb.AddAgent(biker2)
 	mb.AddAgent(biker3)

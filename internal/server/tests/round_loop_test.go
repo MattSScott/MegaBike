@@ -2,14 +2,11 @@ package server_test
 
 import (
 	"SOMAS2023/internal/common/objects"
-	obj "SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"SOMAS2023/internal/server"
-	server2 "SOMAS2023/internal/server/tests"
 	"cmp"
 	"fmt"
-	"math"
 	"math/rand"
 	"slices"
 	"testing"
@@ -21,16 +18,13 @@ import (
 func TestGetLeavingDecisions(t *testing.T) {
 	// check that if some biker has on bike set to false they are not on any megabike
 	// nor in the megabike riders
-	it := 3
-	s := server.Initialize(it)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 
-	s.GetLeavingDecisions(gs)
+	s.GetLeavingDecisions()
 
 	for _, agent := range s.GetAgentMap() {
 		if !agent.GetBikeStatus() {
@@ -48,13 +42,10 @@ func TestGetLeavingDecisions(t *testing.T) {
 }
 
 func TestHandleKickout(t *testing.T) {
-	it := 6
-	s := server.Initialize(it)
+	iterations := 6
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 	s.HandleKickoutProcess()
 
@@ -74,10 +65,10 @@ func TestHandleKickout(t *testing.T) {
 }
 
 func TestProcessJoiningRequests(t *testing.T) {
-	server2.OnlySpawnBaseBikers(t)
-	it := 3
-	s := server.Initialize(it)
-	s.FoundingInstitutions()
+	OnlySpawnBaseBikers(t)
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
 	// 1: get two bike ids (choose the 2 most empty bikes)
 	bikes := make([]objects.IMegaBike, 0, len(s.GetMegaBikes()))
@@ -142,13 +133,10 @@ func TestProcessJoiningRequests(t *testing.T) {
 
 func TestRunActionProcess(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		it := 1
-		s := server.Initialize(it)
+		iterations := 1
+		s := server.GenerateServer()
+		s.Initialize(iterations)
 		// required otherwise agents are not initialized to bikes
-		gs := s.NewGameStateDump(0)
-		for _, agent := range s.GetAgentMap() {
-			agent.UpdateGameState(gs)
-		}
 		s.FoundingInstitutions()
 
 		// Loop through each bike
@@ -157,11 +145,6 @@ func TestRunActionProcess(t *testing.T) {
 			governanceTypes := []int{int(utils.Democracy), int(utils.Leadership), int(utils.Dictatorship)}
 			governance := utils.Governance(governanceTypes[rand.Intn(len(governanceTypes))])
 			bike.SetGovernance(governance)
-
-			// Update the game state for all agents and set the governance of their bike
-			for _, agent := range s.GetAgentMap() {
-				agent.UpdateGameState(gs)
-			}
 
 			// Randomly select a ruler if necessary
 			if governance != utils.Democracy {
@@ -174,13 +157,12 @@ func TestRunActionProcess(t *testing.T) {
 			}
 		}
 
-		s.UpdateGameStates()
 		s.RunActionProcess()
 		// check all agents have lost energy (proportionally to how much they have pedalled)
 		for _, agent := range s.GetAgentMap() {
 			lostEnergy := (utils.MovingDepletion * agent.GetForces().Pedal)
 
-			var agentBike obj.IMegaBike
+			var agentBike objects.IMegaBike
 			for _, bike := range s.GetMegaBikes() {
 				if bike.GetID() == agent.GetBike() {
 					agentBike = bike
@@ -203,102 +185,11 @@ func TestRunActionProcess(t *testing.T) {
 	fmt.Printf("\nRun action process passed \n")
 }
 
-type NegativeAgent struct {
-	*objects.BaseBiker
-}
-
-type INegativeAgent interface {
-	objects.IBaseBiker
-	FurthestLootbox() uuid.UUID
-	DictateDirection() uuid.UUID
-	ProposeDirection() uuid.UUID
-	FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap
-	DecideWeights(utils.Action) map[uuid.UUID]float64
-}
-
-func NewNegativeAgent() *NegativeAgent {
-	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New())
-
-	return &NegativeAgent{
-		BaseBiker: baseBiker,
-	}
-}
-
-func (a *NegativeAgent) FurthestLootbox() uuid.UUID {
-	currLocation := a.GetLocation()
-	furthestDist := 0.0
-	var nearestBox uuid.UUID
-	var currDist float64
-	for _, loot := range a.GetGameState().GetLootBoxes() {
-		x, y := loot.GetPosition().X, loot.GetPosition().Y
-		currDist = math.Sqrt(math.Pow(currLocation.X-x, 2) + math.Pow(currLocation.Y-y, 2))
-		if currDist > furthestDist {
-			nearestBox = loot.GetID()
-			furthestDist = currDist
-		}
-	}
-	return nearestBox
-}
-
-func (a *NegativeAgent) DictateDirection() uuid.UUID {
-	return a.FurthestLootbox()
-}
-
-// used when trying a negative agent as the leader
-func (a *NegativeAgent) ProposeDirection() uuid.UUID {
-	return a.FurthestLootbox()
-}
-
-// only vote for own proposal
-func (a *NegativeAgent) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
-	votes := make(voting.LootboxVoteMap)
-	furthest := a.FurthestLootbox()
-	for _, proposal := range proposals {
-		if furthest == proposal {
-			votes[proposal] = 1.0
-		} else {
-			votes[proposal] = 0.0
-		}
-	}
-	return votes
-}
-
-func (a *NegativeAgent) DecideWeights(utils.Action) map[uuid.UUID]float64 {
-	weights := make(map[uuid.UUID]float64)
-	bike := a.GetGameState().GetMegaBikes()[a.GetBike()]
-	agents := bike.GetAgents()
-	for _, agent := range agents {
-		if agent.GetID() == a.GetID() {
-			weights[agent.GetID()] = 1.0
-		} else {
-			weights[agent.GetID()] = 0.0
-		}
-	}
-	return weights
-}
-
-func (a *NegativeAgent) DecideDictatorAllocation() voting.IdVoteMap {
-	fellowBikers := a.GetFellowBikers()
-	allocation := make(voting.IdVoteMap)
-	for _, biker := range fellowBikers {
-		if biker.GetID() == a.GetID() {
-			allocation[biker.GetID()] = 1.0
-		} else {
-			allocation[biker.GetID()] = 0.0
-		}
-	}
-	return allocation
-}
-
 func TestRunActionProcessDictator(t *testing.T) {
-	it := 1
-	s := server.Initialize(it)
+	iterations := 1
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 
 	// make bike with dictatorship (by getting one of the existing bikes and making it a dictatorship bike)
@@ -307,10 +198,11 @@ func TestRunActionProcessDictator(t *testing.T) {
 	for !foundBike {
 		bikeID = s.GetRandomBikeId()
 		if len(s.GetMegaBikes()[bikeID].GetAgents()) != 0 {
-			break
+			foundBike = true
 		}
 	}
 	bike := s.GetMegaBikes()[bikeID]
+
 	bike.SetGovernance(utils.Dictatorship)
 	agents := bike.GetAgents()
 	if len(agents) == utils.BikersOnBike {
@@ -319,15 +211,13 @@ func TestRunActionProcessDictator(t *testing.T) {
 	}
 
 	// place dictator on bike
-	dictator := NewNegativeAgent()
+	dictator := NewNegativeAgent(s)
 	s.AddAgent(dictator)
-	dictator.UpdateGameState(gs)
 	dictator.SetBike(bikeID)
 	bike.AddAgent(dictator)
 	bike.SetRuler(dictator.GetID())
 
 	// run the action process and confirm the direction is that of the dictator
-	s.UpdateGameStates()
 	s.RunActionProcess()
 
 	// check that the direction for the bike with our dictator is the same as the dictator's
@@ -346,13 +236,11 @@ func TestRunActionProcessDictator(t *testing.T) {
 }
 
 func TestRunActionProcessLeader(t *testing.T) {
-	it := 1
-	s := server.Initialize(it)
+	iterations := 1
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
+
 	s.FoundingInstitutions()
 
 	// make bike with dictatorship (by getting one of the existing bikes and making it a dictatorship bike)
@@ -361,7 +249,7 @@ func TestRunActionProcessLeader(t *testing.T) {
 	for !foundBike {
 		bikeID = s.GetRandomBikeId()
 		if len(s.GetMegaBikes()[bikeID].GetAgents()) != 0 {
-			break
+			foundBike = true
 		}
 	}
 	bike := s.GetMegaBikes()[bikeID]
@@ -373,18 +261,13 @@ func TestRunActionProcessLeader(t *testing.T) {
 	}
 
 	// place dictator on bike
-	leader := NewNegativeAgent()
+	leader := NewNegativeAgent(s)
 	s.AddAgent(leader)
-	leader.UpdateGameState(gs)
 	leader.SetBike(bikeID)
 	bike.AddAgent(leader)
 	bike.SetRuler(leader.GetID())
 
-	s.UpdateGameStates()
-
-	// run action process
-	s.UpdateGameStates()
-	s.RunActionProcess()
+	s.RunActionProcess() // DEBUG
 
 	// check that the direction of the leader is that of its direction (as the weights emulate a dictatorship)
 	for _, bike := range s.GetMegaBikes() {
@@ -402,9 +285,10 @@ func TestRunActionProcessLeader(t *testing.T) {
 
 }
 
-func TestProcessJoiningRequestsWithLimbo(t *testing.T) {
-	it := 3
-	s := server.Initialize(it)
+func TestProcessJoiningRequestsWithLimbo(t *testing.T) { // debug
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
 	// 1: get two bike ids
 	targetBikes := make([]uuid.UUID, 2)
@@ -426,17 +310,14 @@ func TestProcessJoiningRequestsWithLimbo(t *testing.T) {
 	limbo := make([]uuid.UUID, 1)
 	for _, agent := range s.GetAgentMap() {
 		if i == 0 {
-			agent.ToggleOnBike()
 			agent.SetBike(targetBikes[0])
 			requests[targetBikes[0]][0] = agent.GetID()
 		} else if i == 1 {
 			// add it to second bike for request
-			agent.ToggleOnBike()
 			agent.SetBike(targetBikes[1])
-			requests[targetBikes[1]][i-1] = agent.GetID()
+			requests[targetBikes[1]][0] = agent.GetID()
 		} else if i == 2 {
 			//remove it from bike but add it to limbo (to mimick request made in this turn)
-			agent.ToggleOnBike()
 			agent.SetBike(targetBikes[1])
 			limbo[0] = agent.GetID()
 		} else {
@@ -484,7 +365,9 @@ func TestProcessJoiningRequestsWithLimbo(t *testing.T) {
 }
 
 func TestGetWinningDirection1(t *testing.T) {
-	s := server.Initialize(1)
+	iterations := 1
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
 	fullPower := make([]uuid.UUID, 2)
 	for i := 0; i < 2; i++ {
@@ -529,7 +412,9 @@ func TestGetWinningDirection1(t *testing.T) {
 }
 
 func TestGetWinningDirection2(t *testing.T) {
-	s := server.Initialize(1)
+	iterations := 1
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
 	fullPower := make([]uuid.UUID, 2)
 	for i := 0; i < 2; i++ {
@@ -575,13 +460,10 @@ func TestGetWinningDirection2(t *testing.T) {
 }
 
 func TestLootboxShareDictator(t *testing.T) {
-	it := 1
-	s := server.Initialize(it)
+	iterations := 1
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	gs := s.NewGameStateDump(0)
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gs)
-	}
 	s.FoundingInstitutions()
 
 	// make bike with dictatorship (by getting one of the existing bikes and making it a dictatorship bike)
@@ -602,18 +484,11 @@ func TestLootboxShareDictator(t *testing.T) {
 	}
 
 	// place dictator on bike
-	dictator := NewNegativeAgent()
+	dictator := NewNegativeAgent(s)
 	s.AddAgent(dictator)
-	dictator.UpdateGameState(gs)
 	dictator.SetBike(bikeID)
 	bike.AddAgent(dictator)
 	bike.SetRuler(dictator.GetID())
-
-	gsnew := s.NewGameStateDump(0)
-
-	for _, agent := range s.GetAgentMap() {
-		agent.UpdateGameState(gsnew)
-	}
 
 	// run the action process and confirm the direction is that of the dictator
 	s.RunActionProcess()
@@ -627,7 +502,7 @@ func TestLootboxShareDictator(t *testing.T) {
 
 	// impose collision with lootbox (by manually changing the bike's position)
 	// get random lootbox
-	var lootbox obj.ILootBox
+	var lootbox objects.ILootBox
 	for _, lootbox = range s.GetLootBoxes() {
 		break
 	}

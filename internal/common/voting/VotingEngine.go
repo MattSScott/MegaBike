@@ -123,6 +123,9 @@ func GetVotesMap(voters map[uuid.UUID]IVoter) map[uuid.UUID]map[uuid.UUID]float6
 	for agentID, voter := range voters {
 		voteSum := SumOfValues(voter)
 		votes := voter.GetVotes()
+		if voteSum == 0 {
+			continue
+		}
 		for id := range votes {
 			if id == uuid.Nil {
 				panic("agent voted for a nil uuid")

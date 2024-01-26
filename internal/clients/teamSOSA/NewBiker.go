@@ -1,7 +1,7 @@
-package team2
+package teamSOSA
 
 import (
-	"SOMAS2023/internal/clients/team2/agent"
+	"SOMAS2023/internal/clients/teamSOSA/agent"
 	"SOMAS2023/internal/common/objects"
 )
 
