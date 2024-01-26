@@ -1,6 +1,7 @@
 package server
 
 import (
+	"SOMAS2023/internal/clients/teamSOSA"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 
@@ -12,7 +13,7 @@ type AgentInitFunction func(baseBiker *objects.BaseBiker) objects.IBaseBiker
 
 // COHORT EXPERIMENTS
 var AgentInitFunctions = []AgentInitFunction{
-	// team2.GetBiker, // Team 2
+	teamSOSA.GetBiker, // Team SOSA
 }
 
 // BASEBIKER EXPERIMENTS (uncomment this and comment out the above to run base biker experiments)

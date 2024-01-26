@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (a *AgentTwo) CreateForcesMessage() obj.ForcesMessage {
+func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 	return obj.ForcesMessage{
 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
 		AgentId:     a.GetID(),
@@ -15,7 +15,7 @@ func (a *AgentTwo) CreateForcesMessage() obj.ForcesMessage {
 	}
 }
 
-func (a *AgentTwo) CreateKickOffMessage() obj.KickoutAgentMessage {
+func (a *AgentSOSA) CreateKickOffMessage() obj.KickoutAgentMessage {
 	agentId, _ := a.Modules.SocialCapital.GetMinimumSocialCapital()
 	kickOff := false
 	if agentId != a.GetID() {
@@ -29,7 +29,7 @@ func (a *AgentTwo) CreateKickOffMessage() obj.KickoutAgentMessage {
 	}
 }
 
-func (a *AgentTwo) HandleKickOffMessage(msg obj.KickoutAgentMessage) {
+func (a *AgentSOSA) HandleKickOffMessage(msg obj.KickoutAgentMessage) {
 	// fmt.Printf("[HandleKickOffMessage] Received message from Agent %v\n", msg.AgentId)
 
 	agentId := msg.AgentId
@@ -41,7 +41,7 @@ func (a *AgentTwo) HandleKickOffMessage(msg obj.KickoutAgentMessage) {
 	a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventValue_Kickoff, InstitutionEventWeight_Kickoff)
 }
 
-func (a *AgentTwo) HandleForcesMessage(msg obj.ForcesMessage) {
+func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	agentId := msg.AgentId
 	if agentId == uuid.Nil {
 		return
@@ -61,7 +61,7 @@ func (a *AgentTwo) HandleForcesMessage(msg obj.ForcesMessage) {
 	// fmt.Printf("Agent Social Network After: %v\n", a.Modules.SocialCapital.SocialNetwork)
 }
 
-func (a *AgentTwo) HandleJoiningMessage(msg obj.JoiningAgentMessage) {
+func (a *AgentSOSA) HandleJoiningMessage(msg obj.JoiningAgentMessage) {
 	// fmt.Printf("[HandleJoiningMessage] Received message from Agent %v\n", msg.AgentId)
 
 	agentId := msg.AgentId
@@ -75,7 +75,7 @@ func (a *AgentTwo) HandleJoiningMessage(msg obj.JoiningAgentMessage) {
 
 // This function updates all the messages for that agent i.e. both sending and receiving.
 // And returns the new messages from other agents to your agent
-func (a *AgentTwo) GetAllMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
+func (a *AgentSOSA) GetAllMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
 	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
 	wantToSendMsg := true
 	if wantToSendMsg {

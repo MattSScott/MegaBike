@@ -49,7 +49,6 @@ type IBaseBiker interface {
 	UpdateColour(totColours utils.Colour)  // called if a box of the desired colour has been looted
 	UpdatePoints(pointGained int)          // called by server
 	UpdateEnergyLevel(energyLevel float64) // increase the energy level of the agent by the allocated lootbox share or decrease by expended energy
-	UpdateGameState(gameState IGameState)  // sets the gameState field at the beginning of each round
 	ToggleOnBike()                         // called when removing or adding a biker on a bike
 	ResetPoints()
 
@@ -270,10 +269,6 @@ func (bb *BaseBiker) GetForces() utils.Forces {
 
 func (bb *BaseBiker) SetForces(forces utils.Forces) {
 	bb.forces = forces
-}
-
-func (bb *BaseBiker) UpdateGameState(gameState IGameState) {
-	bb.gameState = gameState
 }
 
 // default implementation returns the id of the nearest lootbox

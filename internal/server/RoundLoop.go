@@ -151,7 +151,6 @@ func (s *Server) GetLeavingDecisions() []uuid.UUID {
 	leavingAgents := make([]uuid.UUID, 0)
 	for agentId, agent := range s.GetAgentMap() {
 		if agent.GetBikeStatus() {
-			// agent.UpdateGameState(gameState)
 			agent.UpdateAgentInternalState()
 			switch agent.DecideAction() {
 			case objects.Pedal:
@@ -171,7 +170,6 @@ func (s *Server) GetLeavingDecisions() []uuid.UUID {
 		}
 	}
 
-	// s.UpdateGameStates()
 	// if ruler has left the bike will need to run elections
 	for _, bike := range s.GetMegaBikes() {
 		if slices.Contains(leavingAgents, bike.GetRuler()) && len(bike.GetAgents()) != 0 {
@@ -207,7 +205,6 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 					break
 				}
 			}
-			// s.UpdateGameStates() // agents need an updated game state if they want to have elections
 			// if the governance of the bike is ruler led an election needs to be held
 			gov := s.megaBikes[bikeID].GetGovernance()
 			if gov == utils.Dictatorship || gov == utils.Leadership {

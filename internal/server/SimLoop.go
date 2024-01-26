@@ -80,7 +80,6 @@ func (s *Server) ResetGameState() {
 func (s *Server) FoundingInstitutions() {
 
 	// run founding messaging session
-	// s.UpdateGameStates()
 	s.RunMessagingSession()
 
 	// check which governance method is chosen for each biker

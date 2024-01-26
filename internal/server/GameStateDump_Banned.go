@@ -115,10 +115,6 @@ func (a AgentDump) UpdateEnergyLevel(float64) {
 	panic(bannedFunctionErrorMessage)
 }
 
-func (a AgentDump) UpdateGameState(objects.IGameState) {
-	panic(bannedFunctionErrorMessage)
-}
-
 func (a AgentDump) ToggleOnBike() {
 	panic(bannedFunctionErrorMessage)
 }
@@ -210,9 +206,5 @@ func (b BikeDump) SetGovernance(utils.Governance) {
 }
 
 func (b BikeDump) SetRuler(uuid.UUID) {
-	panic(bannedFunctionErrorMessage)
-}
-
-func (a AwdiDump) UpdateGameState(objects.IGameState) {
 	panic(bannedFunctionErrorMessage)
 }

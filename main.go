@@ -8,7 +8,6 @@ import (
 func main() {
 	fmt.Println("Hello Agents")
 	s := server.GenerateServer()
-	s.Initialize(10)
-	// s.UpdateGameStates()
+	s.Initialize(100)
 	s.Start()
 }

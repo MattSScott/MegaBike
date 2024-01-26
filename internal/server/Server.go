@@ -40,7 +40,6 @@ type IBaseBikerServer interface {
 	LootboxCheckAndDistributions()                                                                               // checks for collision between bike and lootbox and runs the distribution process
 	ResetGameState()                                                                                             // resets game state (at the beginning of a new round)
 	GetDeadAgents() map[uuid.UUID]objects.IBaseBiker                                                             // returns the map of dead agents
-	// UpdateGameStates()                                                                                           // updates the game state object of all agents
 }
 
 type Server struct {
@@ -166,13 +165,6 @@ func (s *Server) outputResults(gameStates [][]GameStateDump) {
 		panic(err)
 	}
 }
-
-// func (s *Server) UpdateGameStates() {
-// 	gs := s.NewGameStateDump(0)
-// 	for _, agent := range s.GetAgentMap() {
-// 		agent.UpdateGameState(gs)
-// 	}
-// }
 
 // had to override to address the fact that agents only have access to the game dump
 // version of agents, so if the recipients are set to be those it will panic as they

@@ -19,8 +19,8 @@ func TestRuleAdherenceValue_SameDirection(t *testing.T) {
 	expectedAction := utils.Forces{Pedal: 1, Turning: turningDecision}
 	actualAction := utils.Forces{Pedal: 0.2, Turning: turningDecision}
 
-	// Create an instance of AgentTwo
-	agent := NewBaseTeam2Biker(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))
+	// Create an instance of AgentSOSA
+	agent := NewAgentSOSA(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))
 
 	// Call the function
 	result := agent.Modules.Utils.RuleAdherenceValue(agentID, expectedAction, actualAction)
@@ -46,8 +46,8 @@ func TestRuleAdherenceValue_OppositeDirection(t *testing.T) {
 	expectedAction := utils.Forces{Pedal: 1, Turning: ExpectedTurningDecision}
 	actualAction := utils.Forces{Pedal: 0.2, Turning: ActualTurningDecision}
 
-	// Create an instance of AgentTwo
-	agent := NewBaseTeam2Biker(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))
+	// Create an instance of AgentSOSA
+	agent := NewAgentSOSA(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))
 
 	// Call the function
 	result := agent.Modules.Utils.RuleAdherenceValue(agentID, expectedAction, actualAction)
@@ -73,8 +73,8 @@ func TestRuleAdherenceValue_OrthogonalDirection(t *testing.T) {
 	expectedAction := utils.Forces{Pedal: 1, Turning: ExpectedTurningDecision}
 	actualAction := utils.Forces{Pedal: 0.2, Turning: ActualTurningDecision}
 
-	// Create an instance of AgentTwo
-	agent := NewBaseTeam2Biker(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))
+	// Create an instance of AgentSOSA
+	agent := NewAgentSOSA(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))
 
 	// Call the function
 	result := agent.Modules.Utils.RuleAdherenceValue(agentID, expectedAction, actualAction)

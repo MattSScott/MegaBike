@@ -7,10 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type IBaseBiker interface {
-	objects.IBaseBiker
-}
-
 type AgentModules struct {
 	Environment    *modules.EnvironmentModule
 	SocialCapital  *modules.SocialCapital
@@ -19,14 +15,14 @@ type AgentModules struct {
 	VotedDirection uuid.UUID
 }
 
-type AgentTwo struct {
+type AgentSOSA struct {
 	*objects.BaseBiker // Embedding the BaseBiker
 	Modules            AgentModules
 }
 
-func NewBaseTeam2Biker(baseBiker *objects.BaseBiker) *AgentTwo {
+func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
 	baseBiker.GroupID = 2
-	return &AgentTwo{
+	return &AgentSOSA{
 		BaseBiker: baseBiker,
 		Modules: AgentModules{
 			Environment:    modules.GetEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),

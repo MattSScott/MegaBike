@@ -10,7 +10,6 @@ import (
 
 type IAwdi interface {
 	IPhysicsObject
-	// UpdateGameState(state IGameState)
 	InjectGameState(gameState IGameState)
 	GetTargetID() uuid.UUID
 }
@@ -96,11 +95,6 @@ func (awdi *Awdi) ComputeTarget() {
 		minVelocity = awdi.target.GetVelocity()
 		minDistance = distance
 	}
-}
-
-// Updates gameState member variable
-func (awdi *Awdi) UpdateGameState(state IGameState) {
-	awdi.gameState = state
 }
 
 func (awdi *Awdi) GetTargetID() uuid.UUID {
