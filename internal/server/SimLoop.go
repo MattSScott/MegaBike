@@ -20,7 +20,7 @@ func (s *Server) RunSimLoop(iterations int) []GameStateDump {
 
 	// run this for n iterations
 	gameStates := []GameStateDump{s.NewGameStateDump(-1)}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < iterations; i++ {
 		s.RunRoundLoop()
 		gameStates = append(gameStates, s.NewGameStateDump(i))
 	}
