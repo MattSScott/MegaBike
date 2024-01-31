@@ -35,8 +35,9 @@ func (fv *ForceVector) ConvertToForce() utils.Forces {
 }
 
 func GetForceVector(force utils.Forces) *ForceVector {
+	pi_f64 := float64(math.Pi)
 	return &ForceVector{
-		X: force.Pedal * float64(math.Cos(float64(math.Pi*force.Turning.SteeringForce))),
-		Y: force.Pedal * float64(math.Sin(float64(math.Pi*force.Turning.SteeringForce))),
+		X: force.Pedal * math.Cos(pi_f64*force.Turning.SteeringForce),
+		Y: force.Pedal * math.Sin(pi_f64*force.Turning.SteeringForce),
 	}
 }

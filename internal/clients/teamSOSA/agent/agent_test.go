@@ -22,11 +22,13 @@ func TestClippingSocialCapital(t *testing.T) {
 	testAgentID := uuid.New()
 
 	// Set up predefined values for trust, institution, and network
-	agent.Modules.SocialCapital.Reputation[testAgentID] = agent.Modules.SocialCapital.ClipValues(1.3)
-	agent.Modules.SocialCapital.Institution[testAgentID] = agent.Modules.SocialCapital.ClipValues(-0.3)
+	agent.Modules.AgentParameters.TrustNetwork[testAgentID] = 0.5
+	agent.Modules.AgentParameters.UpdateTrustValue(testAgentID, 10, 10)
+	// agent.Modules.SocialCapital.Reputation[testAgentID] = agent.Modules.SocialCapital.ClipValues(1.3)
+	// agent.Modules.SocialCapital.Institution[testAgentID] = agent.Modules.SocialCapital.ClipValues(-0.3)
 
-	assert.Equal(t, 1.0, agent.Modules.SocialCapital.Reputation[testAgentID])
-	assert.Equal(t, 0.0, agent.Modules.SocialCapital.Institution[testAgentID])
+	assert.Equal(t, 1.0, agent.Modules.AgentParameters.TrustNetwork[testAgentID])
+	// assert.Equal(t, 0.0, agent.Modules.SocialCapital.Institution[testAgentID])
 }
 
 func TestForcesToVectorConversion(t *testing.T) {

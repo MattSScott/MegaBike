@@ -16,7 +16,8 @@ func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 }
 
 func (a *AgentSOSA) CreateKickOffMessage() obj.KickoutAgentMessage {
-	agentId, _ := a.Modules.SocialCapital.GetMinimumSocialCapital()
+	minTrustAgentStruct := a.Modules.AgentParameters.GetMinimumTrust()
+	agentId := minTrustAgentStruct.ID
 	kickOff := false
 	if agentId != a.GetID() {
 		kickOff = true
@@ -37,8 +38,7 @@ func (a *AgentSOSA) HandleKickOffMessage(msg obj.KickoutAgentMessage) {
 		return
 	}
 
-	a.Modules.SocialCapital.UpdateSocialNetwork(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
-	a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventValue_Kickoff, InstitutionEventWeight_Kickoff)
+	a.Modules.AgentParameters.UpdateTrustValue(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
 }
 
 func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
@@ -49,15 +49,15 @@ func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 
 	// fmt.Printf("[HandleForcesMessage] Received message from Agent %v\n", agentId)
 
-	agentPosition := a.GetLocation()
-	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColor(agentId, a.GetColour())
-	lootboxPosition := a.Modules.Environment.GetLootboxPos(optimalLootbox)
-	optimalForces := a.Modules.Utils.GetForcesToTarget(agentPosition, lootboxPosition)
-	eventValue := a.Modules.Utils.ProjectForce(optimalForces, msg.AgentForces)
+	// agentPosition := a.GetLocation()
+	// optimalLootbox := a.Modules.Environment.GetNearestLootboxByColor(agentId, a.GetColour())
+	// lootboxPosition := a.Modules.Environment.GetLootboxPos(optimalLootbox)
+	// optimalForces := a.Modules.Utils.GetForcesToTarget(agentPosition, lootboxPosition)
+	// eventValue := a.Modules.Utils.ProjectForce(optimalForces, msg.AgentForces)
 
 	// fmt.Printf("Agent Social Network Before: %v\n", a.Modules.SocialCapital.SocialNetwork)
-	a.Modules.SocialCapital.UpdateSocialNetwork(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
-	a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventWeight_Adhereance, eventValue)
+	a.Modules.AgentParameters.UpdateTrustValue(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
+	// a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventWeight_Adhereance, eventValue)
 	// fmt.Printf("Agent Social Network After: %v\n", a.Modules.SocialCapital.SocialNetwork)
 }
 
@@ -69,8 +69,8 @@ func (a *AgentSOSA) HandleJoiningMessage(msg obj.JoiningAgentMessage) {
 		return
 	}
 
-	a.Modules.SocialCapital.UpdateSocialNetwork(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
-	a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventValue_Accepted, InstitutionEventWeight_Accepted)
+	a.Modules.AgentParameters.UpdateTrustValue(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
+	// a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventValue_Accepted, InstitutionEventWeight_Accepted)
 }
 
 // This function updates all the messages for that agent i.e. both sending and receiving.

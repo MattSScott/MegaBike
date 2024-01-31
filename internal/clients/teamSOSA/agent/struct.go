@@ -8,11 +8,11 @@ import (
 )
 
 type AgentModules struct {
-	Environment    *modules.EnvironmentModule
-	SocialCapital  *modules.SocialCapital
-	Decision       *modules.DecisionModule
-	Utils          *modules.UtilsModule
-	VotedDirection uuid.UUID
+	Environment     *modules.EnvironmentModule
+	AgentParameters *modules.AgentParameters
+	Decision        *modules.DecisionModule
+	Utils           *modules.UtilsModule
+	VotedDirection  uuid.UUID
 }
 
 type AgentSOSA struct {
@@ -25,11 +25,11 @@ func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
 	return &AgentSOSA{
 		BaseBiker: baseBiker,
 		Modules: AgentModules{
-			Environment:    modules.GetEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
-			SocialCapital:  modules.NewSocialCapital(),
-			Decision:       modules.NewDecisionModule(),
-			Utils:          modules.NewUtilsModule(),
-			VotedDirection: uuid.UUID{},
+			Environment:     modules.GetEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
+			AgentParameters: modules.NewAgentParameters(),
+			Decision:        modules.NewDecisionModule(),
+			Utils:           modules.NewUtilsModule(),
+			VotedDirection:  uuid.Nil,
 		},
 	}
 }

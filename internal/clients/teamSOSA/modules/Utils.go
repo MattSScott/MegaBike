@@ -10,6 +10,11 @@ import (
 // UtilsModule - Module for handling various Utils
 type UtilsModule struct{}
 
+type IDTrustPair struct {
+	ID    uuid.UUID
+	Trust float64
+}
+
 // NewUtilsModule - Constructor for UtilsModule
 func NewUtilsModule() *UtilsModule {
 	return &UtilsModule{}

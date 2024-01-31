@@ -6,9 +6,9 @@ import (
 
 // DecisionInputs - Inputs for making decisions
 type DecisionInputs struct {
-	SocialCapital *SocialCapital
-	Enviornment   *EnvironmentModule
-	AgentID       uuid.UUID
+	AgentParameters *AgentParameters
+	Environment     *EnvironmentModule
+	AgentID         uuid.UUID
 }
 
 // DecisionOutputs - Struct for outputs of different decision types
@@ -30,13 +30,13 @@ func NewDecisionModule() *DecisionModule {
 
 // Based on social capital, decide which agent to kick through minimum capital
 func (dm *DecisionModule) MakeKickDecision(inputs DecisionInputs) uuid.UUID {
-	agentId, _ := inputs.SocialCapital.GetMinimumSocialCapital()
-	return agentId
+	minAgentStruct := inputs.AgentParameters.GetMinimumTrust()
+	return minAgentStruct.ID
 }
 
 // Accept based on larger than accept threshold
 func (dm *DecisionModule) MakeAcceptAgentDecision(inputs DecisionInputs) bool {
-	socialCapitalScore := inputs.SocialCapital.SocialCapital[inputs.AgentID]
+	socialCapitalScore := inputs.AgentParameters.TrustNetwork[inputs.AgentID]
 	return socialCapitalScore > AcceptThreshold
 }
 
@@ -44,9 +44,9 @@ func (dm *DecisionModule) MakeBikeChangeDecision(inputs DecisionInputs) (bool, u
 	// Logic to decide on bike change
 	shouldChangeBike := false
 	bikeID := uuid.Nil
-	if inputs.SocialCapital.GetAverage(inputs.SocialCapital.SocialCapital) < LeaveBikeThreshold {
+	if inputs.AgentParameters.GetAverageTrust() < LeaveBikeThreshold {
 		shouldChangeBike = true
-		bikeID = inputs.Enviornment.GetBikeWithMaximumSocialCapital(inputs.SocialCapital)
+		bikeID = inputs.Environment.GetBikeWithMaximumSocialCapital(inputs.AgentParameters)
 	}
 	return shouldChangeBike, bikeID
 }

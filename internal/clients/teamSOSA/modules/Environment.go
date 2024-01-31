@@ -20,14 +20,6 @@ type EnvironmentModule struct {
 }
 
 ///
-/// GameState
-///
-
-func (e *EnvironmentModule) SetGameState(gameState objects.IGameState) {
-	e.GameState = gameState
-}
-
-///
 /// Lootboxes
 ///
 
@@ -184,27 +176,27 @@ func (e *EnvironmentModule) GetBikeOrientation() float64 {
 	return e.GetBikeById(e.BikeId).GetOrientation()
 }
 
-func (e *EnvironmentModule) GetBikerWithMaxSocialCapital(sc *SocialCapital) (uuid.UUID, float64) {
+func (e *EnvironmentModule) GetBikerWithMaxSocialCapital(ap *AgentParameters) IDTrustPair {
 	fellowBikers := e.GetBikerAgents()
 	maxSCAgentId := uuid.Nil
-	maxSC := 0.0
+	maxSC := -2.0
 	for _, fellowBiker := range fellowBikers {
-		if sc, ok := sc.SocialCapital[e.AgentId]; ok {
+		if sc, ok := ap.TrustNetwork[e.AgentId]; ok {
 			if sc >= maxSC {
 				maxSCAgentId = fellowBiker.GetID()
 				maxSC = sc
 			}
 		}
 	}
-	return maxSCAgentId, maxSC
+	return IDTrustPair{ID: maxSCAgentId, Trust: maxSC}
 }
 
-func (e *EnvironmentModule) GetBikerWithMinSocialCapital(sc *SocialCapital) (uuid.UUID, float64) {
+func (e *EnvironmentModule) GetBikerWithMinSocialCapital(ap *AgentParameters) IDTrustPair {
 	fellowBikers := e.GetBikerAgents()
 	minSCAgentId := uuid.Nil
 	minSC := math.MaxFloat64
 	for _, fellowBiker := range fellowBikers {
-		if sc, ok := sc.SocialCapital[e.AgentId]; ok {
+		if sc, ok := ap.TrustNetwork[e.AgentId]; ok {
 			if sc < minSC {
 				minSCAgentId = fellowBiker.GetID()
 				minSC = sc
@@ -212,28 +204,26 @@ func (e *EnvironmentModule) GetBikerWithMinSocialCapital(sc *SocialCapital) (uui
 		}
 	}
 
-	if minSCAgentId != uuid.Nil || minSCAgentId != e.AgentId {
+	if minSCAgentId != uuid.Nil && minSCAgentId != e.AgentId {
 		// If minSC is nil or !us, then return the culprit.
-		return minSCAgentId, minSC
-	} else {
-		// Otherwise, return a random agent.
-		if len(fellowBikers) > 1 {
-			i, targetI := 0, rand.Intn(len(fellowBikers))
-			for id := range fellowBikers {
-				if i == targetI {
-					return id, minSC
-				}
-				i++
-			}
-		} else {
-			return uuid.Nil, 0
-		}
-		panic("No agents found to kick off.")
+		return IDTrustPair{ID: minSCAgentId, Trust: minSC}
 	}
-	// return minSCAgentId, minSC
+	// Otherwise, return a random agent.
+	if len(fellowBikers) > 1 {
+		i, targetI := 0, rand.Intn(len(fellowBikers))
+		for id := range fellowBikers {
+			if i == targetI {
+				return IDTrustPair{ID: id, Trust: minSC}
+			}
+			i++
+		}
+	}
+	panic("No agents found to kick off.")
+	// return IDTrustPair{ID: uuid.Nil, Trust: math.NaN()}
+
 }
 
-func (e *EnvironmentModule) GetBikeWithMaximumSocialCapital(sc *SocialCapital) uuid.UUID {
+func (e *EnvironmentModule) GetBikeWithMaximumSocialCapital(ap *AgentParameters) uuid.UUID {
 	maxAverage := float64(0)
 	maxBikeId := uuid.Nil
 
@@ -245,7 +235,7 @@ func (e *EnvironmentModule) GetBikeWithMaximumSocialCapital(sc *SocialCapital) u
 		// Sum up the social capital of all agents on this bike
 		for _, agent := range bike.GetAgents() {
 			agentId := agent.GetID()
-			totalSocialCapital += sc.SocialCapital[agentId]
+			totalSocialCapital += ap.TrustNetwork[agentId]
 		}
 
 		// Calculate average social capital for this bike, Assume we don't swtich to a bike with 0 agents
@@ -261,17 +251,18 @@ func (e *EnvironmentModule) GetBikeWithMaximumSocialCapital(sc *SocialCapital) u
 	if maxBikeId != uuid.Nil || maxBikeId == e.BikeId {
 		// If found, change to that bike.
 		return maxBikeId
-	} else {
-		// Otherwise, change to a random bike.
-		i, targetI := 0, rand.Intn(len(bikes))
-		for id := range bikes {
-			if i == targetI {
-				return id
-			}
-			i++
-		}
-		panic("No bikes found to change to.")
 	}
+
+	// Otherwise, change to a random bike.
+	i, targetI := 0, rand.Intn(len(bikes))
+	for id := range bikes {
+		if i == targetI {
+			return id
+		}
+		i++
+	}
+	panic("No bikes found to change to.")
+
 }
 
 func (e *EnvironmentModule) IsLootboxNearAwdi(lootboxId uuid.UUID) bool {

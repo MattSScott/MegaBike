@@ -24,6 +24,6 @@ const (
 	InstitutionAcceptedEventValue     = 0.2   // Value for being accepted to bike in institution calculation)
 )
 
-const (
-	forgivenessFactor = 0.5 // Factor used in trustworthiness update calculations
-)
+// const (
+// 	forgivenessFactor = 0.5 // Factor used in trustworthiness update calculations
+// )
