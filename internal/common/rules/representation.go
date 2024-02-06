@@ -28,6 +28,7 @@ const (
 	MoveBike Action = iota
 	KickAgent
 	Allocation
+	Lootbox
 )
 
 const (
@@ -48,6 +49,7 @@ const (
 
 type Rule struct {
 	ruleID          uuid.UUID
+	ruleName        string
 	isMutable       bool
 	action          Action
 	ruleInputs      RuleInputs

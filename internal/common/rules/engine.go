@@ -16,6 +16,10 @@ func (r *Rule) GetRuleID() uuid.UUID {
 	return r.ruleID
 }
 
+func (r *Rule) GetRuleName() string {
+	return r.ruleName
+}
+
 func (r *Rule) GetRuleAction() Action {
 	return r.action
 }
@@ -33,6 +37,10 @@ func (r *Rule) GetRuleComparators() []Comparator {
 }
 
 func (r *Rule) UpdateRuleMatrix(newRuleMatrix RuleMatrix) error {
+	if !r.isMutable {
+		return errors.New("rule is (currently) immutable")
+	}
+
 	if len(newRuleMatrix) != len(r.ruleMatrix) {
 		return errors.New("new and old matrix dimensions must match")
 	}
@@ -65,4 +73,16 @@ func (r *Rule) EvaluateRule(agent objects.IBaseBiker) bool {
 		}
 	}
 	return true
+}
+
+func GenerateRule(action Action, name string, ruleInputs RuleInputs, ruleMatrix RuleMatrix, ruleComps RuleComparators, mutability bool) *Rule {
+	return &Rule{
+		ruleID:          uuid.New(),
+		ruleName:        name,
+		isMutable:       mutability,
+		action:          action,
+		ruleInputs:      ruleInputs,
+		ruleMatrix:      ruleMatrix,
+		ruleComparators: ruleComps,
+	}
 }
