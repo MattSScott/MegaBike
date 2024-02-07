@@ -90,3 +90,18 @@ func GenerateRule(action Action, name string, ruleInputs RuleInputs, ruleMatrix 
 		ruleComparators: ruleComps,
 	}
 }
+
+func GenerateNullPassingRule() *Rule {
+	ruleInps := RuleInputs{Location, Energy, Points, Colour}
+	ruleMatrix := [][]float64{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
+	ruleComparators := RuleComparators{EQ, EQ, EQ}
+	return &Rule{
+		ruleID:          uuid.New(),
+		ruleName:        "null_passing_rule",
+		isMutable:       false,
+		action:          AppliesAll,
+		ruleInputs:      ruleInps,
+		ruleMatrix:      ruleMatrix,
+		ruleComparators: ruleComparators,
+	}
+}

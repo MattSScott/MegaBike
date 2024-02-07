@@ -29,6 +29,7 @@ const (
 	KickAgent
 	Allocation
 	Lootbox
+	AppliesAll
 )
 
 const (

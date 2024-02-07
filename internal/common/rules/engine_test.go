@@ -104,3 +104,16 @@ func TestRulePassesAfterMutation(t *testing.T) {
 	}
 
 }
+
+func TestDefaultRuleAlwaysPasses(t *testing.T) {
+	testServer := server.GenerateServer()
+	testServer.Initialize(5)
+	testAgent := agent.NewAgentSOSA(objects.GetBaseBiker(1, uuid.New(), testServer))
+	testServer.AddAgent(testAgent)
+	testServer.FoundingInstitutions()
+	rule := GenerateNullPassingRule()
+
+	if !rule.EvaluateRule(testAgent) {
+		t.Error("Default rule evaluated as false")
+	}
+}
