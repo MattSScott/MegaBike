@@ -30,6 +30,7 @@ const (
 	Allocation
 	Lootbox
 	AppliesAll
+	MAX_ACTIONS
 )
 
 const (

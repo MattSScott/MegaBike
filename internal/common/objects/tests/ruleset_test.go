@@ -2,6 +2,7 @@ package objects
 
 import (
 	"SOMAS2023/internal/common/objects"
+	"SOMAS2023/internal/server"
 	"testing"
 )
 
@@ -24,4 +25,13 @@ func TestRegisterRuleToCache(t *testing.T) {
 		t.Errorf("Failed to add rule to cache")
 	}
 
+}
+
+func TestServerGeneratesRuleCache(t *testing.T) {
+	serv := server.GenerateServer()
+	serv.Initialize(1)
+
+	if len(serv.ViewGlobalRuleCache()) != 100 {
+		t.Error("Server not correctly initialised with rules")
+	}
 }

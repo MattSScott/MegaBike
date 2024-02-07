@@ -93,10 +93,19 @@ func (s *Server) Initialize(iterations int) {
 
 func (s *Server) PopulateGlobalRuleCache() {
 
+	// generate 100 rules split across N actions
+	nActions := int(objects.MAX_ACTIONS)
+	rulesPerAction := int(100 / nActions)
+
+	for i := 0; i < nActions; i++ {
+		for j := 0; j < rulesPerAction; j++ {
+			s.AddToGlobalRuleCache(objects.GenerateNullPassingRuleForAction(objects.Action(i)))
+		}
+	}
 }
 
-func (s *Server) ViewGlobalRuleCache() objects.GlobalRuleCache {
-	return *s.globalRuleCache
+func (s *Server) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return s.globalRuleCache.ViewGlobalRuleSet()
 }
 
 func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
