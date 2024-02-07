@@ -1,7 +1,9 @@
 package server
 
 import (
+	"SOMAS2023/internal/common/gamestate"
 	"SOMAS2023/internal/common/objects"
+	"SOMAS2023/internal/common/rules"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"encoding/json"
@@ -18,7 +20,8 @@ const BikerAgentCount = 56                 // 56 agents in total
 
 type IBaseBikerServer interface {
 	baseserver.IServer[objects.IBaseBiker]
-	objects.IGameState
+	// objects.IGameState
+	gamestate.IGameState
 	// GetMegaBikes() map[uuid.UUID]objects.IMegaBike                                                               // returns all megabikes present on map
 	// GetLootBoxes() map[uuid.UUID]objects.ILootBox                                                                // returns all looboxes present on map
 	// GetAwdi() objects.IAwdi
@@ -52,6 +55,7 @@ type Server struct {
 	awdi            objects.IAwdi
 	deadAgents      map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
 	foundingChoices map[uuid.UUID]utils.Governance
+	globalRuleCache *rules.GlobalRuleCache
 }
 
 func GenerateServer() IBaseBikerServer {
@@ -65,6 +69,8 @@ func (s *Server) Initialize(iterations int) {
 	s.megaBikeRiders = make(map[uuid.UUID]uuid.UUID)
 	s.deadAgents = make(map[uuid.UUID]objects.IBaseBiker)
 	s.awdi = objects.GetIAwdi()
+	s.globalRuleCache = rules.GenerateGlobalRuleCache()
+	s.PopulateGlobalRuleCache()
 	s.replenishLootBoxes()
 	s.replenishMegaBikes()
 	s.awdi.InjectGameState(s)
@@ -84,6 +90,18 @@ func (s *Server) Initialize(iterations int) {
 
 // 	return server
 // }
+
+func (s *Server) PopulateGlobalRuleCache() {
+
+}
+
+func (s *Server) ViewGlobalRuleCache() rules.GlobalRuleCache {
+	return *s.globalRuleCache
+}
+
+func (s *Server) AddToGlobalRuleCache(rule *rules.Rule) {
+	s.globalRuleCache.AddRuleToCache(rule)
+}
 
 // when an agent dies it needs to be removed from its bike, the riders map and the agents map + it's added to the dead agents map
 func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
