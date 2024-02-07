@@ -107,6 +107,10 @@ func (a AgentDump) UpdateColour(utils.Colour) {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (a AgentDump) SetDeterministicColour(utils.Colour) {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (a AgentDump) UpdatePoints(int) {
 	panic(bannedFunctionErrorMessage)
 }

@@ -60,13 +60,17 @@ func (r *Rule) EvaluateRule(agent objects.IBaseBiker) bool {
 		ruleType := r.ruleInputs[i]
 		inputVector[i] = inputGetter(ruleType, agent)
 	}
+
+	// supply constant to vector
+	inputVector = append(inputVector, 1)
+
 	lMat := r.ruleMatrix
 	rMat := mat.NewVecDense(len(inputVector), inputVector)
 
 	var evalMat mat.Dense
 	evalMat.Mul(lMat, rMat)
 
-	for row := 0; row < len(inputVector); row++ {
+	for row := 0; row < len(r.ruleMatrix); row++ {
 		clauseResult := valueComparator(r.ruleComparators[row], evalMat.At(row, 0))
 		if !clauseResult {
 			return false
