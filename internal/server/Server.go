@@ -1,7 +1,9 @@
 package server
 
 import (
+	// "SOMAS2023/internal/common/gamestate"
 	"SOMAS2023/internal/common/objects"
+	// "SOMAS2023/internal/common/rules"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"encoding/json"
@@ -18,6 +20,7 @@ const BikerAgentCount = 56                 // 56 agents in total
 
 type IBaseBikerServer interface {
 	baseserver.IServer[objects.IBaseBiker]
+	// objects.IGameState
 	objects.IGameState
 	// GetMegaBikes() map[uuid.UUID]objects.IMegaBike                                                               // returns all megabikes present on map
 	// GetLootBoxes() map[uuid.UUID]objects.ILootBox                                                                // returns all looboxes present on map
@@ -52,6 +55,7 @@ type Server struct {
 	awdi            objects.IAwdi
 	deadAgents      map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
 	foundingChoices map[uuid.UUID]utils.Governance
+	globalRuleCache *objects.GlobalRuleCache
 }
 
 func GenerateServer() IBaseBikerServer {
@@ -65,6 +69,8 @@ func (s *Server) Initialize(iterations int) {
 	s.megaBikeRiders = make(map[uuid.UUID]uuid.UUID)
 	s.deadAgents = make(map[uuid.UUID]objects.IBaseBiker)
 	s.awdi = objects.GetIAwdi()
+	s.globalRuleCache = objects.GenerateGlobalRuleCache()
+	s.PopulateGlobalRuleCache()
 	s.replenishLootBoxes()
 	s.replenishMegaBikes()
 	s.awdi.InjectGameState(s)
@@ -84,6 +90,27 @@ func (s *Server) Initialize(iterations int) {
 
 // 	return server
 // }
+
+func (s *Server) PopulateGlobalRuleCache() {
+
+	// generate 100 rules split across N actions
+	nActions := int(objects.MAX_ACTIONS)
+	rulesPerAction := int(100 / nActions)
+
+	for i := 0; i < nActions; i++ {
+		for j := 0; j < rulesPerAction; j++ {
+			s.AddToGlobalRuleCache(objects.GenerateNullPassingRuleForAction(objects.Action(i)))
+		}
+	}
+}
+
+func (s *Server) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return s.globalRuleCache.ViewGlobalRuleSet()
+}
+
+func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
+	s.globalRuleCache.AddRuleToCache(rule)
+}
 
 // when an agent dies it needs to be removed from its bike, the riders map and the agents map + it's added to the dead agents map
 func (s *Server) RemoveAgent(agent objects.IBaseBiker) {

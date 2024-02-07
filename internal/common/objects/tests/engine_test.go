@@ -1,8 +1,9 @@
-package rules
+package objects
 
 import (
 	"SOMAS2023/internal/clients/teamSOSA/agent"
 	"SOMAS2023/internal/common/objects"
+
 	"SOMAS2023/internal/server"
 	"testing"
 
@@ -20,10 +21,10 @@ func TestRuleEvaluatesAsTrue(t *testing.T) {
 
 	// generate test rule - energy > 50 and energy < 100, colour == 1
 	testRuleMatrix := [][]float64{{1, 0, -COL}, {0, 1, -1}, {0, 1, -0.5}}
-	testInputVector := RuleInputs{Colour, Energy}
-	testRuleComps := RuleComparators{EQ, LT, GT}
+	testInputVector := objects.RuleInputs{objects.Colour, objects.Energy}
+	testRuleComps := objects.RuleComparators{objects.EQ, objects.LT, objects.GT}
 
-	rule := GenerateRule(Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
+	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
 
 	if rule.EvaluateRule(testAgent) != true {
 		t.Error("Rule incorrectly evaluated as false")
@@ -41,10 +42,10 @@ func TestRuleEvaluatesAsFalse(t *testing.T) {
 
 	// generate test rule - energy > 50 and energy < 100, colour == 1
 	testRuleMatrix := [][]float64{{1, 0, -COL}, {0, 1, -1}, {0, 1, -0.5}}
-	testInputVector := RuleInputs{Colour, Energy}
-	testRuleComps := RuleComparators{EQ, LT, GT}
+	testInputVector := objects.RuleInputs{objects.Colour, objects.Energy}
+	testRuleComps := objects.RuleComparators{objects.EQ, objects.LT, objects.GT}
 
-	rule := GenerateRule(Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
+	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
 
 	if rule.EvaluateRule(testAgent) != false {
 		t.Error("Rule incorrectly evaluated as true")
@@ -55,10 +56,10 @@ func TestRuleImmutability(t *testing.T) {
 
 	// generate test rule - energy > 50 and energy < 100, colour == 1
 	testRuleMatrix := [][]float64{{1, 0, -4}, {0, 1, -1}, {0, 1, -0.5}}
-	testInputVector := RuleInputs{Colour, Energy}
-	testRuleComps := RuleComparators{EQ, LT, GT}
+	testInputVector := objects.RuleInputs{objects.Colour, objects.Energy}
+	testRuleComps := objects.RuleComparators{objects.EQ, objects.LT, objects.GT}
 
-	rule := GenerateRule(Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
+	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
 
 	updatedRuleMatrix := testRuleMatrix
 	updatedRuleMatrix[0][2] = -3
@@ -87,10 +88,10 @@ func TestRulePassesAfterMutation(t *testing.T) {
 
 	// generate test rule - energy > 50 and energy < 100, colour == 1
 	testRuleMatrix := [][]float64{{1, -20, -4}}
-	testInputVector := RuleInputs{Points, Energy}
-	testRuleComps := RuleComparators{EQ}
+	testInputVector := objects.RuleInputs{objects.Points, objects.Energy}
+	testRuleComps := objects.RuleComparators{objects.EQ}
 
-	rule := GenerateRule(Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, true)
+	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, true)
 
 	if rule.EvaluateRule(testAgent) != false {
 		t.Error("Rule incorrectly evaluated as true")
@@ -111,7 +112,7 @@ func TestDefaultRuleAlwaysPasses(t *testing.T) {
 	testAgent := agent.NewAgentSOSA(objects.GetBaseBiker(1, uuid.New(), testServer))
 	testServer.AddAgent(testAgent)
 	testServer.FoundingInstitutions()
-	rule := GenerateNullPassingRule()
+	rule := objects.GenerateNullPassingRule()
 
 	if !rule.EvaluateRule(testAgent) {
 		t.Error("Default rule evaluated as false")

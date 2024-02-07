@@ -1,4 +1,4 @@
-package rules
+package objects
 
 import (
 	"github.com/google/uuid"
@@ -30,6 +30,7 @@ const (
 	Allocation
 	Lootbox
 	AppliesAll
+	MAX_ACTIONS
 )
 
 const (

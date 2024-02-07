@@ -1,4 +1,4 @@
-package rules
+package objects
 
 import "github.com/google/uuid"
 
@@ -19,6 +19,10 @@ func (grc *GlobalRuleCache) AddRuleToCache(rule *Rule) {
 	grc.rawRuleSet[rule.GetRuleID()] = rule
 	grc.stratifiedRuleSet[rule.GetRuleAction()] = append(grc.stratifiedRuleSet[rule.GetRuleAction()], rule)
 
+}
+
+func (grc *GlobalRuleCache) ViewGlobalRuleSet() map[uuid.UUID]*Rule {
+	return grc.rawRuleSet
 }
 
 func GenerateGlobalRuleCache() *GlobalRuleCache {

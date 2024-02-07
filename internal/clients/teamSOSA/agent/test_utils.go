@@ -23,3 +23,9 @@ func (mgs *MockGameState) GetAgentMap() map[uuid.UUID]objects.IBaseBiker {
 func (mgs *MockGameState) GetAwdi() objects.IAwdi {
 	return objects.GetIAwdi()
 }
+
+func (mgs *MockGameState) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return make(map[uuid.UUID]*objects.Rule)
+}
+
+func (mgs *MockGameState) AddToGlobalRuleCache(*objects.Rule) {}

@@ -1,7 +1,8 @@
-package rules
+package objects
 
 import (
-	"SOMAS2023/internal/common/objects"
+	// "SOMAS2023/internal/common/objects"
+	// "SOMAS2023/internal/common/objects"
 	"errors"
 
 	"github.com/google/uuid"
@@ -53,7 +54,7 @@ func (r *Rule) UpdateRuleMatrix(newRuleMatrix RuleMatrix) error {
 	return nil
 }
 
-func (r *Rule) EvaluateRule(agent objects.IBaseBiker) bool {
+func (r *Rule) EvaluateRule(agent IBaseBiker) bool {
 	var inputVector []float64 = make([]float64, len(r.ruleInputs))
 
 	for i := range r.ruleInputs {

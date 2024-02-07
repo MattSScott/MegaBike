@@ -11,16 +11,16 @@ import (
 
 type MockBiker struct {
 	*objects.BaseBiker
-	ID             uuid.UUID
-	VoteMap        map[uuid.UUID]int
-	kickedOutCount int
-	governance     utils.Governance
-	ruler          uuid.UUID
+	ID      uuid.UUID
+	VoteMap map[uuid.UUID]int
+	// kickedOutCount int
+	// governance     utils.Governance
+	// ruler          uuid.UUID
 }
 
 type MegaBike struct {
-	agents         []Biker
-	kickedOutCount int
+	// agents         []Biker
+	// kickedOutCount int
 }
 
 func NewMockBiker(gameState objects.IGameState) *MockBiker {
