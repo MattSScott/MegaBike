@@ -1,4 +1,4 @@
-package rules
+package objects
 
 import (
 	"github.com/google/uuid"

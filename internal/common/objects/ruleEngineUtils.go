@@ -1,35 +1,34 @@
-package rules
+package objects
 
 import (
-	"SOMAS2023/internal/common/objects"
 	"math"
 )
 
-func forceGetter(agent objects.IBaseBiker) float64 {
+func forceGetter(agent IBaseBiker) float64 {
 	return agent.GetForces().Pedal
 }
 
-func colourGetter(agent objects.IBaseBiker) float64 {
+func colourGetter(agent IBaseBiker) float64 {
 	return float64(agent.GetColour())
 }
 
-func locationGetter(agent objects.IBaseBiker) float64 {
+func locationGetter(agent IBaseBiker) float64 {
 	loco := agent.GetLocation()
 	dx := loco.X * loco.X
 	dy := loco.Y * loco.Y
 	return math.Sqrt(dx + dy)
 }
 
-func energyGetter(agent objects.IBaseBiker) float64 {
+func energyGetter(agent IBaseBiker) float64 {
 	return agent.GetEnergyLevel()
 }
 
-func pointsGetter(agent objects.IBaseBiker) float64 {
+func pointsGetter(agent IBaseBiker) float64 {
 	return float64(agent.GetPoints())
 }
 
 // generate numerical output of interface rule
-func inputGetter(rule RuleInput, agent objects.IBaseBiker) float64 {
+func inputGetter(rule RuleInput, agent IBaseBiker) float64 {
 	switch rule {
 	case Forces:
 		return forceGetter(agent)
