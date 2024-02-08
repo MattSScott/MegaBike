@@ -1,9 +1,8 @@
 package server
 
 import (
-	// "SOMAS2023/internal/common/gamestate"
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
-	// "SOMAS2023/internal/common/rules"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"encoding/json"
@@ -14,17 +13,14 @@ import (
 	"github.com/google/uuid"
 )
 
-const LootBoxCount = BikerAgentCount * 2.5 // 2.5 lootboxes available per Agent
-const MegaBikeCount = 11                   // Megabikes should have 8 riders
-const BikerAgentCount = 56                 // 56 agents in total
+// const LootBoxCount = BikerAgentCount * 2.5 // 2.5 lootboxes available per Agent
+// const MegaBikeCount = 11                   // Megabikes should have 8 riders
+// const BikerAgentCount = 56                 // 56 agents in total
 
 type IBaseBikerServer interface {
 	baseserver.IServer[objects.IBaseBiker]
-	// objects.IGameState
 	objects.IGameState
-	// GetMegaBikes() map[uuid.UUID]objects.IMegaBike                                                               // returns all megabikes present on map
-	// GetLootBoxes() map[uuid.UUID]objects.ILootBox                                                                // returns all looboxes present on map
-	// GetAwdi() objects.IAwdi
+
 	Initialize(iterations int)                                                                                   // returns the awdi interface
 	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                                                    // returns a map from bike id to the id of all agents trying to joing that bike
 	GetRandomBikeId() uuid.UUID                                                                                  // gets the id of any random bike in the map
@@ -74,6 +70,8 @@ func (s *Server) Initialize(iterations int) {
 	s.replenishLootBoxes()
 	s.replenishMegaBikes()
 	s.awdi.InjectGameState(s)
+
+	fmt.Println(len(s.GetMegaBikes()))
 }
 
 // func (s *Server) Initialize(iterations int) IBaseBikerServer {
@@ -94,7 +92,7 @@ func (s *Server) Initialize(iterations int) {
 func (s *Server) PopulateGlobalRuleCache() {
 	// generate 100 rules split across N actions
 	nActions := int(objects.MAX_ACTIONS)
-	rulesPerAction := int(100 / nActions)
+	rulesPerAction := int(*globals.GlobalRuleCount / nActions)
 
 	for i := 0; i < nActions; i++ {
 		for j := 0; j < rulesPerAction; j++ {

@@ -12,8 +12,10 @@ import (
 
 func (s *Server) RunRoundLoop() {
 	// get destination bikes from bikers not on bike
+	s.runActionDeliberation(objects.MoveBike)
 	s.SetDestinationBikes()
 	// take care of agents that want to leave the bike and of the acceptance/ expulsion process
+	s.runActionDeliberation(objects.KickAgent)
 	s.RunBikeSwitch()
 	// get the direction decisions and pedalling forces
 	s.RunActionProcess()
@@ -23,6 +25,7 @@ func (s *Server) RunRoundLoop() {
 	for _, bike := range s.megaBikes {
 		// update mass dependent on number of agents on bike
 		bike.UpdateMass()
+		s.runActionDeliberation(objects.Lootbox)
 		s.MovePhysicsObject(bike)
 	}
 
@@ -30,6 +33,7 @@ func (s *Server) RunRoundLoop() {
 	s.MovePhysicsObject(s.awdi)
 
 	// Lootbox Distribution
+	s.runActionDeliberation(objects.Allocation)
 	s.LootboxCheckAndDistributions()
 
 	// Punish bikeless agents
@@ -64,6 +68,13 @@ func (s *Server) RunRoundLoop() {
 
 	// Run the messaging session
 	s.RunMessagingSession()
+}
+
+func (s *Server) runActionDeliberation(action objects.Action) {
+	for _, bike := range s.megaBikes {
+		// update mass dependent on number of agents on bike
+		bike.ActionIsValidForRuleset(action)
+	}
 }
 
 // handles bikers leaving the bike, potential kick outs and the acceptance process (in this order)

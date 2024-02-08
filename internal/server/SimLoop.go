@@ -128,10 +128,11 @@ func (s *Server) FoundingInstitutions() {
 		// add that biker to a megabike
 		// if there are more bikers for a governance method than there are seats, then evenly distribute them across megabikes
 
-		// select a bike with this governance method which has been assigned the lowest amount of bikers
+		// select a bike with this governance method which has been assigned the lowest amount of bikers. If none available, stay in limbo
 		bikesAvailable := govBikes[governance]
 		if len(bikesAvailable) == 0 {
-			panic("not enough bikes to accommodate governance choices")
+			continue
+			// panic("not enough bikes to accommodate governance choices")
 		}
 
 		// Sort bikes from least to most full
@@ -169,5 +170,5 @@ func (s *Server) Start() {
 		s.RunMessagingSession()
 		fmt.Printf("Game Loop %d completed.\n", i)
 	}
-	s.outputResults(gameStates)
+	// s.outputResults(gameStates)
 }
