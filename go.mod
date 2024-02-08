@@ -22,6 +22,7 @@ require (
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/shabbyrobe/xmlwriter v0.0.0-20200208144257-9fca06d00ffa // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/text v0.8.0 // indirect
+	gonum.org/v1/gonum v0.14.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

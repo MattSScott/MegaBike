@@ -18,23 +18,34 @@ type IMegaBike interface {
 	GetRuler() uuid.UUID
 	SetGovernance(governance utils.Governance)
 	SetRuler(ruler uuid.UUID)
+	GetActiveRulesForAction(action Action) []*Rule
+	AddToRuleMap(rule *Rule)
+	ViewLocalRuleMap() map[Action][]*Rule
+	ActionIsValidForRuleset(action Action) bool
+	ActionCompliesWithLinearRuleset() bool
 }
 
 // MegaBike will have the following forces
 type MegaBike struct {
 	*PhysicsObject
-	agents         []IBaseBiker
-	kickedOutCount int
-	governance     utils.Governance
-	ruler          uuid.UUID
+	agents              []IBaseBiker
+	kickedOutCount      int
+	governance          utils.Governance
+	ruler               uuid.UUID
+	globalRuleCacheView RuleCacheOperations
+	activeRuleMap       map[Action][]*Rule
+	linearRuleList      []*Rule
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
-func GetMegaBike() *MegaBike {
+func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 	return &MegaBike{
-		PhysicsObject: GetPhysicsObject(utils.MassBike),
-		governance:    utils.Democracy,
-		ruler:         uuid.Nil,
+		PhysicsObject:       GetPhysicsObject(utils.MassBike),
+		governance:          utils.Democracy,
+		ruler:               uuid.Nil,
+		globalRuleCacheView: ruleCache,
+		activeRuleMap:       make(map[Action][]*Rule),
+		linearRuleList:      make([]*Rule, 0),
 	}
 }
 
@@ -170,4 +181,61 @@ func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 
 func (mb *MegaBike) SetRuler(ruler uuid.UUID) {
 	mb.ruler = ruler
+}
+
+func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
+	output := []*Rule{}
+	if action != AppliesAll {
+		output = append(output, mb.activeRuleMap[AppliesAll]...)
+	}
+
+	output = append(output, mb.activeRuleMap[action]...)
+	return output
+}
+
+func (mb *MegaBike) AddToRuleMap(rule *Rule) {
+	category := rule.GetRuleAction()
+	mb.activeRuleMap[category] = append(mb.activeRuleMap[category], rule)
+}
+
+func (mb *MegaBike) ActivateAllGlobalRules() {
+	globalRuleView := mb.globalRuleCacheView
+	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
+		mb.AddToRuleMap(rule)
+		mb.linearRuleList = append(mb.linearRuleList, rule)
+	}
+}
+
+func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
+	return mb.activeRuleMap
+}
+
+func (mb *MegaBike) ViewLinearRuleList() []*Rule {
+	return mb.linearRuleList
+}
+
+func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
+	for _, r := range mb.linearRuleList {
+		for _, agent := range mb.agents {
+			if !r.EvaluateRule(agent) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
+	rulesToTest := mb.activeRuleMap[action]
+
+	for _, r := range rulesToTest {
+		for _, agent := range mb.agents {
+			if !r.EvaluateRule(agent) {
+				return false
+			}
+		}
+	}
+
+	return true
 }

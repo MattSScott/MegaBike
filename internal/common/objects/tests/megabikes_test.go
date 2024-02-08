@@ -11,17 +11,29 @@ import (
 
 type MockBiker struct {
 	*objects.BaseBiker
-	ID             uuid.UUID
-	VoteMap        map[uuid.UUID]int
-	kickedOutCount int
-	governance     utils.Governance
-	ruler          uuid.UUID
+	ID      uuid.UUID
+	VoteMap map[uuid.UUID]int
+	// kickedOutCount int
+	// governance     utils.Governance
+	// ruler          uuid.UUID
+}
+
+func (mb *MockBiker) GetLocation() utils.Coordinates {
+	return utils.GenerateRandomCoordinates()
 }
 
 type MegaBike struct {
-	agents         []Biker
-	kickedOutCount int
+	// agents         []Biker
+	// kickedOutCount int
 }
+
+type MockRuleCache struct{}
+
+func (mrc *MockRuleCache) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return make(map[uuid.UUID]*objects.Rule)
+}
+
+func (mrc *MockRuleCache) AddToGlobalRuleCache(*objects.Rule) {}
 
 func NewMockBiker(gameState objects.IGameState) *MockBiker {
 	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), gameState)
@@ -49,7 +61,7 @@ func (mb *MockBiker) GetID() uuid.UUID {
 }
 
 func TestGetMegaBike(t *testing.T) {
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 
 	if mb == nil {
 		t.Errorf("GetMegaBike returned nil")
@@ -69,7 +81,7 @@ func TestAddAgent(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	biker := NewMockBiker(s)
 
 	mb.AddAgent(biker)
@@ -88,7 +100,7 @@ func TestRemoveAgent(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	biker1 := NewMockBiker(s)
 	biker2 := NewMockBiker(s)
 
@@ -117,7 +129,7 @@ func TestUpdateMass(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	initialMass := mb.GetPhysicalState().Mass
 
 	mb.AddAgent(NewMockBiker(s))
@@ -140,7 +152,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -175,7 +187,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker := NewMockBiker(s)
 
 		turningDecision := utils.TurningDecision{
@@ -208,7 +220,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -258,7 +270,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 		biker3 := NewMockBiker(s)
@@ -294,7 +306,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -329,7 +341,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -364,7 +376,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -395,7 +407,7 @@ func TestUpdateOrientation(t *testing.T) {
 }
 
 func TestGetSetGovernanceAndRuler(t *testing.T) {
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	originalGovernance := mb.GetGovernance()
 	originalRuler := mb.GetRuler()
 
@@ -423,7 +435,7 @@ func TestKickOutAgent(t *testing.T) {
 	s.Initialize(iterations)
 	s.FoundingInstitutions()
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 
 	//biker1 := NewMockBiker(uuid.New(), map[uuid.UUID]int{ /* votes */ })
 	biker1 := NewMockBiker(s)
@@ -472,4 +484,51 @@ func TestKickOutAgent(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestPopulateBikeWithFullRuleset(t *testing.T) {
+	serv := server.GenerateServer()
+	serv.Initialize(1)
+
+	mb := objects.GetMegaBike(serv)
+
+	if len(mb.ViewLocalRuleMap()) != 0 {
+		t.Error("Rulemap not initialised as empty")
+	}
+
+	mb.ActivateAllGlobalRules()
+
+	if len(mb.ViewLocalRuleMap()) != int(objects.MAX_ACTIONS) {
+		t.Error("Rules not generated in all categories")
+	}
+}
+
+func TestRulesExtractedAndPassEvent(t *testing.T) {
+
+	serv := server.GenerateServer()
+	serv.Initialize(1)
+
+	mb := objects.GetMegaBike(serv)
+	for i := 0; i < 8; i++ {
+		mb.AddAgent(NewMockBiker(serv))
+	}
+
+	if len(mb.GetAgents()) != 8 {
+		t.Error("Agents not correctly added to bike")
+	}
+
+	if len(mb.ViewLocalRuleMap()) != 0 {
+		t.Error("Rulemap not initialised as empty")
+	}
+
+	mb.ActivateAllGlobalRules()
+
+	if !mb.ActionIsValidForRuleset(objects.AppliesAll) {
+		t.Error("Rules not properly passing (applies all)")
+	}
+
+	if !mb.ActionIsValidForRuleset(objects.Lootbox) {
+		t.Error("Rules not properly passing (lootbox)")
+	}
+
 }

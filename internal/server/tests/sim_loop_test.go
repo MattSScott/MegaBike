@@ -157,15 +157,6 @@ func TestFoundingInstitutions(t *testing.T) {
 
 	s.FoundingInstitutions()
 
-	/* 	for _, agent := range s.GetAgentMap() {
-		bikeID := agent.GetBike()
-		bike := s.GetMegaBikes()[bikeID]
-		if bike != nil && bike.GetGovernance() != agent.DecideGovernance() {
-			t.Errorf("Agent %v is on bike with governance %v, want %v",
-				agent.GetID(), bike.GetGovernance(), agent.DecideGovernance())
-		}
-	} */
-
 	for _, biker := range mockBikers {
 		actualBike := s.GetMegaBikes()[biker.GetBike()]
 		if actualBike == nil {

@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/server"
 	"fmt"
 	"testing"
@@ -14,16 +15,20 @@ func TestInitialize(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	if len(s.GetAgentMap()) != server.BikerAgentCount {
-		t.Error("Agents not properly instantiated")
+	if len(s.GetAgentMap()) != *globals.BikerAgentCount {
+		t.Error("agents not properly instantiated")
 	}
 
-	if len(s.GetMegaBikes()) != server.MegaBikeCount {
-		t.Error("mega bikes not properly instantiated")
+	if len(s.GetMegaBikes()) != globals.MegaBikeCount {
+		t.Error("megabikes not properly instantiated")
 	}
 
-	if len(s.GetLootBoxes()) != server.LootBoxCount {
-		t.Error("Mega bikes not properly instantiated")
+	if len(s.GetLootBoxes()) != globals.LootBoxCount {
+		t.Error("loot boxes not properly instantiated")
+	}
+
+	if len(s.ViewGlobalRuleCache()) != *globals.GlobalRuleCount {
+		t.Error("ruleset not properly instantiated")
 	}
 
 	if s.GetAwdi().GetID() == uuid.Nil {

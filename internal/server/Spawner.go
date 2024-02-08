@@ -2,6 +2,7 @@ package server
 
 import (
 	"SOMAS2023/internal/clients/teamSOSA"
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 
@@ -23,8 +24,9 @@ var AgentInitFunctions = []AgentInitFunction{
 
 func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objects.IBaseBiker] {
 
-	bikersPerTeam := BikerAgentCount / (len(AgentInitFunctions) + 1)
-	extraBaseBikers := BikerAgentCount % (len(AgentInitFunctions) + 1)
+	bikersPerTeam := *globals.BikerAgentCount / (len(AgentInitFunctions) + 1)
+	extraBaseBikers := *globals.BikerAgentCount % (len(AgentInitFunctions) + 1)
+
 	agentGenerators := []baseserver.AgentGeneratorCountPair[objects.IBaseBiker]{
 		// Spawn base bikers
 		baseserver.MakeAgentGeneratorCountPair(s.BikerAgentGenerator(nil), bikersPerTeam+extraBaseBikers),
@@ -53,19 +55,20 @@ func (s *Server) spawnLootBox() {
 
 // replenishes lootboxes up to the externally set count
 func (s *Server) replenishLootBoxes() {
-	count := LootBoxCount - len(s.lootBoxes)
+	count := globals.LootBoxCount - len(s.lootBoxes)
 	for i := 0; i < count; i++ {
 		s.spawnLootBox()
 	}
 }
 
 func (s *Server) spawnMegaBike() {
-	megaBike := objects.GetMegaBike()
+	megaBike := objects.GetMegaBike(s)
 	s.megaBikes[megaBike.GetID()] = megaBike
+	megaBike.ActivateAllGlobalRules()
 }
 
 func (s *Server) replenishMegaBikes() {
-	neededBikes := MegaBikeCount - len(s.megaBikes)
+	neededBikes := globals.MegaBikeCount - len(s.megaBikes)
 	for i := 0; i < neededBikes; i++ {
 		s.spawnMegaBike()
 	}

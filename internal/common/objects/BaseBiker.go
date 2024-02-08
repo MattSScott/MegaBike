@@ -44,12 +44,13 @@ type IBaseBiker interface {
 	GetGroupID() int
 	GetBikeStatus() bool // returns whether the biker is on a bike or not
 
-	SetBike(uuid.UUID)                     // sets the megaBikeID. this is either the id of the bike that the agent is on or the one that it's trying to join
-	SetForces(forces utils.Forces)         // sets the forces (to be updated in DecideForces())
-	UpdateColour(totColours utils.Colour)  // called if a box of the desired colour has been looted
-	UpdatePoints(pointGained int)          // called by server
-	UpdateEnergyLevel(energyLevel float64) // increase the energy level of the agent by the allocated lootbox share or decrease by expended energy
-	ToggleOnBike()                         // called when removing or adding a biker on a bike
+	SetBike(uuid.UUID)                       // sets the megaBikeID. this is either the id of the bike that the agent is on or the one that it's trying to join
+	SetForces(forces utils.Forces)           // sets the forces (to be updated in DecideForces())
+	UpdateColour(totColours utils.Colour)    // called if a box of the desired colour has been looted
+	SetDeterministicColour(col utils.Colour) // allows for deterministic setting of colour
+	UpdatePoints(pointGained int)            // called by server
+	UpdateEnergyLevel(energyLevel float64)   // increase the energy level of the agent by the allocated lootbox share or decrease by expended energy
+	ToggleOnBike()                           // called when removing or adding a biker on a bike
 	ResetPoints()
 
 	GetReputation() map[uuid.UUID]float64 // get reputation value of all other agents
@@ -256,6 +257,10 @@ func (bb *BaseBiker) GetGroupID() int {
 // this is called when a lootbox of the desidered colour has been looted in order to update the sought colour
 func (bb *BaseBiker) UpdateColour(totColours utils.Colour) {
 	bb.soughtColour = utils.Colour(rand.Intn(int(totColours)))
+}
+
+func (bb *BaseBiker) SetDeterministicColour(col utils.Colour) {
+	bb.soughtColour = col
 }
 
 // update the points at the end of a round
