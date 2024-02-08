@@ -97,6 +97,7 @@ func (s *Server) FoundingInstitutions() {
 	// for each governance method, populate megabikes with the bikers who chose that governance method
 	govBikes := make(map[utils.Governance][]uuid.UUID)
 	bikesUsed := make([]uuid.UUID, 0)
+
 	for governanceMethod, numBikers := range foundingTotals {
 		megaBikesNeeded := int(math.Ceil(float64(numBikers) / float64(utils.BikersOnBike)))
 		govBikes[governanceMethod] = make([]uuid.UUID, 0, megaBikesNeeded)
@@ -120,14 +121,11 @@ func (s *Server) FoundingInstitutions() {
 			}
 		}
 	}
-	// return
-	// TODO: debug following loop
-	// i := 0
+
 	for agent, governance := range s.foundingChoices {
 		// randomly select a biker from the bikers who chose this governance method
 		// add that biker to a megabike
 		// if there are more bikers for a governance method than there are seats, then evenly distribute them across megabikes
-
 		// select a bike with this governance method which has been assigned the lowest amount of bikers. If none available, stay in limbo
 		bikesAvailable := govBikes[governance]
 		if len(bikesAvailable) == 0 {

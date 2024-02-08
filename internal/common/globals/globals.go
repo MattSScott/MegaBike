@@ -10,5 +10,5 @@ var BikerAgentCount = flag.Int("agents", 56, "number of agents in simulator")
 var GlobalRuleCount = flag.Int("rules", 100, "number of initial rules in global rule cache")
 var StratifyRules = flag.Bool("s", true, "stratify rules by action")
 
-var LootBoxCount int
-var MegaBikeCount int
+var LootBoxCount int = 140
+var MegaBikeCount int = 10

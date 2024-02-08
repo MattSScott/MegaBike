@@ -70,8 +70,6 @@ func (s *Server) Initialize(iterations int) {
 	s.replenishLootBoxes()
 	s.replenishMegaBikes()
 	s.awdi.InjectGameState(s)
-
-	fmt.Println(len(s.GetMegaBikes()))
 }
 
 // func (s *Server) Initialize(iterations int) IBaseBikerServer {

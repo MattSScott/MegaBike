@@ -22,6 +22,7 @@ type IMegaBike interface {
 	AddToRuleMap(rule *Rule)
 	ViewLocalRuleMap() map[Action][]*Rule
 	ActionIsValidForRuleset(action Action) bool
+	ActionCompliesWithLinearRuleset() bool
 }
 
 // MegaBike will have the following forces
@@ -33,6 +34,7 @@ type MegaBike struct {
 	ruler               uuid.UUID
 	globalRuleCacheView RuleCacheOperations
 	activeRuleMap       map[Action][]*Rule
+	linearRuleList      []*Rule
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
@@ -43,6 +45,7 @@ func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 		ruler:               uuid.Nil,
 		globalRuleCacheView: ruleCache,
 		activeRuleMap:       make(map[Action][]*Rule),
+		linearRuleList:      make([]*Rule, 0),
 	}
 }
 
@@ -199,11 +202,28 @@ func (mb *MegaBike) ActivateAllGlobalRules() {
 	globalRuleView := mb.globalRuleCacheView
 	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
 		mb.AddToRuleMap(rule)
+		mb.linearRuleList = append(mb.linearRuleList, rule)
 	}
 }
 
 func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
 	return mb.activeRuleMap
+}
+
+func (mb *MegaBike) ViewLinearRuleList() []*Rule {
+	return mb.linearRuleList
+}
+
+func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
+	for _, r := range mb.linearRuleList {
+		for _, agent := range mb.agents {
+			if !r.EvaluateRule(agent) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {

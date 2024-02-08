@@ -228,3 +228,7 @@ func (b BikeDump) ViewLocalRuleMap() map[objects.Action][]*objects.Rule {
 func (b BikeDump) ActionIsValidForRuleset(action objects.Action) bool {
 	panic(bannedFunctionErrorMessage)
 }
+
+func (b BikeDump) ActionCompliesWithLinearRuleset() bool {
+	panic(bannedFunctionErrorMessage)
+}

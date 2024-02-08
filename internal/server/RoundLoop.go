@@ -1,6 +1,7 @@
 package server
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
@@ -72,8 +73,11 @@ func (s *Server) RunRoundLoop() {
 
 func (s *Server) runActionDeliberation(action objects.Action) {
 	for _, bike := range s.megaBikes {
-		// update mass dependent on number of agents on bike
-		bike.ActionIsValidForRuleset(action)
+		if *globals.StratifyRules {
+			bike.ActionIsValidForRuleset(action)
+		} else {
+			bike.ActionCompliesWithLinearRuleset()
+		}
 	}
 }
 
