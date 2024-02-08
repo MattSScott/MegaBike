@@ -220,3 +220,11 @@ func (b BikeDump) AddToRuleMap(rule *objects.Rule) {
 func (b BikeDump) GetActiveRulesForAction(action objects.Action) []*objects.Rule {
 	panic(bannedFunctionErrorMessage)
 }
+
+func (b BikeDump) ViewLocalRuleMap() map[objects.Action][]*objects.Rule {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) ActionIsValidForRuleset(action objects.Action) bool {
+	panic(bannedFunctionErrorMessage)
+}

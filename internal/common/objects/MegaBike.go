@@ -20,6 +20,8 @@ type IMegaBike interface {
 	SetRuler(ruler uuid.UUID)
 	GetActiveRulesForAction(action Action) []*Rule
 	AddToRuleMap(rule *Rule)
+	ViewLocalRuleMap() map[Action][]*Rule
+	ActionIsValidForRuleset(action Action) bool
 }
 
 // MegaBike will have the following forces
@@ -179,19 +181,41 @@ func (mb *MegaBike) SetRuler(ruler uuid.UUID) {
 }
 
 func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
-
-	if action == AppliesAll {
-		output := []*Rule{}
-		for _, v := range mb.activeRuleMap {
-			output = append(output, v...)
-		}
-		return output
+	output := []*Rule{}
+	if action != AppliesAll {
+		output = append(output, mb.activeRuleMap[AppliesAll]...)
 	}
 
-	return mb.activeRuleMap[action]
+	output = append(output, mb.activeRuleMap[action]...)
+	return output
 }
 
 func (mb *MegaBike) AddToRuleMap(rule *Rule) {
 	category := rule.GetRuleAction()
 	mb.activeRuleMap[category] = append(mb.activeRuleMap[category], rule)
+}
+
+func (mb *MegaBike) ActivateAllGlobalRules() {
+	globalRuleView := mb.globalRuleCacheView
+	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
+		mb.AddToRuleMap(rule)
+	}
+}
+
+func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
+	return mb.activeRuleMap
+}
+
+func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
+	rulesToTest := mb.activeRuleMap[action]
+
+	for _, r := range rulesToTest {
+		for _, agent := range mb.agents {
+			if !r.EvaluateRule(agent) {
+				return false
+			}
+		}
+	}
+
+	return true
 }

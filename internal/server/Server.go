@@ -92,7 +92,6 @@ func (s *Server) Initialize(iterations int) {
 // }
 
 func (s *Server) PopulateGlobalRuleCache() {
-
 	// generate 100 rules split across N actions
 	nActions := int(objects.MAX_ACTIONS)
 	rulesPerAction := int(100 / nActions)

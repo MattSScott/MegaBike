@@ -18,6 +18,10 @@ type MockBiker struct {
 	// ruler          uuid.UUID
 }
 
+func (mb *MockBiker) GetLocation() utils.Coordinates {
+	return utils.GenerateRandomCoordinates()
+}
+
 type MegaBike struct {
 	// agents         []Biker
 	// kickedOutCount int
@@ -480,4 +484,51 @@ func TestKickOutAgent(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestPopulateBikeWithFullRuleset(t *testing.T) {
+	serv := server.GenerateServer()
+	serv.Initialize(1)
+
+	mb := objects.GetMegaBike(serv)
+
+	if len(mb.ViewLocalRuleMap()) != 0 {
+		t.Error("Rulemap not initialised as empty")
+	}
+
+	mb.ActivateAllGlobalRules()
+
+	if len(mb.ViewLocalRuleMap()) != int(objects.MAX_ACTIONS) {
+		t.Error("Rules not generated in all categories")
+	}
+}
+
+func TestRulesExtractedAndPassEvent(t *testing.T) {
+
+	serv := server.GenerateServer()
+	serv.Initialize(1)
+
+	mb := objects.GetMegaBike(serv)
+	for i := 0; i < 8; i++ {
+		mb.AddAgent(NewMockBiker(serv))
+	}
+
+	if len(mb.GetAgents()) != 8 {
+		t.Error("Agents not correctly added to bike")
+	}
+
+	if len(mb.ViewLocalRuleMap()) != 0 {
+		t.Error("Rulemap not initialised as empty")
+	}
+
+	mb.ActivateAllGlobalRules()
+
+	if !mb.ActionIsValidForRuleset(objects.AppliesAll) {
+		t.Error("Rules not properly passing (applies all)")
+	}
+
+	if !mb.ActionIsValidForRuleset(objects.Lootbox) {
+		t.Error("Rules not properly passing (lootbox)")
+	}
+
 }
