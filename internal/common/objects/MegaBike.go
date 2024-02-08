@@ -18,23 +18,29 @@ type IMegaBike interface {
 	GetRuler() uuid.UUID
 	SetGovernance(governance utils.Governance)
 	SetRuler(ruler uuid.UUID)
+	GetActiveRulesForAction(action Action) []*Rule
+	AddToRuleMap(rule *Rule)
 }
 
 // MegaBike will have the following forces
 type MegaBike struct {
 	*PhysicsObject
-	agents         []IBaseBiker
-	kickedOutCount int
-	governance     utils.Governance
-	ruler          uuid.UUID
+	agents              []IBaseBiker
+	kickedOutCount      int
+	governance          utils.Governance
+	ruler               uuid.UUID
+	globalRuleCacheView RuleCacheOperations
+	activeRuleMap       map[Action][]*Rule
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
-func GetMegaBike() *MegaBike {
+func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 	return &MegaBike{
-		PhysicsObject: GetPhysicsObject(utils.MassBike),
-		governance:    utils.Democracy,
-		ruler:         uuid.Nil,
+		PhysicsObject:       GetPhysicsObject(utils.MassBike),
+		governance:          utils.Democracy,
+		ruler:               uuid.Nil,
+		globalRuleCacheView: ruleCache,
+		activeRuleMap:       make(map[Action][]*Rule),
 	}
 }
 
@@ -170,4 +176,22 @@ func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 
 func (mb *MegaBike) SetRuler(ruler uuid.UUID) {
 	mb.ruler = ruler
+}
+
+func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
+
+	if action == AppliesAll {
+		output := []*Rule{}
+		for _, v := range mb.activeRuleMap {
+			output = append(output, v...)
+		}
+		return output
+	}
+
+	return mb.activeRuleMap[action]
+}
+
+func (mb *MegaBike) AddToRuleMap(rule *Rule) {
+	category := rule.GetRuleAction()
+	mb.activeRuleMap[category] = append(mb.activeRuleMap[category], rule)
 }

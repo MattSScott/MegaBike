@@ -212,3 +212,11 @@ func (b BikeDump) SetGovernance(utils.Governance) {
 func (b BikeDump) SetRuler(uuid.UUID) {
 	panic(bannedFunctionErrorMessage)
 }
+
+func (b BikeDump) AddToRuleMap(rule *objects.Rule) {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) GetActiveRulesForAction(action objects.Action) []*objects.Rule {
+	panic(bannedFunctionErrorMessage)
+}

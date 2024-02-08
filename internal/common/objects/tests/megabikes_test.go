@@ -23,6 +23,14 @@ type MegaBike struct {
 	// kickedOutCount int
 }
 
+type MockRuleCache struct{}
+
+func (mrc *MockRuleCache) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return make(map[uuid.UUID]*objects.Rule)
+}
+
+func (mrc *MockRuleCache) AddToGlobalRuleCache(*objects.Rule) {}
+
 func NewMockBiker(gameState objects.IGameState) *MockBiker {
 	baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), gameState)
 
@@ -49,7 +57,7 @@ func (mb *MockBiker) GetID() uuid.UUID {
 }
 
 func TestGetMegaBike(t *testing.T) {
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 
 	if mb == nil {
 		t.Errorf("GetMegaBike returned nil")
@@ -69,7 +77,7 @@ func TestAddAgent(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	biker := NewMockBiker(s)
 
 	mb.AddAgent(biker)
@@ -88,7 +96,7 @@ func TestRemoveAgent(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	biker1 := NewMockBiker(s)
 	biker2 := NewMockBiker(s)
 
@@ -117,7 +125,7 @@ func TestUpdateMass(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	initialMass := mb.GetPhysicalState().Mass
 
 	mb.AddAgent(NewMockBiker(s))
@@ -140,7 +148,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -175,7 +183,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker := NewMockBiker(s)
 
 		turningDecision := utils.TurningDecision{
@@ -208,7 +216,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -258,7 +266,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 		biker3 := NewMockBiker(s)
@@ -294,7 +302,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -329,7 +337,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -364,7 +372,7 @@ func TestUpdateOrientation(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 
-		mb := objects.GetMegaBike()
+		mb := objects.GetMegaBike(&MockRuleCache{})
 		biker1 := NewMockBiker(s)
 		biker2 := NewMockBiker(s)
 
@@ -395,7 +403,7 @@ func TestUpdateOrientation(t *testing.T) {
 }
 
 func TestGetSetGovernanceAndRuler(t *testing.T) {
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 	originalGovernance := mb.GetGovernance()
 	originalRuler := mb.GetRuler()
 
@@ -423,7 +431,7 @@ func TestKickOutAgent(t *testing.T) {
 	s.Initialize(iterations)
 	s.FoundingInstitutions()
 
-	mb := objects.GetMegaBike()
+	mb := objects.GetMegaBike(&MockRuleCache{})
 
 	//biker1 := NewMockBiker(uuid.New(), map[uuid.UUID]int{ /* votes */ })
 	biker1 := NewMockBiker(s)
