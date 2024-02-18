@@ -217,7 +217,7 @@ func (mb *MegaBike) ViewLinearRuleList() []*Rule {
 func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
 	for _, r := range mb.linearRuleList {
 		for _, agent := range mb.agents {
-			if !r.EvaluateRule(agent) {
+			if !r.EvaluateAgentRule(agent) {
 				return false
 			}
 		}
@@ -231,7 +231,7 @@ func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
 
 	for _, r := range rulesToTest {
 		for _, agent := range mb.agents {
-			if !r.EvaluateRule(agent) {
+			if !r.EvaluateAgentRule(agent) {
 				return false
 			}
 		}

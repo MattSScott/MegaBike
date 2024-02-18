@@ -26,7 +26,7 @@ func TestRuleEvaluatesAsTrue(t *testing.T) {
 
 	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
 
-	if rule.EvaluateRule(testAgent) != true {
+	if rule.EvaluateAgentRule(testAgent) != true {
 		t.Error("Rule incorrectly evaluated as false")
 	}
 }
@@ -47,7 +47,7 @@ func TestRuleEvaluatesAsFalse(t *testing.T) {
 
 	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, false)
 
-	if rule.EvaluateRule(testAgent) != false {
+	if rule.EvaluateAgentRule(testAgent) != false {
 		t.Error("Rule incorrectly evaluated as true")
 	}
 }
@@ -93,14 +93,14 @@ func TestRulePassesAfterMutation(t *testing.T) {
 
 	rule := objects.GenerateRule(objects.Lootbox, "testRule", testInputVector, testRuleMatrix, testRuleComps, true)
 
-	if rule.EvaluateRule(testAgent) != false {
+	if rule.EvaluateAgentRule(testAgent) != false {
 		t.Error("Rule incorrectly evaluated as true")
 	}
 
 	fixedRuleMat := testRuleMatrix
 	fixedRuleMat[0][2] = -5
 
-	if rule.EvaluateRule(testAgent) != true {
+	if rule.EvaluateAgentRule(testAgent) != true {
 		t.Error("Rule incorrectly evaluated as false")
 	}
 
@@ -114,7 +114,7 @@ func TestDefaultRuleAlwaysPasses(t *testing.T) {
 	testServer.FoundingInstitutions()
 	rule := objects.GenerateNullPassingRule()
 
-	if !rule.EvaluateRule(testAgent) {
+	if !rule.EvaluateAgentRule(testAgent) {
 		t.Error("Default rule evaluated as false")
 	}
 }

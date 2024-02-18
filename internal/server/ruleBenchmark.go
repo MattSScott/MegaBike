@@ -11,7 +11,7 @@ func (s *Server) runBenchmarkingSession(newRep bool, iters int) {
 		rule := objects.GenerateNullPassingRule2()
 		for i := 0; i < iters; i++ {
 			for _, ag := range s.GetAgentMap() {
-				rule.EvaluateRule(ag)
+				rule.EvaluateAgentRule(ag)
 			}
 		}
 	} else {

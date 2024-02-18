@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"SOMAS2023/internal/common/physics"
 	"errors"
 
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ func (r *Rule) UpdateRuleMatrix(newRuleMatrix RuleMatrix) error {
 	return nil
 }
 
-func (r *Rule) EvaluateRule(agent IBaseBiker) bool {
+func (r *Rule) EvaluateAgentInputs(agent IBaseBiker) []float64 {
 	var inputVector []float64 = make([]float64, len(r.ruleInputs))
 
 	for i := range r.ruleInputs {
@@ -62,9 +63,34 @@ func (r *Rule) EvaluateRule(agent IBaseBiker) bool {
 
 	// supply constant to vector
 	inputVector = append(inputVector, 1)
+	return inputVector
+}
 
+func (r *Rule) EvaluateTestLootboxRuleInputs(bike IMegaBike, lootbox ILootBox) []float64 {
+	bPos := bike.GetPosition()
+	lPos := lootbox.GetPosition()
+
+	dPos := physics.ComputeDistance(bPos, lPos)
+
+	return []float64{
+		dPos,
+		1,
+	}
+}
+
+func (r *Rule) EvaluateAgentRule(agent IBaseBiker) bool {
+	inputVector := r.EvaluateAgentInputs(agent)
+	return r.EvaluateRule(inputVector)
+}
+
+func (r *Rule) EvaluateLootboxRule(bike IMegaBike, lootbox ILootBox) bool {
+	inputVector := r.EvaluateTestLootboxRuleInputs(bike, lootbox)
+	return r.EvaluateRule(inputVector)
+}
+
+func (r *Rule) EvaluateRule(parsedInputs []float64) bool {
 	lMat := r.ruleMatrix
-	rMat := mat.NewVecDense(len(inputVector), inputVector)
+	rMat := mat.NewVecDense(len(parsedInputs), parsedInputs)
 
 	var evalMat mat.Dense
 	evalMat.Mul(lMat, rMat)

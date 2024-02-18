@@ -64,7 +64,7 @@ func (s *Server) replenishLootBoxes() {
 func (s *Server) spawnMegaBike() {
 	megaBike := objects.GetMegaBike(s)
 	s.megaBikes[megaBike.GetID()] = megaBike
-	megaBike.ActivateAllGlobalRules()
+	// megaBike.ActivateAllGlobalRules()
 }
 
 func (s *Server) replenishMegaBikes() {

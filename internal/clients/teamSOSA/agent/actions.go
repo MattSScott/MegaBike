@@ -221,7 +221,6 @@ func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	}
 	// fmt.Printf("[PProposeDirection Team2] Agent %s proposed optimal lootbox %s\n", agentID, optimalLootbox)
 	return optimalLootbox
-
 }
 
 func (a *AgentSOSA) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {

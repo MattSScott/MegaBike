@@ -42,17 +42,42 @@ func (s *Server) RulerElection(agents []objects.IBaseBiker, governance utils.Gov
 	return ruler
 }
 
+func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.ILootBox {
+	relevantRules := bike.GetActiveRulesForAction(objects.Lootbox)
+
+	validLootboxes := make(map[uuid.UUID]objects.ILootBox, len(s.lootBoxes))
+
+	for id, lb := range s.lootBoxes {
+		validLootboxes[id] = lb
+	}
+
+	for _, r := range relevantRules {
+		for id, l := range s.lootBoxes {
+			if _, ok := validLootboxes[id]; !ok {
+				continue
+			}
+			if !r.EvaluateLootboxRule(bike, l) {
+				delete(validLootboxes, id)
+			}
+		}
+	}
+
+	return validLootboxes
+}
+
 // select this round's decision following a voting-based approach (with weights in the case of a leadership-led governance)
 func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UUID]float64) uuid.UUID {
 	// map of the proposed lootboxes by bike (for each bike a list of lootbox proposals is made, with one lootbox proposed by each agent on the bike)
 	agents := bike.GetAgents()
 	proposedDirections := make(map[uuid.UUID]uuid.UUID)
+
 	for _, agent := range agents {
 		// agents that have decided to stay on the bike (and that haven't been kicked off it)
 		// will participate in the voting for the directions
 		// ---------------------------VOTING ROUTINE - STEP 1 ---------------------
 		if agent.GetBikeStatus() {
 			proposedDirection := agent.ProposeDirection()
+			// proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
 			if _, ok := s.lootBoxes[proposedDirection]; !ok {
 				panic("agent proposed a non-existent lootbox")
 			}
