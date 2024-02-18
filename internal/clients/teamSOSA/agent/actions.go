@@ -298,10 +298,11 @@ func (a *AgentSOSA) DecideAction() objects.BikerAction {
 
 func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 	if direction == uuid.Nil {
-		lootboxId := a.Modules.Environment.GetHighestGainLootbox()
-		lootboxPos := a.Modules.Environment.GetLootboxPos(lootboxId)
-		a.SetForces(a.Modules.Utils.GetForcesToTarget(a.GetLocation(), lootboxPos))
 		return
+		// lootboxId := a.Modules.Environment.GetHighestGainLootbox()
+		// lootboxPos := a.Modules.Environment.GetLootboxPos(lootboxId)
+		// a.SetForces(a.Modules.Utils.GetForcesToTarget(a.GetLocation(), lootboxPos))
+		// return
 	}
 
 	a.Modules.VotedDirection = direction
