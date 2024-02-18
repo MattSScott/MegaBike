@@ -212,18 +212,13 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 }
 
 func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
-	nearest := uuid.Nil
-	nDist := math.MaxFloat64
-
-	for id := range subset {
-		dist := a.Modules.Environment.GetDistanceToLootbox(id)
-		if dist < nDist {
-			nDist = dist
-			nearest = id
-		}
+	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
+	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColorFromSubset(agentID, agentColour, subset)
+	nearestLootbox := a.Modules.Environment.GetNearestLootboxFromSubset(agentID, subset)
+	if agentEnergy < modules.EnergyToOptimalLootboxThreshold || optimalLootbox == uuid.Nil {
+		return nearestLootbox
 	}
-
-	return nearest
+	return optimalLootbox
 }
 
 func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
