@@ -290,7 +290,7 @@ func (bb *BaseBiker) ProposeNewRadius(pRad float64) float64 {
 }
 
 func (bb *BaseBiker) ProposeDirectionFromSubset(subset map[uuid.UUID]ILootBox) uuid.UUID {
-	return bb.nearestLoot()
+	return uuid.Nil
 }
 
 func (bb *BaseBiker) ToggleOnBike() {
