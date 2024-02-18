@@ -1,8 +1,6 @@
 package objects
 
 import (
-	// "SOMAS2023/internal/common/objects"
-	// "SOMAS2023/internal/common/objects"
 	"errors"
 
 	"github.com/google/uuid"
@@ -107,6 +105,26 @@ func GenerateNullPassingRule() *Rule {
 	}
 }
 
+func GenerateNullPassingRule2() *Rule {
+	ruleInps := RuleInputs{Location, Energy, Points, Colour}
+	rDim := 1000
+	ruleMatrix := make([][]float64, rDim)
+	ruleComparators := make(RuleComparators, rDim)
+	for i := 0; i < rDim; i++ {
+		ruleMatrix[i] = make([]float64, 5)
+		ruleComparators[i] = EQ
+	}
+	return &Rule{
+		ruleID:          uuid.New(),
+		ruleName:        "null_passing_rule",
+		isMutable:       false,
+		action:          AppliesAll,
+		ruleInputs:      ruleInps,
+		ruleMatrix:      ruleMatrix,
+		ruleComparators: ruleComparators,
+	}
+}
+
 func GenerateNullPassingRuleForAction(action Action) *Rule {
 	ruleInps := RuleInputs{Location, Energy, Points, Colour}
 	ruleMatrix := [][]float64{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
@@ -120,4 +138,19 @@ func GenerateNullPassingRuleForAction(action Action) *Rule {
 		ruleMatrix:      ruleMatrix,
 		ruleComparators: ruleComparators,
 	}
+}
+
+func LinguisticNullRuleCheck(agent IBaseBiker) bool {
+	for i := 0; i < 1000; i++ {
+		lCheck := 0 * locationGetter(agent)
+		eCheck := 0 * energyGetter(agent)
+		pCheck := 0 * pointsGetter(agent)
+		colCheck := 0 * colourGetter(agent)
+		constCheck := 0 * 1.0
+
+		if lCheck+eCheck+pCheck+colCheck+constCheck != 0 {
+			return false
+		}
+	}
+	return true
 }
