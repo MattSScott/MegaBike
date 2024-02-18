@@ -75,13 +75,20 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 	for _, agent := range bike.GetAgents() {
 		if agent.GetBikeStatus() {
 			tRad += agent.ProposeNewRadius(pRad)
+			nAg += 1
 		}
+	}
+
+	if nAg == 0 {
+		return
 	}
 
 	tRad /= nAg
 
-	newRuleMatrix := [][]float64{{1, -tRad}}
+	newRuleMatrix := [][]float64{{1, tRad}}
 	rule.UpdateRuleMatrix(newRuleMatrix)
+	// nRule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
+	// fmt.Println(nRule.GetRuleMatrix())
 }
 
 // select this round's decision following a voting-based approach (with weights in the case of a leadership-led governance)

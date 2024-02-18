@@ -233,6 +233,10 @@ func (b BikeDump) ViewLocalRuleMap() map[objects.Action][]*objects.Rule {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (b BikeDump) ClearRuleMap() {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (b BikeDump) ActionIsValidForRuleset(action objects.Action) bool {
 	panic(bannedFunctionErrorMessage)
 }

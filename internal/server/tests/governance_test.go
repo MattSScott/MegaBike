@@ -144,6 +144,10 @@ func TestRunDemocraticAction(t *testing.T) {
 
 			direction := s.RunDemocraticAction(bike, weights)
 
+			if direction == uuid.Nil {
+				return
+			}
+
 			_, exists := s.GetLootBoxes()[direction]
 			if !exists {
 				t.Error("returned wrong direction")

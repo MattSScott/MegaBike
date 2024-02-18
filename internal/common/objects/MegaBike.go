@@ -20,6 +20,7 @@ type IMegaBike interface {
 	SetRuler(ruler uuid.UUID)
 	GetActiveRulesForAction(action Action) []*Rule
 	AddToRuleMap(rule *Rule)
+	ClearRuleMap()
 	ViewLocalRuleMap() map[Action][]*Rule
 	ActionIsValidForRuleset(action Action) bool
 	ActionCompliesWithLinearRuleset() bool
@@ -198,6 +199,10 @@ func (mb *MegaBike) AddToRuleMap(rule *Rule) {
 	mb.activeRuleMap[category] = append(mb.activeRuleMap[category], rule)
 }
 
+func (mb *MegaBike) ClearRuleMap() {
+	mb.activeRuleMap = make(map[Action][]*Rule)
+}
+
 func (mb *MegaBike) ActivateAllGlobalRules() {
 	globalRuleView := mb.globalRuleCacheView
 	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
@@ -207,10 +212,10 @@ func (mb *MegaBike) ActivateAllGlobalRules() {
 }
 
 func (mb *MegaBike) InitialiseRuleMap() {
-	dist := 0.0
+	dist := 1.0
 	mute := true
 
-	ruleInputs := RuleInputs{}
+	ruleInputs := RuleInputs{Energy}
 	ruleMat := RuleMatrix{{1, -dist}}
 	ruleComps := RuleComparators{LEQ}
 

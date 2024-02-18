@@ -20,13 +20,11 @@ func TestCanPruneLootboxes(t *testing.T) {
 	s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
+		bike.ClearRuleMap()
 		bike.AddToRuleMap(getRule(10000, false))
-	}
-
-	for _, bike := range s.GetMegaBikes() {
 		rLen := len(bike.GetActiveRulesForAction(objects.Lootbox))
 		if rLen != 1 {
-			t.Error("Rules not properly added: ruleset size is ", rLen)
+			t.Error("Rules not properly added: ruleset size is", rLen)
 		}
 	}
 
@@ -48,13 +46,11 @@ func TestCanOverPruneLootboxes(t *testing.T) {
 	s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
+		bike.ClearRuleMap()
 		bike.AddToRuleMap(getRule(0, false))
-	}
-
-	for _, bike := range s.GetMegaBikes() {
 		rLen := len(bike.GetActiveRulesForAction(objects.Lootbox))
 		if rLen != 1 {
-			t.Error("Rules not properly added: ruleset size is ", rLen)
+			t.Error("Rules not properly added: ruleset size is", rLen)
 		}
 	}
 
@@ -74,6 +70,4 @@ func TestPositionUnchangedAfterPruning(t *testing.T) {
 	s := &server.Server{}
 	s.Initialize(1)
 	s.FoundingInstitutions()
-
-	
 }
