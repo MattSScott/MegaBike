@@ -206,6 +206,19 @@ func (mb *MegaBike) ActivateAllGlobalRules() {
 	}
 }
 
+func (mb *MegaBike) InitialiseRuleMap() {
+	dist := 0.0
+	mute := true
+
+	ruleInputs := RuleInputs{}
+	ruleMat := RuleMatrix{{1, -dist}}
+	ruleComps := RuleComparators{LEQ}
+
+	rule := GenerateRule(Lootbox, "lootbox_dist", ruleInputs, ruleMat, ruleComps, mute)
+
+	mb.AddToRuleMap(rule)
+}
+
 func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
 	return mb.activeRuleMap
 }

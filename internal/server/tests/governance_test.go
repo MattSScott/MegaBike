@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/server"
 	"fmt"
@@ -132,6 +133,7 @@ func TestRunDemocraticAction(t *testing.T) {
 	s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
+		fmt.Println("RULES:", len(bike.GetActiveRulesForAction(objects.Lootbox)))
 		agents := bike.GetAgents()
 		if len(agents) != 0 {
 			// make map of weights of 1 for all agents on bike

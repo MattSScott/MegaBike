@@ -211,15 +211,36 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 	return decision
 }
 
+func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	nearest := uuid.Nil
+	nDist := math.MaxFloat64
+
+	for id := range subset {
+		dist := a.Modules.Environment.GetDistanceToLootbox(id)
+		if dist < nDist {
+			nDist = dist
+			nearest = id
+		}
+	}
+
+	return nearest
+}
+
+func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
+	energy := a.GetEnergyLevel()
+	if energy < 0.5 {
+		return pRad * 1.5
+	}
+	return pRad * 0.5
+}
+
 func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
 	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColor(agentID, agentColour)
 	nearestLootbox := a.Modules.Environment.GetNearestLootbox(agentID)
 	if agentEnergy < modules.EnergyToOptimalLootboxThreshold || optimalLootbox == uuid.Nil {
-		// fmt.Printf("[PProposeDirection Team2] Agent %s proposed nearest lootbox %s\n", agentID, nearestLootbox)
 		return nearestLootbox
 	}
-	// fmt.Printf("[PProposeDirection Team2] Agent %s proposed optimal lootbox %s\n", agentID, optimalLootbox)
 	return optimalLootbox
 }
 

@@ -69,3 +69,11 @@ func TestCanOverPruneLootboxes(t *testing.T) {
 		}
 	}
 }
+
+func TestPositionUnchangedAfterPruning(t *testing.T) {
+	s := &server.Server{}
+	s.Initialize(1)
+	s.FoundingInstitutions()
+
+	
+}

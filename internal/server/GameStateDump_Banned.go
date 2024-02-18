@@ -67,6 +67,14 @@ func (a AgentDump) ProposeDirection() uuid.UUID {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (a AgentDump) ProposeNewRadius(float64) float64 {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (a AgentDump) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (a AgentDump) FinalDirectionVote(map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
 	panic(bannedFunctionErrorMessage)
 }

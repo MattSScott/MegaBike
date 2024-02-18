@@ -65,24 +65,53 @@ func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.IL
 	return validLootboxes
 }
 
+func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
+	tRad := 0.0
+	nAg := 0.0
+
+	rule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
+	pRad := rule.GetRuleMatrix()[0][1]
+
+	for _, agent := range bike.GetAgents() {
+		if agent.GetBikeStatus() {
+			tRad += agent.ProposeNewRadius(pRad)
+		}
+	}
+
+	tRad /= nAg
+
+	newRuleMatrix := [][]float64{{1, -tRad}}
+	rule.UpdateRuleMatrix(newRuleMatrix)
+}
+
 // select this round's decision following a voting-based approach (with weights in the case of a leadership-led governance)
 func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UUID]float64) uuid.UUID {
 	// map of the proposed lootboxes by bike (for each bike a list of lootbox proposals is made, with one lootbox proposed by each agent on the bike)
 	agents := bike.GetAgents()
 	proposedDirections := make(map[uuid.UUID]uuid.UUID)
+	validLootboxes := s.PruneLootboxes(bike)
 
 	for _, agent := range agents {
 		// agents that have decided to stay on the bike (and that haven't been kicked off it)
 		// will participate in the voting for the directions
 		// ---------------------------VOTING ROUTINE - STEP 1 ---------------------
 		if agent.GetBikeStatus() {
-			proposedDirection := agent.ProposeDirection()
-			// proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
+			// proposedDirection := agent.ProposeDirection()
+			proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
+			if proposedDirection == uuid.Nil {
+				continue
+			}
 			if _, ok := s.lootBoxes[proposedDirection]; !ok {
 				panic("agent proposed a non-existent lootbox")
 			}
 			proposedDirections[agent.GetID()] = proposedDirection
 		}
+	}
+
+	s.UpdateBikeRules(bike)
+
+	if len(proposedDirections) == 0 {
+		return uuid.Nil
 	}
 
 	finalVotes := make(map[uuid.UUID]voting.LootboxVoteMap, len(agents))

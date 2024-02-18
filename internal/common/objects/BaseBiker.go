@@ -16,11 +16,13 @@ type IBaseBiker interface {
 	baseAgent.IAgent[IBaseBiker]
 
 	DecideGovernance() utils.Governance
-	DecideAction() BikerAction                                                  // ** determines what action the agent is going to take this round. (changeBike or Pedal)
-	DecideForce(direction uuid.UUID)                                            // ** defines the vector you pass to the bike: [pedal, brake, turning]
-	DecideJoining(pendinAgents []uuid.UUID) map[uuid.UUID]bool                  // ** decide whether to accept or not accept bikers, ranks the ones
-	ChangeBike() uuid.UUID                                                      // ** called when biker wants to change bike, it will choose which bike to try and join
-	ProposeDirection() uuid.UUID                                                // ** returns the id of the desired lootbox based on internal strategy
+	DecideAction() BikerAction                                   // ** determines what action the agent is going to take this round. (changeBike or Pedal)
+	DecideForce(direction uuid.UUID)                             // ** defines the vector you pass to the bike: [pedal, brake, turning]
+	DecideJoining(pendinAgents []uuid.UUID) map[uuid.UUID]bool   // ** decide whether to accept or not accept bikers, ranks the ones
+	ChangeBike() uuid.UUID                                       // ** called when biker wants to change bike, it will choose which bike to try and join
+	ProposeDirection() uuid.UUID                                 // ** returns the id of the desired lootbox based on internal strategy
+	ProposeDirectionFromSubset(map[uuid.UUID]ILootBox) uuid.UUID // ** returns the id of the desired lootbox from the set of valid lootboxes given by the server
+	ProposeNewRadius(float64) float64
 	FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap // ** stage 3 of direction voting
 	DecideAllocation() voting.IdVoteMap                                         // ** decide the allocation parameters
 	VoteForKickout() map[uuid.UUID]int
@@ -169,7 +171,9 @@ func (bb *BaseBiker) DecideAction() BikerAction {
 
 // the function is passed in the id of the voted lootbox and the default base bikers steer to that lootbox.
 func (bb *BaseBiker) DecideForce(direction uuid.UUID) {
-
+	if direction == uuid.Nil {
+		return
+	}
 	// NEAREST BOX STRATEGY (MVP)
 	currLocation := bb.GetLocation()
 	currentLootBoxes := bb.gameState.GetLootBoxes()
@@ -278,6 +282,14 @@ func (bb *BaseBiker) SetForces(forces utils.Forces) {
 
 // default implementation returns the id of the nearest lootbox
 func (bb *BaseBiker) ProposeDirection() uuid.UUID {
+	return bb.nearestLoot()
+}
+
+func (bb *BaseBiker) ProposeNewRadius(pRad float64) float64 {
+	return pRad * 1.1
+}
+
+func (bb *BaseBiker) ProposeDirectionFromSubset(subset map[uuid.UUID]ILootBox) uuid.UUID {
 	return bb.nearestLoot()
 }
 
