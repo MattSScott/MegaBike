@@ -168,5 +168,5 @@ func (s *Server) Start() {
 		s.RunMessagingSession()
 		fmt.Printf("Game Loop %d completed.\n", i)
 	}
-	// s.outputResults(gameStates)
+	s.outputResults(gameStates)
 }

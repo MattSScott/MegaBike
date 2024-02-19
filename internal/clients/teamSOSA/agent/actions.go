@@ -224,9 +224,9 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
 	energy := a.GetEnergyLevel()
 	if energy < 0.5 {
-		return pRad * 1.5
+		return pRad * 1.05
 	}
-	return pRad * 0.5
+	return pRad * 0.95
 }
 
 func (a *AgentSOSA) ProposeDirection() uuid.UUID {

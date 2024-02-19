@@ -5,7 +5,6 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -159,34 +158,63 @@ func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 }
 
 func (s *Server) outputResults(gameStates [][]GameStateDump) {
-	statistics := CalculateStatistics(gameStates)
+	stats := CalculateStatistics(gameStates)
 
-	statisticsJson, err := json.MarshalIndent(statistics.Average, "", "    ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Average Statistics:\n" + string(statisticsJson))
+	lifeSpans := stats.Average.AgentLifetime
 
-	file, err := os.Create("statistics.xlsx")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	if err := statistics.ToSpreadsheet().Write(file); err != nil {
-		panic(err)
+	avg := 0.0
+	size := float64(len(lifeSpans))
+
+	for _, val := range lifeSpans {
+		avg += val
 	}
 
-	file, err = os.Create("game_dump.json")
+	avg /= size
+
+	f, err := os.Create("output.txt") // creating...
 	if err != nil {
-		panic(err)
+		fmt.Printf("error creating file: %v", err)
+		return
 	}
-	defer file.Close()
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "    ")
-	if err := encoder.Encode(gameStates); err != nil {
-		panic(err)
+	defer f.Close()
+	_, err = f.WriteString(fmt.Sprintf("%f", avg))
+	if err != nil {
+		fmt.Printf("error writing string: %v", err)
 	}
+
+	// statisticsJson, _ := json.MarshalIndent(stats.Average.AgentLifetime, "", "    ")
+	// fmt.Println("Average Statistics:\n" + string(statisticsJson))
 }
+
+// func (s *Server) outputResults(gameStates [][]GameStateDump) {
+// 	statistics := CalculateStatistics(gameStates)
+
+// 	statisticsJson, err := json.MarshalIndent(statistics.Average, "", "    ")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	fmt.Println("Average Statistics:\n" + string(statisticsJson))
+
+// 	file, err := os.Create("statistics.xlsx")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer file.Close()
+// 	if err := statistics.ToSpreadsheet().Write(file); err != nil {
+// 		panic(err)
+// 	}
+
+// 	file, err = os.Create("game_dump.json")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer file.Close()
+// 	encoder := json.NewEncoder(file)
+// 	encoder.SetIndent("", "    ")
+// 	if err := encoder.Encode(gameStates); err != nil {
+// 		panic(err)
+// 	}
+// }
 
 // had to override to address the fact that agents only have access to the game dump
 // version of agents, so if the recipients are set to be those it will panic as they
