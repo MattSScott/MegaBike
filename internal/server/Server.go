@@ -170,6 +170,7 @@ func (s *Server) outputResults(gameStates [][]GameStateDump) {
 	}
 
 	avg /= size
+	fmt.Println(avg)
 
 	f, err := os.Create("output.txt") // creating...
 	if err != nil {
