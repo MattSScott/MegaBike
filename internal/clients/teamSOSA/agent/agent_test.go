@@ -56,3 +56,72 @@ func TestCosineSimilarity(t *testing.T) {
 
 	assert.Equal(t, expectedResult, result)
 }
+
+func generateMockupBike() (*AgentSOSA, objects.IMegaBike) {
+
+	mgs := &MockGameState{bikes: make(map[uuid.UUID]objects.IMegaBike)}
+	bike := objects.GetMegaBike(mgs)
+
+	mgs.SetTestingBike(bike)
+
+	simLeader := NewAgentSOSA(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), mgs))
+	bike.AddAgent(simLeader)
+	simLeader.SetBike(bike.GetID())
+	simLeader.ToggleOnBike()
+
+	for i := 0; i < 7; i++ {
+		fakeAgent := NewAgentSOSA(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), mgs))
+		bike.AddAgent(fakeAgent)
+		fakeAgent.SetBike(bike.GetID())
+		fakeAgent.ToggleOnBike()
+	}
+
+	return simLeader, bike
+}
+
+func TestAgentCanBeTrustorthy(t *testing.T) {
+
+	simLeader, _ := generateMockupBike()
+
+	simLeader.Modules.AgentParameters.Trustworthiness = 1.0
+	weights := simLeader.DecideWeights(utils.Direction)
+
+	weightSize := len(weights)
+
+	if weightSize != 8 {
+		t.Errorf("Weight map should be size 8. Instead, got size: %d", weightSize)
+	}
+
+	selfWeight, ok := weights[simLeader.GetID()]
+
+	if !ok {
+		t.Error("Couldn't find vote for self in weighting map")
+	}
+
+	if selfWeight != 0.5 {
+		t.Errorf("Agent has unfairly weighted themselves at: %f", selfWeight)
+	}
+}
+
+func TestAgentCanBeNonTrustorthy(t *testing.T) {
+	simLeader, _ := generateMockupBike()
+
+	simLeader.Modules.AgentParameters.Trustworthiness = 0.0
+	weights := simLeader.DecideWeights(utils.Direction)
+
+	weightSize := len(weights)
+
+	if weightSize != 8 {
+		t.Errorf("Weight map should be size 8. Instead, got size: %d", weightSize)
+	}
+
+	selfWeight, ok := weights[simLeader.GetID()]
+
+	if !ok {
+		t.Error("Couldn't find vote for self in weighting map")
+	}
+
+	if selfWeight != 1 {
+		t.Errorf("Agent has fairly weighted themselves at: %f", selfWeight)
+	}
+}

@@ -16,10 +16,16 @@ type IMegaBike interface {
 	KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID
 	GetGovernance() utils.Governance
 	GetRuler() uuid.UUID
+	GetKickedOutCount() int
+	ResetKickedOutCount()
+	GetCurrentPool() float64
+	UpdateCurrentPool(val float64)
+	ResetCurrentPool()
 	SetGovernance(governance utils.Governance)
 	SetRuler(ruler uuid.UUID)
 	GetActiveRulesForAction(action Action) []*Rule
 	AddToRuleMap(rule *Rule)
+	ClearRuleMap()
 	ViewLocalRuleMap() map[Action][]*Rule
 	ActionIsValidForRuleset(action Action) bool
 	ActionCompliesWithLinearRuleset() bool
@@ -35,6 +41,7 @@ type MegaBike struct {
 	globalRuleCacheView RuleCacheOperations
 	activeRuleMap       map[Action][]*Rule
 	linearRuleList      []*Rule
+	currentPool         float64
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
@@ -46,6 +53,7 @@ func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 		globalRuleCacheView: ruleCache,
 		activeRuleMap:       make(map[Action][]*Rule),
 		linearRuleList:      make([]*Rule, 0),
+		currentPool:         0,
 	}
 }
 
@@ -133,9 +141,25 @@ func (mb *MegaBike) GetOrientation() float64 {
 	return mb.orientation
 }
 
+func (mb *MegaBike) GetCurrentPool() float64 {
+	return mb.currentPool
+}
+
+func (mb *MegaBike) UpdateCurrentPool(val float64) {
+	mb.currentPool += val
+}
+
+func (mb *MegaBike) ResetCurrentPool() {
+	mb.currentPool = 0
+}
+
 // get the count of kicked out agents
 func (mb *MegaBike) GetKickedOutCount() int {
 	return mb.kickedOutCount
+}
+
+func (mb *MegaBike) ResetKickedOutCount() {
+	mb.kickedOutCount = 0
 }
 
 // only called for level 0 and level 1
@@ -198,12 +222,29 @@ func (mb *MegaBike) AddToRuleMap(rule *Rule) {
 	mb.activeRuleMap[category] = append(mb.activeRuleMap[category], rule)
 }
 
+func (mb *MegaBike) ClearRuleMap() {
+	mb.activeRuleMap = make(map[Action][]*Rule)
+}
+
 func (mb *MegaBike) ActivateAllGlobalRules() {
 	globalRuleView := mb.globalRuleCacheView
 	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
 		mb.AddToRuleMap(rule)
 		mb.linearRuleList = append(mb.linearRuleList, rule)
 	}
+}
+
+func (mb *MegaBike) InitialiseRuleMap() {
+	dist := 100.0
+	mute := false
+
+	ruleInputs := RuleInputs{Energy}
+	ruleMat := RuleMatrix{{1, -dist}}
+	ruleComps := RuleComparators{LEQ}
+
+	rule := GenerateRule(Lootbox, "lootbox_dist", ruleInputs, ruleMat, ruleComps, mute)
+
+	mb.AddToRuleMap(rule)
 }
 
 func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
@@ -217,7 +258,7 @@ func (mb *MegaBike) ViewLinearRuleList() []*Rule {
 func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
 	for _, r := range mb.linearRuleList {
 		for _, agent := range mb.agents {
-			if !r.EvaluateRule(agent) {
+			if !r.EvaluateAgentRule(agent) {
 				return false
 			}
 		}
@@ -231,7 +272,7 @@ func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
 
 	for _, r := range rulesToTest {
 		for _, agent := range mb.agents {
-			if !r.EvaluateRule(agent) {
+			if !r.EvaluateAgentRule(agent) {
 				return false
 			}
 		}

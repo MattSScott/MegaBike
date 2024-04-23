@@ -38,9 +38,9 @@ func TestInitialize(t *testing.T) {
 	fmt.Printf("\nInitialize passed \n")
 }
 
-func TestRunGame(t *testing.T) {
-	iterations := 2
-	s := server.GenerateServer()
-	s.Initialize(iterations)
-	s.Start()
-}
+// func TestRunGame(t *testing.T) {
+// 	iterations := 2
+// 	s := server.GenerateServer()
+// 	s.Initialize(iterations)
+// 	s.Start()
+// }

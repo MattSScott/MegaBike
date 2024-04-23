@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) RunRoundLoop() {
+func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump) {
 	// get destination bikes from bikers not on bike
 	s.runActionDeliberation(objects.MoveBike)
 	s.SetDestinationBikes()
@@ -45,6 +45,9 @@ func (s *Server) RunRoundLoop() {
 	s.AwdiCollisionCheck()
 	s.unaliveAgents()
 
+	roundDump := s.GenerateRoundDump()
+	iterationDump.AddRoundToIteration(roundDump)
+
 	// if the leader dies hold new elections
 	for _, bike := range s.GetMegaBikes() {
 		gov := bike.GetGovernance()
@@ -69,6 +72,10 @@ func (s *Server) RunRoundLoop() {
 
 	// Run the messaging session
 	s.RunMessagingSession()
+
+	for _, bike := range s.GetMegaBikes() {
+		bike.ResetCurrentPool()
+	}
 }
 
 func (s *Server) runActionDeliberation(action objects.Action) {
@@ -394,6 +401,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 	for _, megabike := range s.GetMegaBikes() {
 		for lootid, lootbox := range s.GetLootBoxes() {
 			if megabike.CheckForCollision(lootbox) { // && len(megabike.GetAgents()) != 0
+				megabike.UpdateCurrentPool(lootbox.GetTotalResources())
 				if value, ok := looted[lootid]; ok {
 					looted[lootid] = value + 1
 				} else {

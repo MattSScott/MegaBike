@@ -57,18 +57,31 @@ func (a *AgentSOSA) VoteDictator() voting.IdVoteMap {
 	return votes
 }
 
+func (a *AgentSOSA) calculateUntrustworthyWeighting(id uuid.UUID) float64 {
+	if a.GetID() == id {
+		return 1.0
+	}
+	return 0.0
+}
+
 func (a *AgentSOSA) DecideWeights(action utils.Action) map[uuid.UUID]float64 {
 	// All actions have equal weights. Weighting by AgentId based on social capital.
 	// We set the weight for an Agent to be equal to its Social Capital.
 	weights := make(map[uuid.UUID]float64)
 	agents := a.GetFellowBikers()
+	compRoll := rand.Float64()
+	willComply := compRoll < a.Modules.AgentParameters.Trustworthiness
 	for _, agent := range agents {
 		// if agent Id is not in the a.Modules.SocialCapital.SocialCapital map, set the weight to 0.5 (neither trust or distrust)
 		if _, ok := a.Modules.AgentParameters.TrustNetwork[agent.GetID()]; !ok {
 			// add agent to the map
 			a.Modules.AgentParameters.TrustNetwork[agent.GetID()] = 0.5
 		}
-		weights[agent.GetID()] = a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
+		agentWeighting := a.calculateUntrustworthyWeighting(agent.GetID()) // weight own action by 100%, if non compliant
+		if willComply {                                                    // give 'fair' weighting based on trust, if agent is trustworthy
+			agentWeighting = a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
+		}
+		weights[agent.GetID()] = agentWeighting
 		// fmt.Printf("[DecideWeights G2] Agent %s has weight %f\n", agent.GetID(), weights[agent.GetID()])
 	}
 	return weights
@@ -211,17 +224,33 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 	return decision
 }
 
+func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
+	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColorFromSubset(agentID, agentColour, subset)
+	nearestLootbox := a.Modules.Environment.GetNearestLootboxFromSubset(agentID, subset)
+	if agentEnergy < modules.EnergyToOptimalLootboxThreshold || optimalLootbox == uuid.Nil {
+		return nearestLootbox
+	}
+	return optimalLootbox
+}
+
+func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
+	energy := a.GetEnergyLevel()
+	newRad := pRad * 0.95
+	if energy < 0.5 {
+		newRad = pRad * 1.05
+	}
+	return math.Max(newRad, -100000)
+}
+
 func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
 	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColor(agentID, agentColour)
 	nearestLootbox := a.Modules.Environment.GetNearestLootbox(agentID)
 	if agentEnergy < modules.EnergyToOptimalLootboxThreshold || optimalLootbox == uuid.Nil {
-		// fmt.Printf("[PProposeDirection Team2] Agent %s proposed nearest lootbox %s\n", agentID, nearestLootbox)
 		return nearestLootbox
 	}
-	// fmt.Printf("[PProposeDirection Team2] Agent %s proposed optimal lootbox %s\n", agentID, optimalLootbox)
 	return optimalLootbox
-
 }
 
 func (a *AgentSOSA) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
@@ -283,10 +312,11 @@ func (a *AgentSOSA) DecideAction() objects.BikerAction {
 
 func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 	if direction == uuid.Nil {
-		lootboxId := a.Modules.Environment.GetHighestGainLootbox()
-		lootboxPos := a.Modules.Environment.GetLootboxPos(lootboxId)
-		a.SetForces(a.Modules.Utils.GetForcesToTarget(a.GetLocation(), lootboxPos))
 		return
+		// lootboxId := a.Modules.Environment.GetHighestGainLootbox()
+		// lootboxPos := a.Modules.Environment.GetLootboxPos(lootboxId)
+		// a.SetForces(a.Modules.Utils.GetForcesToTarget(a.GetLocation(), lootboxPos))
+		// return
 	}
 
 	a.Modules.VotedDirection = direction

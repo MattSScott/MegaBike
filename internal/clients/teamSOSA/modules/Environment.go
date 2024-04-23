@@ -75,6 +75,21 @@ func (e *EnvironmentModule) GetNearestLootbox(agentId uuid.UUID) uuid.UUID {
 	return nearestLootbox
 }
 
+func (e *EnvironmentModule) GetNearestLootboxFromSubset(agentId uuid.UUID, subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	nearest := uuid.Nil
+	nDist := math.MaxFloat64
+
+	for id := range subset {
+		dist := e.GetDistanceToLootbox(id)
+		if dist < nDist {
+			nDist = dist
+			nearest = id
+		}
+	}
+
+	return nearest
+}
+
 func (e *EnvironmentModule) GetNearestLootboxByColor(agentId uuid.UUID, color utils.Colour) uuid.UUID {
 	nearestLootbox := e.GetNearestLootbox(agentId) // Defaults to nearest lootbox
 	minDist := math.MaxFloat64
@@ -92,6 +107,29 @@ func (e *EnvironmentModule) GetNearestLootboxByColor(agentId uuid.UUID, color ut
 
 	if nearestLootbox == uuid.Nil {
 		nearestLootbox = e.GetRandomLootbox()
+	}
+	return nearestLootbox
+}
+
+
+func (e *EnvironmentModule) GetNearestLootboxByColorFromSubset(agentId uuid.UUID, color utils.Colour, subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	// TODO: could be nil
+	nearestLootbox := e.GetNearestLootboxFromSubset(agentId, subset) // Defaults to nearest lootbox
+	minDist := math.MaxFloat64
+	for id := range e.GetLootBoxesByColor(color) {
+		if _, ok := subset[id]; !ok {
+			continue
+		} 
+		if e.IsLootboxNearAwdi(id) {
+			// fmt.Printf("[GetNearestLootboxByColor] Lootbox %v is near awdi\n", lootbox.GetID())
+			continue
+		}
+		dist := e.GetDistanceToLootbox(id)
+		if dist < minDist {
+			minDist = dist
+			nearestLootbox = id
+		}
+
 	}
 	return nearestLootbox
 }

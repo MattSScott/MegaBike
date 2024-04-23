@@ -6,14 +6,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type MockGameState struct{}
+type MockGameState struct {
+	bikes map[uuid.UUID]objects.IMegaBike
+}
 
 func (mgs *MockGameState) GetLootBoxes() map[uuid.UUID]objects.ILootBox {
 	return make(map[uuid.UUID]objects.ILootBox)
 }
 
+func (mgs *MockGameState) SetTestingBike(bike objects.IMegaBike) {
+	mgs.bikes[bike.GetID()] = bike
+}
+
 func (mgs *MockGameState) GetMegaBikes() map[uuid.UUID]objects.IMegaBike {
-	return make(map[uuid.UUID]objects.IMegaBike)
+	return mgs.bikes
 }
 
 func (mgs *MockGameState) GetAgentMap() map[uuid.UUID]objects.IBaseBiker {

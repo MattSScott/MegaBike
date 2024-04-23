@@ -15,9 +15,18 @@ type AgentModules struct {
 	VotedDirection  uuid.UUID
 }
 
+type IAgentSOSA interface {
+	objects.IBaseBiker
+	GetTrustworthiness() float64
+}
+
 type AgentSOSA struct {
 	*objects.BaseBiker // Embedding the BaseBiker
 	Modules            AgentModules
+}
+
+func (sosa *AgentSOSA) GetTrustworthiness() float64 {
+	return sosa.Modules.AgentParameters.Trustworthiness
 }
 
 func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {

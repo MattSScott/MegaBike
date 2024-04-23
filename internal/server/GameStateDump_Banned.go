@@ -67,6 +67,14 @@ func (a AgentDump) ProposeDirection() uuid.UUID {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (a AgentDump) ProposeNewRadius(float64) float64 {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (a AgentDump) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (a AgentDump) FinalDirectionVote(map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
 	panic(bannedFunctionErrorMessage)
 }
@@ -189,6 +197,10 @@ func (a AgentDump) ResetPoints() {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (a AgentDump) GetTrustworthiness() float64 {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (b BikeDump) AddAgent(objects.IBaseBiker) {
 	panic(bannedFunctionErrorMessage)
 }
@@ -225,10 +237,34 @@ func (b BikeDump) ViewLocalRuleMap() map[objects.Action][]*objects.Rule {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (b BikeDump) ClearRuleMap() {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (b BikeDump) ActionIsValidForRuleset(action objects.Action) bool {
 	panic(bannedFunctionErrorMessage)
 }
 
 func (b BikeDump) ActionCompliesWithLinearRuleset() bool {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) GetCurrentPool() float64 {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) ResetCurrentPool() {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) UpdateCurrentPool(float64) {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) GetKickedOutCount() int {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) ResetKickedOutCount() {
 	panic(bannedFunctionErrorMessage)
 }

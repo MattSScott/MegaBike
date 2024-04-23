@@ -1,8 +1,7 @@
 package objects
 
 import (
-	// "SOMAS2023/internal/common/objects"
-	// "SOMAS2023/internal/common/objects"
+	"SOMAS2023/internal/common/physics"
 	"errors"
 
 	"github.com/google/uuid"
@@ -54,7 +53,7 @@ func (r *Rule) UpdateRuleMatrix(newRuleMatrix RuleMatrix) error {
 	return nil
 }
 
-func (r *Rule) EvaluateRule(agent IBaseBiker) bool {
+func (r *Rule) EvaluateAgentInputs(agent IBaseBiker) []float64 {
 	var inputVector []float64 = make([]float64, len(r.ruleInputs))
 
 	for i := range r.ruleInputs {
@@ -64,9 +63,34 @@ func (r *Rule) EvaluateRule(agent IBaseBiker) bool {
 
 	// supply constant to vector
 	inputVector = append(inputVector, 1)
+	return inputVector
+}
 
+func (r *Rule) EvaluateTestLootboxRuleInputs(bike IMegaBike, lootbox ILootBox) []float64 {
+	bPos := bike.GetPosition()
+	lPos := lootbox.GetPosition()
+
+	dPos := physics.ComputeDistance(bPos, lPos)
+
+	return []float64{
+		dPos,
+		1,
+	}
+}
+
+func (r *Rule) EvaluateAgentRule(agent IBaseBiker) bool {
+	inputVector := r.EvaluateAgentInputs(agent)
+	return r.EvaluateRule(inputVector)
+}
+
+func (r *Rule) EvaluateLootboxRule(bike IMegaBike, lootbox ILootBox) bool {
+	inputVector := r.EvaluateTestLootboxRuleInputs(bike, lootbox)
+	return r.EvaluateRule(inputVector)
+}
+
+func (r *Rule) EvaluateRule(parsedInputs []float64) bool {
 	lMat := r.ruleMatrix
-	rMat := mat.NewVecDense(len(inputVector), inputVector)
+	rMat := mat.NewVecDense(len(parsedInputs), parsedInputs)
 
 	var evalMat mat.Dense
 	evalMat.Mul(lMat, rMat)
@@ -107,6 +131,26 @@ func GenerateNullPassingRule() *Rule {
 	}
 }
 
+func GenerateNullPassingRule2() *Rule {
+	ruleInps := RuleInputs{Location, Energy, Points, Colour}
+	rDim := 1000
+	ruleMatrix := make([][]float64, rDim)
+	ruleComparators := make(RuleComparators, rDim)
+	for i := 0; i < rDim; i++ {
+		ruleMatrix[i] = make([]float64, 5)
+		ruleComparators[i] = EQ
+	}
+	return &Rule{
+		ruleID:          uuid.New(),
+		ruleName:        "null_passing_rule",
+		isMutable:       false,
+		action:          AppliesAll,
+		ruleInputs:      ruleInps,
+		ruleMatrix:      ruleMatrix,
+		ruleComparators: ruleComparators,
+	}
+}
+
 func GenerateNullPassingRuleForAction(action Action) *Rule {
 	ruleInps := RuleInputs{Location, Energy, Points, Colour}
 	ruleMatrix := [][]float64{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
@@ -120,4 +164,19 @@ func GenerateNullPassingRuleForAction(action Action) *Rule {
 		ruleMatrix:      ruleMatrix,
 		ruleComparators: ruleComparators,
 	}
+}
+
+func LinguisticNullRuleCheck(agent IBaseBiker) bool {
+	for i := 0; i < 1000; i++ {
+		lCheck := 0 * locationGetter(agent)
+		eCheck := 0 * energyGetter(agent)
+		pCheck := 0 * pointsGetter(agent)
+		colCheck := 0 * colourGetter(agent)
+		constCheck := 0 * 1.0
+
+		if lCheck+eCheck+pCheck+colCheck+constCheck != 0 {
+			return false
+		}
+	}
+	return true
 }
