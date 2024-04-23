@@ -1,5 +1,7 @@
 package utils
 
+import "math"
+
 type Colour int
 
 const (
@@ -55,6 +57,18 @@ type Forces struct {
 	// If agents do not want to steer, they must set their TurningDecision.SteerBike to false and their steering will not have an impact on the direction of the bike.
 	// TurningDecision.SteeringForce is a force from -1 to 1 which maps to -180° to 180°.
 	Turning TurningDecision `json:"turning"` // Brake is a force from 0-1 opposing the direction of travel (bike cannot go backwards)
+}
+
+func (f Forces) Force2Vec() Coordinates {
+	if !f.Turning.SteerBike {
+		return Coordinates{X: 0, Y: 0}
+	}
+
+	angle := f.Turning.SteeringForce * math.Pi
+	xComp := (f.Pedal - f.Brake) * math.Cos(angle)
+	yComp := (f.Pedal - f.Brake) * math.Sin(angle)
+
+	return Coordinates{X: xComp, Y: yComp}
 }
 
 type Coordinates struct {

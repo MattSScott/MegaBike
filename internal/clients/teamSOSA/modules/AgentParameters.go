@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"math/rand"
+
 	"github.com/google/uuid"
 )
 
@@ -103,7 +105,7 @@ func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, event
 
 func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
-		Trustworthiness: 0.5,
+		Trustworthiness: rand.Float64(),
 		TrustNetwork:    make(map[uuid.UUID]float64),
 	}
 }

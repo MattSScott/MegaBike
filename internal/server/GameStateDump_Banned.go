@@ -197,6 +197,10 @@ func (a AgentDump) ResetPoints() {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (a AgentDump) GetTrustworthiness() float64 {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (b BikeDump) AddAgent(objects.IBaseBiker) {
 	panic(bannedFunctionErrorMessage)
 }
@@ -242,5 +246,25 @@ func (b BikeDump) ActionIsValidForRuleset(action objects.Action) bool {
 }
 
 func (b BikeDump) ActionCompliesWithLinearRuleset() bool {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) GetCurrentPool() float64 {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) ResetCurrentPool() {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) UpdateCurrentPool(float64) {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) GetKickedOutCount() int {
+	panic(bannedFunctionErrorMessage)
+}
+
+func (b BikeDump) ResetKickedOutCount() {
 	panic(bannedFunctionErrorMessage)
 }

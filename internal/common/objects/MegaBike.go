@@ -16,6 +16,11 @@ type IMegaBike interface {
 	KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID
 	GetGovernance() utils.Governance
 	GetRuler() uuid.UUID
+	GetKickedOutCount() int
+	ResetKickedOutCount()
+	GetCurrentPool() float64
+	UpdateCurrentPool(val float64)
+	ResetCurrentPool()
 	SetGovernance(governance utils.Governance)
 	SetRuler(ruler uuid.UUID)
 	GetActiveRulesForAction(action Action) []*Rule
@@ -36,6 +41,7 @@ type MegaBike struct {
 	globalRuleCacheView RuleCacheOperations
 	activeRuleMap       map[Action][]*Rule
 	linearRuleList      []*Rule
+	currentPool         float64
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
@@ -47,6 +53,7 @@ func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 		globalRuleCacheView: ruleCache,
 		activeRuleMap:       make(map[Action][]*Rule),
 		linearRuleList:      make([]*Rule, 0),
+		currentPool:         0,
 	}
 }
 
@@ -134,9 +141,25 @@ func (mb *MegaBike) GetOrientation() float64 {
 	return mb.orientation
 }
 
+func (mb *MegaBike) GetCurrentPool() float64 {
+	return mb.currentPool
+}
+
+func (mb *MegaBike) UpdateCurrentPool(val float64) {
+	mb.currentPool += val
+}
+
+func (mb *MegaBike) ResetCurrentPool() {
+	mb.currentPool = 0
+}
+
 // get the count of kicked out agents
 func (mb *MegaBike) GetKickedOutCount() int {
 	return mb.kickedOutCount
+}
+
+func (mb *MegaBike) ResetKickedOutCount() {
+	mb.kickedOutCount = 0
 }
 
 // only called for level 0 and level 1
@@ -212,7 +235,7 @@ func (mb *MegaBike) ActivateAllGlobalRules() {
 }
 
 func (mb *MegaBike) InitialiseRuleMap() {
-	dist := 1000.0
+	dist := 100.0
 	mute := false
 
 	ruleInputs := RuleInputs{Energy}

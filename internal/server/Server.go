@@ -5,7 +5,7 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"fmt"
+	"encoding/json"
 	"os"
 
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
@@ -124,11 +124,14 @@ func (s *Server) AddAgentToBike(agent objects.IBaseBiker) {
 	// Remove the agent from the old bike, if it was on one
 	if oldBikeId, ok := s.megaBikeRiders[agent.GetID()]; ok {
 		s.megaBikes[oldBikeId].RemoveAgent(agent.GetID())
+		agent.ToggleOnBike()
 	}
 
 	// set agent on desired bike
-	bikeId := agent.GetBike()
-	if bikeId == uuid.Nil {
+	bikeId := agent.ChangeBike()
+	allBikes := s.GetMegaBikes()
+	requestedBike := allBikes[bikeId]
+	if bikeId == uuid.Nil || len(requestedBike.GetAgents()) == 8 {
 		return
 	}
 	s.megaBikes[bikeId].AddAgent(agent)
@@ -157,35 +160,35 @@ func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 	return s.deadAgents
 }
 
-func (s *Server) outputResults(gameStates [][]GameStateDump) {
-	stats := CalculateStatistics(gameStates)
+// func (s *Server) outputResults(gameStates [][]GameStateDump) {
+// 	stats := CalculateStatistics(gameStates)
 
-	lifeSpans := stats.Average.AgentLifetime
+// 	lifeSpans := stats.Average.AgentLifetime
 
-	avg := 0.0
-	size := float64(len(lifeSpans))
+// 	avg := 0.0
+// 	size := float64(len(lifeSpans))
 
-	for _, val := range lifeSpans {
-		avg += val
-	}
+// 	for _, val := range lifeSpans {
+// 		avg += val
+// 	}
 
-	avg /= size
-	fmt.Println(avg)
+// 	avg /= size
+// 	fmt.Println(avg)
 
-	f, err := os.Create("output.txt") // creating...
-	if err != nil {
-		fmt.Printf("error creating file: %v", err)
-		return
-	}
-	defer f.Close()
-	_, err = f.WriteString(fmt.Sprintf("%f", avg))
-	if err != nil {
-		fmt.Printf("error writing string: %v", err)
-	}
+// 	f, err := os.Create("output.txt") // creating...
+// 	if err != nil {
+// 		fmt.Printf("error creating file: %v", err)
+// 		return
+// 	}
+// 	defer f.Close()
+// 	_, err = f.WriteString(fmt.Sprintf("%f", avg))
+// 	if err != nil {
+// 		fmt.Printf("error writing string: %v", err)
+// 	}
 
-	// statisticsJson, _ := json.MarshalIndent(stats.Average.AgentLifetime, "", "    ")
-	// fmt.Println("Average Statistics:\n" + string(statisticsJson))
-}
+// 	// statisticsJson, _ := json.MarshalIndent(stats.Average.AgentLifetime, "", "    ")
+// 	// fmt.Println("Average Statistics:\n" + string(statisticsJson))
+// }
 
 // func (s *Server) outputResults(gameStates [][]GameStateDump) {
 // 	statistics := CalculateStatistics(gameStates)
@@ -216,6 +219,26 @@ func (s *Server) outputResults(gameStates [][]GameStateDump) {
 // 		panic(err)
 // 	}
 // }
+
+func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
+
+	relativePath, _ := os.Getwd()
+	gameDumpPath := "/gameDumps/debug/"
+	gameDumpHash := uuid.New().String()
+
+	gameDumpFile := relativePath + gameDumpPath + gameDumpHash + ".json"
+
+	file, err := os.Create(gameDumpFile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "    ")
+	if err := encoder.Encode(dump); err != nil {
+		panic(err)
+	}
+}
 
 // had to override to address the fact that agents only have access to the game dump
 // version of agents, so if the recipients are set to be those it will panic as they

@@ -13,19 +13,37 @@ import (
 )
 
 // the simulation loop represents a round
-func (s *Server) RunSimLoop(iterations int) []GameStateDump {
+func (s *Server) RunSimLoop(iterations int, gameState *SimplifiedGameStateDump) {
 
 	s.ResetGameState()
 	s.FoundingInstitutions()
 
+	iterationDump := s.GenerateIterationDump()
+
 	// run this for n iterations
-	gameStates := []GameStateDump{s.NewGameStateDump(-1)}
+	// gameStates := []GameStateDump{s.NewGameStateDump(-1)}
 	for i := 0; i < iterations; i++ {
-		s.RunRoundLoop()
-		gameStates = append(gameStates, s.NewGameStateDump(i))
+		s.RunRoundLoop(iterationDump)
+		// gameStates = append(gameStates, s.NewGameStateDump(i))
 	}
 
-	return gameStates
+	avgKicks := 0.0
+
+	for bikeID, bike := range s.GetMegaBikes() {
+		nKicks := bike.GetKickedOutCount()
+		iterationDump.KickOffs[bikeID] = nKicks
+		avgKicks += float64(nKicks)
+	}
+
+	nBikes := float64(len(s.GetMegaBikes()))
+
+	iterationDump.AverageKickOffs = avgKicks / nBikes
+
+	gameState.AddIterationToGameState(iterationDump)
+
+	for _, bike := range s.GetMegaBikes() {
+		bike.ResetKickedOutCount()
+	}
 }
 
 // remove all agents from bikes, respawn dead agents (if required), replenish energy (if required), reset points (if required)
@@ -160,13 +178,17 @@ func (s *Server) FoundingInstitutions() {
 
 func (s *Server) Start() {
 	fmt.Printf("Server initialised with %d agents \n\n", len(s.GetAgentMap()))
-	gameStates := make([][]GameStateDump, 0, s.GetIterations())
+	// gameStates := make([][]GameStateDump, 0, s.GetIterations())
+
+	gameState := NewSimplifiedGameStateDump()
+
 	s.deadAgents = make(map[uuid.UUID]objects.IBaseBiker)
 	for i := 0; i < s.GetIterations(); i++ {
 		fmt.Printf("Game Loop %d running... \n \n", i)
-		gameStates = append(gameStates, s.RunSimLoop(utils.RoundIterations))
+		// gameStates = append(gameStates, s.RunSimLoop(utils.RoundIterations))
+		s.RunSimLoop(utils.RoundIterations, gameState)
 		s.RunMessagingSession()
 		fmt.Printf("Game Loop %d completed.\n", i)
 	}
-	s.outputResults(gameStates)
+	s.outputSimulationResult(*gameState)
 }

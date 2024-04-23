@@ -45,6 +45,7 @@ type IBaseBiker interface {
 	GetPoints() int
 	GetGroupID() int
 	GetBikeStatus() bool // returns whether the biker is on a bike or not
+	GetTrustworthiness() float64
 
 	SetBike(uuid.UUID)                       // sets the megaBikeID. this is either the id of the bike that the agent is on or the one that it's trying to join
 	SetForces(forces utils.Forces)           // sets the forces (to be updated in DecideForces())
@@ -114,6 +115,10 @@ func (bb *BaseBiker) UpdateEnergyLevel(energyLevel float64) {
 
 func (bb *BaseBiker) GetColour() utils.Colour {
 	return bb.soughtColour
+}
+
+func (bb *BaseBiker) GetTrustworthiness() float64 {
+	return -1
 }
 
 // through this function the agent submits their desired allocation of resources

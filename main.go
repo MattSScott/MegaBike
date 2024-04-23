@@ -4,7 +4,6 @@ import (
 	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/server"
 	"flag"
-	"fmt"
 	"math"
 )
 
@@ -17,7 +16,6 @@ func initialiseFlagConstants() {
 func main() {
 	flag.Parse()
 	initialiseFlagConstants()
-	fmt.Println("Hello Agents")
 	s := server.GenerateServer()
 	s.Initialize(100)
 	s.Start()
