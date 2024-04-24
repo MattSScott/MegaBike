@@ -4,7 +4,6 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/server"
-	"slices"
 	"testing"
 
 	"github.com/google/uuid"
@@ -48,36 +47,12 @@ func (mb *MockBiker) DecideGovernance() utils.Governance {
 	return mb.governance
 }
 
-/*
-func createMockBikers(s server.IBaseBikerServer, count int) []*MockBiker {
-	var mockBikers []*MockBiker
-	for i := 0; i < count; i++ {
-		mockBiker := NewMockBiker()
-		mockBiker.governance = utils.Democracy
-
-		bikeID := uuid.New()
-		mockBiker.BikeID = bikeID
-
-		s.AddAgentToBike(mockBiker)
-
-		if i%2 != 0 {
-			s.RemoveAgent(mockBiker)
-		}
-
-		mockBiker.UpdateEnergyLevel(0.5)
-		mockBiker.point += 10
-
-		mockBikers = append(mockBikers, mockBiker)
-	}
-	return mockBikers
-} */
-
 func TestResetGameState(t *testing.T) {
 	OnlySpawnBaseBikers(t)
 	iterations := 2
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// remove 4 agents from the map
 	i := 0
@@ -102,7 +77,7 @@ func TestResetGameState(t *testing.T) {
 		mockBikers[i] = mockBiker
 	}
 
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	s.ResetGameState()
 
@@ -126,64 +101,64 @@ func TestResetGameState(t *testing.T) {
 
 }
 
-func TestFoundingInstitutions(t *testing.T) {
-	OnlySpawnBaseBikers(t)
+// func TestFoundingInstitutions(t *testing.T) {
+// 	OnlySpawnBaseBikers(t)
 
-	iterations := 2
-	s := server.GenerateServer()
-	s.Initialize(iterations)
+// 	iterations := 2
+// 	s := server.GenerateServer()
+// 	s.Initialize(iterations)
 
-	// remove 4 agents from the map
-	i := 0
-	for _, agent := range s.GetAgentMap() {
-		s.RemoveAgent(agent)
-		if i == 3 {
-			break
-		}
-		i++
-	}
+// 	// remove 4 agents from the map
+// 	i := 0
+// 	for _, agent := range s.GetAgentMap() {
+// 		s.RemoveAgent(agent)
+// 		if i == 3 {
+// 			break
+// 		}
+// 		i++
+// 	}
 
-	mockBikers := make([]*MockBiker, 4)
-	for i := range mockBikers {
-		mockBiker := NewMockBiker(s)
-		if i < 2 {
-			mockBiker.governance = utils.Democracy
-		} else {
-			mockBiker.governance = utils.Dictatorship
-		}
-		s.AddAgent(mockBiker)
-		mockBikers[i] = mockBiker
-	}
+// 	mockBikers := make([]*MockBiker, 4)
+// 	for i := range mockBikers {
+// 		mockBiker := NewMockBiker(s)
+// 		if i < 2 {
+// 			mockBiker.governance = utils.Democracy
+// 		} else {
+// 			mockBiker.governance = utils.Dictatorship
+// 		}
+// 		s.AddAgent(mockBiker)
+// 		mockBikers[i] = mockBiker
+// 	}
 
-	s.FoundingInstitutions()
+// 	// // s.FoundingInstitutions()
 
-	for _, biker := range mockBikers {
-		actualBike := s.GetMegaBikes()[biker.GetBike()]
-		if actualBike == nil {
-			t.Errorf("Biker %v has not been assigned to any bike", biker.GetID())
-			continue
-		}
-		if actualBike.GetGovernance() != biker.governance {
-			t.Errorf("Biker %v is on a bike with incorrect governance", biker.GetID())
-		}
-	}
+// 	for _, biker := range mockBikers {
+// 		actualBike := s.GetMegaBikes()[biker.GetBike()]
+// 		if actualBike == nil {
+// 			t.Errorf("Biker %v has not been assigned to any bike", biker.GetID())
+// 			continue
+// 		}
+// 		if actualBike.GetGovernance() != biker.governance {
+// 			t.Errorf("Biker %v is on a bike with incorrect governance", biker.GetID())
+// 		}
+// 	}
 
-	for _, agent := range s.GetAgentMap() {
-		bikeID := agent.GetBike()
-		if bikeID == uuid.Nil {
-			t.Errorf("Agent %v has not been assigned to any bike", agent.GetID())
-		}
-		if bike, ok := s.GetMegaBikes()[bikeID]; ok {
-			if bike.GetGovernance() != agent.DecideGovernance() {
-				t.Errorf("Agent %v is on bike with governance %v, want %v",
-					agent.GetID(), bike.GetGovernance(), agent.DecideGovernance())
-			}
-			agents := bike.GetAgents()
-			if !slices.Contains(agents, agent) {
-				t.Errorf("Agent %v is not on the bike they were assigned to", agent.GetID())
-			}
-		} else {
-			t.Errorf("Agent %v has not been assigned to any bike", agent.GetID())
-		}
-	}
-}
+// 	for _, agent := range s.GetAgentMap() {
+// 		bikeID := agent.GetBike()
+// 		if bikeID == uuid.Nil {
+// 			t.Errorf("Agent %v has not been assigned to any bike", agent.GetID())
+// 		}
+// 		if bike, ok := s.GetMegaBikes()[bikeID]; ok {
+// 			if bike.GetGovernance() != agent.DecideGovernance() {
+// 				t.Errorf("Agent %v is on bike with governance %v, want %v",
+// 					agent.GetID(), bike.GetGovernance(), agent.DecideGovernance())
+// 			}
+// 			agents := bike.GetAgents()
+// 			if !slices.Contains(agents, agent) {
+// 				t.Errorf("Agent %v is not on the bike they were assigned to", agent.GetID())
+// 			}
+// 		} else {
+// 			t.Errorf("Agent %v has not been assigned to any bike", agent.GetID())
+// 		}
+// 	}
+// }

@@ -140,6 +140,9 @@ func (bb *BaseBiker) DecideAllocation() voting.IdVoteMap {
 // the biker itself doesn't technically have a location (as it's on the map only when it's on a bike)
 // in fact this function is only called when the biker needs to make a decision about the pedaling forces
 func (bb *BaseBiker) GetLocation() utils.Coordinates {
+	if !bb.GetBikeStatus() {
+		return utils.Coordinates{X: -1, Y: -1}
+	}
 	megaBikes := bb.gameState.GetMegaBikes()
 	return megaBikes[bb.megaBikeId].GetPosition()
 }

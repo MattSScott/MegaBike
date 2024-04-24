@@ -15,7 +15,7 @@ func TestGetJoiningRequests(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// 1: get two bike ids
 	targetBikes := make([]uuid.UUID, 2)
@@ -68,7 +68,7 @@ func TestGetJoiningRequestsWithLimbo(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// 1: get two bike ids
 	targetBikes := make([]uuid.UUID, 2)
@@ -125,7 +125,7 @@ func TestGetRandomID(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	bike := s.GetRandomBikeId()
 	_, exists := s.GetMegaBikes()[bike]
@@ -139,13 +139,13 @@ func TestAddAgentToBike(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	bike := s.GetRandomBikeId()
 	var changedAgent uuid.UUID
 	for agentID, agent := range s.GetAgentMap() {
 		agent.SetBike(bike)
-		s.AddAgentToBike(agent)
+		s.AddAgentToBike(agent, s.GetMegaBikes()[bike])
 		changedAgent = agentID
 		break
 	}

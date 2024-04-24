@@ -6,6 +6,7 @@ import (
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
+	"fmt"
 	"slices"
 
 	"github.com/google/uuid"
@@ -17,7 +18,6 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump) {
 	s.SetDestinationBikes()
 	// take care of agents that want to leave the bike and of the acceptance/ expulsion process
 	s.runActionDeliberation(objects.KickAgent)
-	s.RunBikeSwitch()
 	// get the direction decisions and pedalling forces
 	s.RunActionProcess()
 	// The Awdi makes a decision
@@ -66,6 +66,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump) {
 	if utils.ReplenishLootBoxes {
 		s.replenishLootBoxes()
 	}
+
 	if utils.ReplenishMegaBikes {
 		s.replenishMegaBikes()
 	}
@@ -209,12 +210,13 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 	// -------------------------- PROCESS JOINING REQUESTS -------------------------
 	// 1. group agents that have onBike = false by the bike they are trying to join
 	bikeRequests := s.GetJoiningRequests(inLimbo)
-
 	// panic(s.megaBikes)
 
 	// 2. pass to agents on each of the desired bikes a list of all agents trying to join
 	for bikeID, pendingAgents := range bikeRequests {
-		agents := s.megaBikes[bikeID].GetAgents()
+		bike := s.megaBikes[bikeID]
+		agents := bike.GetAgents()
+		fmt.Println(len(agents))
 		// if there are no agents on the target bike accept all of them (until all seats are filled)
 		if len(agents) == 0 {
 			// as iterating over a map is pseudo-random it's enough to stop whrn the capacity is reached
@@ -222,21 +224,14 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 			for i, pendingAgent := range pendingAgents {
 				if i <= utils.BikersOnBike {
 					acceptedAgent := s.GetAgentMap()[pendingAgent]
-					s.AddAgentToBike(acceptedAgent)
+					s.AddAgentToBike(acceptedAgent, bike)
 				} else {
 					break
 				}
 			}
 			// if the governance of the bike is ruler led an election needs to be held
-			gov := s.megaBikes[bikeID].GetGovernance()
-			if gov == utils.Dictatorship || gov == utils.Leadership {
-				// run election process
-				agents := s.megaBikes[bikeID].GetAgents()
-				ruler := s.RulerElection(agents, gov)
-				s.megaBikes[bikeID].SetRuler(ruler)
-			}
+			// TODO!!!
 		} else {
-			bike := s.GetMegaBikes()[bikeID]
 			acceptedRanked := make([]uuid.UUID, 0)
 
 			// the acceptance process is different for each governance type
@@ -288,7 +283,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 			for i := 0; i < min(emptySpaces, len(acceptedRanked)); i++ {
 				accepted := acceptedRanked[i]
 				acceptedAgent := s.GetAgentMap()[accepted]
-				s.AddAgentToBike(acceptedAgent)
+				s.AddAgentToBike(acceptedAgent, bike)
 			}
 		}
 	}

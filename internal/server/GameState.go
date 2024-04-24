@@ -2,6 +2,7 @@ package server
 
 import (
 	"SOMAS2023/internal/common/objects"
+	"fmt"
 	"math/rand"
 	"slices"
 
@@ -39,6 +40,7 @@ func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UU
 			}
 		}
 	}
+	fmt.Println(bikeRequests)
 	return bikeRequests
 }
 

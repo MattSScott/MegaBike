@@ -72,6 +72,32 @@ func (s *Server) spawnMegaBike() {
 	// megaBike.ActivateAllGlobalRules()
 }
 
+func (s *Server) spawnInitialMegaBikesAndRiders() {
+	for i := 0; i < globals.MegaBikeCount; i++ {
+		s.spawnMegaBike()
+	}
+
+	bikeArray := make([]objects.IMegaBike, 0)
+
+	for _, bike := range s.GetMegaBikes() {
+		bikeArray = append(bikeArray, bike)
+	}
+
+	bikeAssignIdx := 0
+
+	for _, agent := range s.GetAgentMap() {
+		bike := bikeArray[bikeAssignIdx]
+		if len(bike.GetAgents()) == 8 {
+			bikeAssignIdx += 1
+			bike = bikeArray[bikeAssignIdx]
+		}
+		bike.AddAgent(agent)
+		agent.SetBike(bike.GetID())
+		agent.ToggleOnBike()
+	}
+
+}
+
 func (s *Server) replenishMegaBikes() {
 	neededBikes := globals.MegaBikeCount - len(s.megaBikes)
 	for i := 0; i < neededBikes; i++ {
