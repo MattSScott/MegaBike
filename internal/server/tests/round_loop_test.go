@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
@@ -132,6 +133,10 @@ func TestProcessJoiningRequests(t *testing.T) {
 }
 
 func TestRunActionProcess(t *testing.T) {
+
+	*globals.BikerAgentCount = 16
+	globals.MegaBikeCount = 2
+
 	for i := 0; i < 10; i++ {
 		iterations := 1
 		s := server.GenerateServer()
@@ -139,11 +144,16 @@ func TestRunActionProcess(t *testing.T) {
 		// required otherwise agents are not initialized to bikes
 		s.FoundingInstitutions()
 
+		for _, bike := range s.GetMegaBikes() {
+			fmt.Println(len(bike.GetAgents()))
+		}
+
 		// Loop through each bike
 		for _, bike := range s.GetMegaBikes() {
 			// Randomly select a governance strategy for this bike
 			governanceTypes := []int{int(utils.Democracy), int(utils.Leadership), int(utils.Dictatorship)}
 			governance := utils.Governance(governanceTypes[rand.Intn(len(governanceTypes))])
+			// bike.SetGovernance(governance)
 			bike.SetGovernance(governance)
 
 			// Randomly select a ruler if necessary
@@ -153,6 +163,8 @@ func TestRunActionProcess(t *testing.T) {
 					randIndex := rand.Intn(len(agents))
 					randomAgent := agents[randIndex]
 					bike.SetRuler(randomAgent.GetID())
+				} else {
+					t.Error("Bike is empty")
 				}
 			}
 		}
@@ -162,12 +174,8 @@ func TestRunActionProcess(t *testing.T) {
 		for _, agent := range s.GetAgentMap() {
 			lostEnergy := (utils.MovingDepletion * agent.GetForces().Pedal)
 
-			var agentBike objects.IMegaBike
-			for _, bike := range s.GetMegaBikes() {
-				if bike.GetID() == agent.GetBike() {
-					agentBike = bike
-				}
-			}
+			allBikes := s.GetMegaBikes()
+			agentBike := allBikes[agent.GetBike()]
 
 			governance := agentBike.GetGovernance()
 			switch governance {
@@ -175,6 +183,12 @@ func TestRunActionProcess(t *testing.T) {
 				lostEnergy += utils.DeliberativeDemocracyPenalty
 			case utils.Leadership:
 				lostEnergy += utils.LeadershipDemocracyPenalty
+			default:
+			}
+			if agent.GetEnergyLevel()+lostEnergy != 1 {
+				// fmt.Println(agent.GetForces().Pedal*utils.MovingDepletion, agentBike.GetGovernance())
+				// fmt.Println("NEW:", agent.GetEnergyLevel(), lostEnergy, agent.GetEnergyLevel()+lostEnergy, agent.GetBikeStatus())
+				fmt.Println(agent.GetID(), agent.GetBike())
 			}
 			// FP precision error
 			if (agent.GetEnergyLevel() - (1.0 - lostEnergy)) > utils.Epsilon {

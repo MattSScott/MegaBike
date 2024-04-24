@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/server"
@@ -498,7 +499,9 @@ func TestPopulateBikeWithFullRuleset(t *testing.T) {
 
 	mb.ActivateAllGlobalRules()
 
-	if len(mb.ViewLocalRuleMap()) != int(objects.MAX_ACTIONS) {
+	categories := int(*globals.GlobalRuleCount) / int(objects.MAX_ACTIONS)
+
+	if len(mb.ViewLocalRuleMap()) != categories {
 		t.Error("Rules not generated in all categories")
 	}
 }

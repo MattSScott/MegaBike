@@ -235,8 +235,8 @@ func (mb *MegaBike) ActivateAllGlobalRules() {
 }
 
 func (mb *MegaBike) InitialiseRuleMap() {
-	dist := 100.0
-	mute := false
+	dist := 10000.0
+	mute := true
 
 	ruleInputs := RuleInputs{Energy}
 	ruleMat := RuleMatrix{{1, -dist}}

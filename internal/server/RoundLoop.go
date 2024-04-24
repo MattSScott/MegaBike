@@ -318,7 +318,9 @@ func (s *Server) RunActionProcess() {
 			direction = s.RunDemocraticAction(bike, weights)
 			// agetns incur in an energetic penalty for partecipating in a vote
 			for _, agent := range agents {
+				// fmt.Println("DEMO LOSS:", agent.GetForces().Pedal, agent.GetEnergyLevel())
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
+				// fmt.Println(agent.GetEnergyLevel())
 			}
 		case utils.Leadership:
 			// get weights from leader
@@ -329,6 +331,7 @@ func (s *Server) RunActionProcess() {
 			weights := leader.DecideWeights(utils.Direction)
 			direction = s.RunDemocraticAction(bike, weights)
 			for _, agent := range agents {
+				// fmt.Println("LEADER LOSS")
 				agent.UpdateEnergyLevel(-utils.LeadershipDemocracyPenalty)
 			}
 		case utils.Dictatorship:
@@ -338,9 +341,12 @@ func (s *Server) RunActionProcess() {
 
 		for _, agent := range agents {
 			agent.DecideForce(direction)
+			// fmt.Println("SUBFUNC INIT:", agent.GetEnergyLevel())
 			// deplete energy
 			energyLost := agent.GetForces().Pedal * utils.MovingDepletion
+			// fmt.Println("BASE LOSS")
 			agent.UpdateEnergyLevel(-energyLost)
+			// fmt.Println("FINAL LOSS:", agent.GetEnergyLevel())
 		}
 	}
 }

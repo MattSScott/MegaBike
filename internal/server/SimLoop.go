@@ -160,7 +160,7 @@ func (s *Server) FoundingInstitutions() {
 		chosenBike := bikesAvailable[0]
 		// add agent to bike
 		agentInt := s.GetAgentMap()[agent]
-		agentInt.SetBike(chosenBike) // BUGGY!!! (setting bike here massively slows down iterations)
+		agentInt.SetBike(chosenBike)
 		agentInt.ToggleOnBike()
 		s.AddAgentToBike(agentInt)
 	}

@@ -1,6 +1,7 @@
 package objects
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/server"
 	"testing"
@@ -31,7 +32,7 @@ func TestServerGeneratesRuleCache(t *testing.T) {
 	serv := server.GenerateServer()
 	serv.Initialize(1)
 
-	if len(serv.ViewGlobalRuleCache()) != 100 {
+	if len(serv.ViewGlobalRuleCache()) != *globals.GlobalRuleCount {
 		t.Error("Server not correctly initialised with rules")
 	}
 }

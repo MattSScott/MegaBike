@@ -11,10 +11,13 @@ import (
 // obtain direction for current round from the dictator
 func (s *Server) RunRulerAction(bike objects.IMegaBike) uuid.UUID {
 	agents := s.GetAgentMap()
-	ruler := agents[bike.GetRuler()]
-	// get dictators direction choice
-	direction := ruler.DictateDirection()
-	return direction
+	ruler, ok := agents[bike.GetRuler()]
+	if ok {
+		// get dictators direction choice
+		direction := ruler.DictateDirection()
+		return direction
+	}
+	return uuid.Nil
 }
 
 // elect ruler (happens during the foundation stage, or when a bike with ruler-lead

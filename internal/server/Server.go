@@ -6,6 +6,7 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
@@ -220,6 +221,20 @@ func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 // 	}
 // }
 
+func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
+	result := make(map[uuid.UUID]int)
+	for _, gameState := range dump.Iterations {
+		for idx, round := range gameState.Rounds {
+			for _, bike := range round.Bikes {
+				for id := range bike.Agents {
+					result[id] = idx
+				}
+			}
+		}
+	}
+	return result
+}
+
 func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 
 	relativePath, _ := os.Getwd()
@@ -238,6 +253,10 @@ func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 	if err := encoder.Encode(dump); err != nil {
 		panic(err)
 	}
+	for id, span := range lifespan(dump) {
+		fmt.Println(id, span)
+	}
+	fmt.Println(gameDumpFile)
 }
 
 // had to override to address the fact that agents only have access to the game dump
