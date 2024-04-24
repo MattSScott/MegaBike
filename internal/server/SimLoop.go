@@ -4,15 +4,15 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
 // the simulation loop represents a round
 func (s *Server) RunSimLoop(iterations int, gameState *SimplifiedGameStateDump) {
 
+	s.ResetGameState()
 	s.RunMessagingSession()
-	s.RunBikeSwitch()                  // self-selection phase
+	s.RunBikeSwitch() // self-selection phase
+	s.SetDestinationBikes()
 	for _, bike := range s.megaBikes { // action phase
 		s.PerformRoleAssignment(bike)
 	}
@@ -22,7 +22,7 @@ func (s *Server) RunSimLoop(iterations int, gameState *SimplifiedGameStateDump) 
 	// run this for n iterations
 	// gameStates := []GameStateDump{s.NewGameStateDump(-1)}
 	for i := 0; i < iterations; i++ {
-		s.RunRoundLoop(iterationDump)
+		s.RunRoundLoop(iterationDump, i)
 		// gameStates = append(gameStates, s.NewGameStateDump(i))
 	}
 
@@ -48,14 +48,6 @@ func (s *Server) RunSimLoop(iterations int, gameState *SimplifiedGameStateDump) 
 // remove all agents from bikes, respawn dead agents (if required), replenish energy (if required), reset points (if required)
 // replenish environment objects
 func (s *Server) ResetGameState() {
-	// kick everyone off bikes
-	for _, agent := range s.GetAgentMap() {
-		if agent.GetBike() != uuid.Nil {
-			s.RemoveAgentFromBike(agent)
-		} else if agent.GetBikeStatus() {
-			agent.ToggleOnBike()
-		}
-	}
 
 	// respawn people who died in previous round (conditional)
 	if utils.RespawnEveryRound && utils.ReplenishEnergyEveryRound {
@@ -81,13 +73,13 @@ func (s *Server) ResetGameState() {
 		}
 	}
 
-	for _, bike := range s.GetMegaBikes() {
-		bike.SetRuler(uuid.Nil)
-	}
+	// for _, bike := range s.GetMegaBikes() {
+	// 	bike.SetRuler(uuid.Nil)
+	// }
 
-	for _, agent := range s.GetAgentMap() {
-		agent.SetBike(uuid.Nil)
-	}
+	// for _, agent := range s.GetAgentMap() {
+	// 	agent.SetBike(uuid.Nil)
+	// }
 
 	s.replenishLootBoxes()
 	s.replenishMegaBikes()
@@ -191,9 +183,16 @@ func (s *Server) Start() {
 	gameState := NewSimplifiedGameStateDump()
 
 	for i := 0; i < s.GetIterations(); i++ {
-		fmt.Printf("Game Loop %d running... \n \n", i)
+		fmt.Printf("Game Loop %d running... \n \n", i+1)
 		s.RunSimLoop(utils.RoundIterations, gameState)
-		fmt.Printf("Game Loop %d completed.\n", i)
+		fmt.Printf("Game Loop %d completed.\n", i+1)
+		// for _, agent := range s.GetAgentMap() {
+		// 	fmt.Println(agent.GetEnergyLevel())
+		// }
+		fmt.Println(len(s.GetAgentMap()))
+		if len(s.GetAgentMap()) == 0 {
+			break
+		}
 	}
 	s.outputSimulationResult(*gameState)
 }

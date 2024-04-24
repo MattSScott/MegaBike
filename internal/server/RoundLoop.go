@@ -12,10 +12,16 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump) {
+func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int) {
+
+	// for id, agent := range s.GetAgentMap() {
+	// 	fmt.Println(id, agent.GetEnergyLevel())
+	// }
+	// fmt.Println(len(s.GetAgentMap()), round)
+
 	// get destination bikes from bikers not on bike
 	s.runActionDeliberation(objects.MoveBike)
-	s.SetDestinationBikes()
+	// s.SetDestinationBikes()
 	// take care of agents that want to leave the bike and of the acceptance/ expulsion process
 	s.runActionDeliberation(objects.KickAgent)
 	// get the direction decisions and pedalling forces
@@ -31,7 +37,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump) {
 	}
 
 	// Move the awdi
-	s.MovePhysicsObject(s.awdi)
+	// s.MovePhysicsObject(s.awdi)
 
 	// Lootbox Distribution
 	s.runActionDeliberation(objects.Allocation)
@@ -313,9 +319,7 @@ func (s *Server) RunActionProcess() {
 			direction = s.RunDemocraticAction(bike, weights)
 			// agetns incur in an energetic penalty for partecipating in a vote
 			for _, agent := range agents {
-				// fmt.Println("DEMO LOSS:", agent.GetForces().Pedal, agent.GetEnergyLevel())
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
-				// fmt.Println(agent.GetEnergyLevel())
 			}
 		case utils.Leadership:
 			// get weights from leader
@@ -326,7 +330,6 @@ func (s *Server) RunActionProcess() {
 			weights := leader.DecideWeights(utils.Direction)
 			direction = s.RunDemocraticAction(bike, weights)
 			for _, agent := range agents {
-				// fmt.Println("LEADER LOSS")
 				agent.UpdateEnergyLevel(-utils.LeadershipDemocracyPenalty)
 			}
 		case utils.Dictatorship:
@@ -336,12 +339,11 @@ func (s *Server) RunActionProcess() {
 
 		for _, agent := range agents {
 			agent.DecideForce(direction)
-			// fmt.Println("SUBFUNC INIT:", agent.GetEnergyLevel())
 			// deplete energy
 			energyLost := agent.GetForces().Pedal * utils.MovingDepletion
-			// fmt.Println("BASE LOSS")
+			// fmt.Println("BEFORE:", agent.GetEnergyLevel())
 			agent.UpdateEnergyLevel(-energyLost)
-			// fmt.Println("FINAL LOSS:", agent.GetEnergyLevel())
+			// fmt.Println("AFTER:", agent.GetEnergyLevel())
 		}
 	}
 }
@@ -415,6 +417,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 		for lootid, lootbox := range s.GetLootBoxes() {
 			if megabike.CheckForCollision(lootbox) {
 				// Collision detected
+				fmt.Println("GOT ONE !!!")
 				agents := megabike.GetAgents()
 				totAgents := len(agents)
 
@@ -479,9 +482,14 @@ func (s *Server) LootboxCheckAndDistributions() {
 
 					for agentID, allocation := range winningAllocation {
 						lootShare := allocation * (lootbox.GetTotalResources() / bikeShare)
-						agent := s.GetAgentMap()[agentID]
+						agent, ok := s.GetAgentMap()[agentID]
+						if !ok {
+							continue
+						}
 						// Allocate loot based on the calculated utility share
+						// fmt.Println(agent.GetEnergyLevel())
 						agent.UpdateEnergyLevel(lootShare)
+						// fmt.Println(agent.GetEnergyLevel())
 						// Allocate points if the box is of the right colour
 						if agent.GetColour() == lootbox.GetColour() {
 							agent.UpdatePoints(utils.PointsFromSameColouredLootBox)
@@ -517,7 +525,7 @@ func (s *Server) SetDestinationBikes() {
 
 func (s *Server) unaliveAgents() {
 	for _, agent := range s.GetAgentMap() {
-		if agent.GetEnergyLevel() < 0 {
+		if agent.GetEnergyLevel() <= 0 {
 			// fmt.Printf("Agent %s got game ended\n", id)
 			s.RemoveAgent(agent)
 		}
@@ -528,7 +536,7 @@ func (s *Server) punishBikelessAgents() {
 	for id, agent := range s.GetAgentMap() {
 		if _, ok := s.megaBikeRiders[id]; !ok {
 			// Agent is not on a bike
-			agent.UpdateEnergyLevel(utils.LimboEnergyPenalty)
+			agent.UpdateEnergyLevel(-utils.LimboEnergyPenalty)
 		}
 	}
 }

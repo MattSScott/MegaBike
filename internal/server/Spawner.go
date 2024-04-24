@@ -60,7 +60,7 @@ func (s *Server) spawnLootBox() {
 // replenishes lootboxes up to the externally set count
 func (s *Server) replenishLootBoxes() {
 	count := globals.LootBoxCount - len(s.lootBoxes)
-	for i := 0; i < count; i++ {
+ 	for i := 0; i < count; i++ {
 		s.spawnLootBox()
 	}
 }
@@ -91,9 +91,7 @@ func (s *Server) spawnInitialMegaBikesAndRiders() {
 			bikeAssignIdx += 1
 			bike = bikeArray[bikeAssignIdx]
 		}
-		bike.AddAgent(agent)
-		agent.SetBike(bike.GetID())
-		agent.ToggleOnBike()
+		s.AddAgentToBike(agent, bike)
 	}
 
 }

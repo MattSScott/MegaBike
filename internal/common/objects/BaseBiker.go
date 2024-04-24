@@ -47,6 +47,8 @@ type IBaseBiker interface {
 	GetBikeStatus() bool // returns whether the biker is on a bike or not
 	GetTrustworthiness() float64
 
+	HandleAgentUnalive(uuid.UUID)
+
 	SetBike(uuid.UUID)                       // sets the megaBikeID. this is either the id of the bike that the agent is on or the one that it's trying to join
 	SetForces(forces utils.Forces)           // sets the forces (to be updated in DecideForces())
 	UpdateColour(totColours utils.Colour)    // called if a box of the desired colour has been looted
@@ -102,6 +104,8 @@ func (bb *BaseBiker) GetEnergyLevel() float64 {
 func (bb *BaseBiker) GetPoints() int {
 	return bb.points
 }
+
+func (bb *BaseBiker) HandleAgentUnalive(id uuid.UUID) {}
 
 // the function will be called by the server to:
 // - reduce the energy level based on the force spent pedalling (energyLevel will be neg.ve)

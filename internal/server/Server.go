@@ -118,6 +118,10 @@ func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
 		s.megaBikes[bikeId].RemoveAgent(id)
 		delete(s.megaBikeRiders, id)
 	}
+
+	for _, agent := range s.GetAgentMap() {
+		agent.HandleAgentUnalive(agent.GetID())
+	}
 }
 
 // ensures that adding agents to a bike is atomic (ie no agent is added to a bike while still resulting as on another bike)
@@ -132,7 +136,9 @@ func (s *Server) AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike
 	if len(bike.GetAgents()) == 8 {
 		return
 	}
+
 	bike.AddAgent(agent)
+	agent.SetBike(bike.GetID())
 	s.megaBikeRiders[agent.GetID()] = bike.GetID()
 	if !agent.GetBikeStatus() {
 		agent.ToggleOnBike()
@@ -220,11 +226,11 @@ func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 
 func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
 	result := make(map[uuid.UUID]int)
-	for _, gameState := range dump.Iterations {
-		for idx, round := range gameState.Rounds {
+	for idx, gameState := range dump.Iterations {
+		for _, round := range gameState.Rounds {
 			for _, bike := range round.Bikes {
 				for id := range bike.Agents {
-					result[id] = idx
+					result[id] = idx + 1
 				}
 			}
 		}

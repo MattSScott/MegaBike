@@ -356,3 +356,7 @@ func (a *AgentSOSA) SetBike(bikeId uuid.UUID) {
 	a.Modules.Environment.BikeId = bikeId
 	a.BaseBiker.SetBike(bikeId)
 }
+
+func (a *AgentSOSA) HandleAgentUnalive(id uuid.UUID) {
+	delete(a.Modules.AgentParameters.TrustNetwork, id)
+}
