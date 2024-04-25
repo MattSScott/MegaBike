@@ -183,7 +183,9 @@ func (bb *BaseBiker) DecideAction() BikerAction {
 
 // the function is passed in the id of the voted lootbox and the default base bikers steer to that lootbox.
 func (bb *BaseBiker) DecideForce(direction uuid.UUID) {
+	// fmt.Println("I'm trying...")
 	if direction == uuid.Nil {
+		// fmt.Println("But failed.")
 		return
 	}
 	// NEAREST BOX STRATEGY (MVP)
@@ -302,7 +304,19 @@ func (bb *BaseBiker) ProposeNewRadius(pRad float64) float64 {
 }
 
 func (bb *BaseBiker) ProposeDirectionFromSubset(subset map[uuid.UUID]ILootBox) uuid.UUID {
-	return uuid.Nil
+	currLocation := bb.GetLocation()
+	shortestDist := math.MaxFloat64
+	var nearestBox uuid.UUID
+	var currDist float64
+	for _, loot := range subset {
+		x, y := loot.GetPosition().X, loot.GetPosition().Y
+		currDist = math.Sqrt(math.Pow(currLocation.X-x, 2) + math.Pow(currLocation.Y-y, 2))
+		if currDist < shortestDist {
+			nearestBox = loot.GetID()
+			shortestDist = currDist
+		}
+	}
+	return nearestBox
 }
 
 func (bb *BaseBiker) ToggleOnBike() {

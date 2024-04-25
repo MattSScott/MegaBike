@@ -17,6 +17,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	// for id, agent := range s.GetAgentMap() {
 	// 	fmt.Println(id, agent.GetEnergyLevel())
 	// }
+	// fmt.Println()
 	// fmt.Println(len(s.GetAgentMap()), round)
 
 	// get destination bikes from bikers not on bike
@@ -341,9 +342,7 @@ func (s *Server) RunActionProcess() {
 			agent.DecideForce(direction)
 			// deplete energy
 			energyLost := agent.GetForces().Pedal * utils.MovingDepletion
-			// fmt.Println("BEFORE:", agent.GetEnergyLevel())
 			agent.UpdateEnergyLevel(-energyLost)
-			// fmt.Println("AFTER:", agent.GetEnergyLevel())
 		}
 	}
 }
@@ -417,7 +416,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 		for lootid, lootbox := range s.GetLootBoxes() {
 			if megabike.CheckForCollision(lootbox) {
 				// Collision detected
-				fmt.Println("GOT ONE !!!")
+				// fmt.Println("GOT ONE !!!")
 				agents := megabike.GetAgents()
 				totAgents := len(agents)
 

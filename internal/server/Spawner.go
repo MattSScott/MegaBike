@@ -5,7 +5,6 @@ import (
 	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
-	"fmt"
 
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
 	"github.com/google/uuid"
@@ -27,8 +26,6 @@ func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objec
 
 	bikersPerTeam := *globals.BikerAgentCount / (len(AgentInitFunctions))
 	extraBaseBikers := *globals.BikerAgentCount % (len(AgentInitFunctions))
-
-	fmt.Println(bikersPerTeam, extraBaseBikers)
 
 	agentGenerators := []baseserver.AgentGeneratorCountPair[objects.IBaseBiker]{
 		// Spawn base bikers
@@ -60,7 +57,7 @@ func (s *Server) spawnLootBox() {
 // replenishes lootboxes up to the externally set count
 func (s *Server) replenishLootBoxes() {
 	count := globals.LootBoxCount - len(s.lootBoxes)
- 	for i := 0; i < count; i++ {
+	for i := 0; i < count; i++ {
 		s.spawnLootBox()
 	}
 }

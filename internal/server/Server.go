@@ -241,7 +241,7 @@ func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
 func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 
 	relativePath, _ := os.Getwd()
-	gameDumpPath := "/gameDumps/debug/"
+	gameDumpPath := "/gameDumps/immutable/"
 	gameDumpHash := uuid.New().String()
 
 	gameDumpFile := relativePath + gameDumpPath + gameDumpHash + ".json"

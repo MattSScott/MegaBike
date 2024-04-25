@@ -5,7 +5,6 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"maps"
 	"math"
 	"math/rand"
 	"runtime"
@@ -139,27 +138,56 @@ func (a *AgentSOSA) DecideGovernance() utils.Governance {
 }
 
 func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
-	socialCapital := maps.Clone(a.Modules.AgentParameters.TrustNetwork)
-	// Iterate through agents in social capital
-	for id := range socialCapital {
-		// Iterate through fellow bikers
-		for _, biker := range a.GetFellowBikers() {
-			// If this agent is a fellow biker, move on
-			if biker.GetID() == id {
-				continue
-			}
+	allocation := make(map[uuid.UUID]float64)
+	allocation[a.GetID()] = 1.0
+
+	normConst := 1.0
+
+	trustNet := a.Modules.AgentParameters.TrustNetwork
+
+	for _, biker := range a.GetFellowBikers() {
+		if a.GetID() == biker.GetID() {
+			continue
 		}
-		if math.IsNaN(socialCapital[id]) {
-			runtime.Breakpoint()
-			panic("dhsd")
+
+		agentAllocation, ok := trustNet[biker.GetID()]
+		if !ok {
+			agentAllocation = 0.5
 		}
-		// This agent is not a fellow biker - remove it from SC
-		delete(socialCapital, id)
+
+		allocation[biker.GetID()] = agentAllocation
+		normConst += agentAllocation
 	}
-	// We give ourselves 1.0
-	socialCapital[a.GetID()] = 1.0
-	return socialCapital
+
+	for id, val := range allocation {
+		allocation[id] = val / normConst
+	}
+
+	return allocation
 }
+
+// func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
+// 	socialCapital := maps.Clone(a.Modules.AgentParameters.TrustNetwork)
+// 	// Iterate through agents in social capital
+// 	for id := range socialCapital {
+// 		// Iterate through fellow bikers
+// 		for _, biker := range a.GetFellowBikers() {
+// 			// If this agent is a fellow biker, move on
+// 			if biker.GetID() == id {
+// 				continue
+// 			}
+// 		}
+// 		if math.IsNaN(socialCapital[id]) {
+// 			runtime.Breakpoint()
+// 			panic("dhsd")
+// 		}
+// 		// This agent is not a fellow biker - remove it from SC
+// 		delete(socialCapital, id)
+// 	}
+// 	// We give ourselves 1.0
+// 	socialCapital[a.GetID()] = 1.0
+// 	return socialCapital
+// }
 
 func (a *AgentSOSA) DecideDictatorAllocation() voting.IdVoteMap {
 	socialCapital := a.DecideAllocation()
@@ -236,11 +264,13 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 
 func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
 	energy := a.GetEnergyLevel()
-	newRad := pRad * 0.95
-	if energy < 0.5 {
-		newRad = pRad * 1.05
+	newRad := pRad
+	if energy < 0.75 {
+		newRad = pRad * 2
 	}
+
 	return math.Max(newRad, -100000)
+
 }
 
 func (a *AgentSOSA) ProposeDirection() uuid.UUID {

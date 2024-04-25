@@ -9,13 +9,15 @@ import (
 // the simulation loop represents a round
 func (s *Server) RunSimLoop(iterations int, gameState *SimplifiedGameStateDump) {
 
-	s.ResetGameState()
 	s.RunMessagingSession()
 	s.RunBikeSwitch() // self-selection phase
 	s.SetDestinationBikes()
 	for _, bike := range s.megaBikes { // action phase
+		s.UpdateBikeRules(bike)
 		s.PerformRoleAssignment(bike)
 	}
+
+	s.ResetGameState()
 
 	iterationDump := s.GenerateIterationDump()
 
@@ -193,6 +195,10 @@ func (s *Server) Start() {
 		if len(s.GetAgentMap()) == 0 {
 			break
 		}
+		// for id, agent := range s.GetAgentMap() {
+		// 	fmt.Println(id, agent.GetEnergyLevel())
+		// }
+		// fmt.Println()
 	}
 	s.outputSimulationResult(*gameState)
 }
