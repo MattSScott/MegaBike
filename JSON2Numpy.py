@@ -1,5 +1,7 @@
 import numpy as np
 import json
+import os
+import pickle
 
 
 def parse_full(filename):
@@ -12,8 +14,9 @@ def parse_full(filename):
             new_agent, new_bike = parse_iteration_data(game_data[i])
             full_data_agent = np.append(full_data_agent, new_agent, axis=1)
             full_data_bike = np.append(full_data_bike, new_bike, axis=0)
-        print(full_data_agent.shape)
-        print(full_data_bike.shape)
+        # print(full_data_agent.shape)
+        # print(full_data_bike.shape)
+        return (full_data_agent, full_data_bike)
 
 
 def parse_iteration_data(iteration_data_full):
@@ -43,15 +46,15 @@ def parse_round_data(round_data):
     return (round_agent_dirs, round_bike_dirs)
 
 
-cnt = 0
+# cnt = 0
 
 
 def parse_bike_data(bike_data):
     agents = bike_data["agents"]
     # print(len(agents))
-    global cnt
-    if len(agents) != 0:
-        cnt += 1
+    # global cnt
+    # if len(agents) != 0:
+    #     cnt += 1
     agent_dirs = np.empty((8, 2))
     agent_dirs.fill(np.nan)
     for idx, agent in enumerate(agents.values()):
@@ -62,6 +65,36 @@ def parse_bike_data(bike_data):
     return agent_dirs
 
 
-parse_full("gameDumps/debug/6142fc5c-a09c-4a9a-9d10-4ff496a8f96e.json")
+# parse_full("gameDumps/debug/6142fc5c-a09c-4a9a-9d10-4ff496a8f96e.json")
 # parse_full("gameDumps/debug/76e34653-faaf-4805-b16c-6c8b8eb362ad.json")
-print(cnt)
+# print(cnt)
+
+
+def pickler():
+    dirs = ["mutable", "immutable"]
+    for d in dirs:
+        read_dir = f"gameDumps/{d}"
+        write_dir = f"vectorisedDumps/{d}"
+        files = os.listdir(read_dir)
+        for f in files:
+            if f == ".DS_Store":
+                continue
+            read_path = f"{read_dir}/{f}"
+            write_path = f"{write_dir}/{f[:-5]}"  # strip json suffix
+
+            agent_write_file = f"{write_path}/agent_data.pickle"
+            bike_write_file = f"{write_path}/bike_data.pickle"
+
+            for filename in [agent_write_file, bike_write_file]:
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+            agent_vec, bike_vec = parse_full(read_path)
+
+            with open(agent_write_file, "wb") as agent:
+                pickle.dump(agent_vec, agent, protocol=pickle.HIGHEST_PROTOCOL)
+
+            with open(bike_write_file, "wb") as bike:
+                pickle.dump(bike_vec, bike, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+pickler()
