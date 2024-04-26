@@ -15,7 +15,7 @@ func TestRulerElectionDictator(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// pass gamestate
 	var ruler uuid.UUID
@@ -39,7 +39,7 @@ func TestRulerElectionLeader(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 	// pass gamestate
 	var ruler uuid.UUID
 	for _, bike := range s.GetMegaBikes() {
@@ -63,7 +63,7 @@ func TestRunRulerActionDictator(t *testing.T) {
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
 
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		agents := bike.GetAgents()
@@ -97,7 +97,7 @@ func TestRunRulerActionLeader(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		agents := bike.GetAgents()
@@ -130,7 +130,7 @@ func TestRunDemocraticAction(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		fmt.Println("RULES:", len(bike.GetActiveRulesForAction(objects.Lootbox)))

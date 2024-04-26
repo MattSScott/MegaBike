@@ -11,10 +11,13 @@ import (
 // obtain direction for current round from the dictator
 func (s *Server) RunRulerAction(bike objects.IMegaBike) uuid.UUID {
 	agents := s.GetAgentMap()
-	ruler := agents[bike.GetRuler()]
-	// get dictators direction choice
-	direction := ruler.DictateDirection()
-	return direction
+	ruler, ok := agents[bike.GetRuler()]
+	if ok {
+		// get dictators direction choice
+		direction := ruler.DictateDirection()
+		return direction
+	}
+	return uuid.Nil
 }
 
 // elect ruler (happens during the foundation stage, or when a bike with ruler-lead
@@ -72,6 +75,8 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 	rule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
 	pRad := rule.GetRuleMatrix()[0][1]
 
+	// fmt.Println(rule)
+
 	for _, agent := range bike.GetAgents() {
 		if agent.GetBikeStatus() {
 			tRad += agent.ProposeNewRadius(pRad)
@@ -87,6 +92,7 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 
 	newRuleMatrix := [][]float64{{1, tRad}}
 	rule.UpdateRuleMatrix(newRuleMatrix)
+
 	// nRule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
 	// fmt.Println(nRule.GetRuleMatrix())
 }
@@ -98,6 +104,8 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UU
 	proposedDirections := make(map[uuid.UUID]uuid.UUID)
 	validLootboxes := s.PruneLootboxes(bike)
 
+	// fmt.Println(len(s.lootBoxes), len(validLootboxes))
+
 	for _, agent := range agents {
 		// agents that have decided to stay on the bike (and that haven't been kicked off it)
 		// will participate in the voting for the directions
@@ -105,6 +113,7 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UU
 		if agent.GetBikeStatus() {
 			// proposedDirection := agent.ProposeDirection()
 			proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
+
 			if proposedDirection == uuid.Nil {
 				continue
 			}
@@ -114,8 +123,6 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UU
 			proposedDirections[agent.GetID()] = proposedDirection
 		}
 	}
-
-	s.UpdateBikeRules(bike)
 
 	if len(proposedDirections) == 0 {
 		return uuid.Nil
