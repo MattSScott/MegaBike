@@ -434,7 +434,7 @@ func TestKickOutAgent(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	mb := objects.GetMegaBike(&MockRuleCache{})
 

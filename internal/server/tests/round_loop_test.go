@@ -23,7 +23,7 @@ func TestGetLeavingDecisions(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	s.GetLeavingDecisions()
 
@@ -47,7 +47,7 @@ func TestHandleKickout(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 	s.HandleKickoutProcess()
 
 	for _, agent := range s.GetAgentMap() {
@@ -66,6 +66,7 @@ func TestHandleKickout(t *testing.T) {
 }
 
 func TestProcessJoiningRequests(t *testing.T) {
+	globals.MegaBikeCount += 2 // accomodate two spare bikes
 	OnlySpawnBaseBikers(t)
 	iterations := 3
 	s := server.GenerateServer()
@@ -108,8 +109,8 @@ func TestProcessJoiningRequests(t *testing.T) {
 	// all agents should be accepted as there should be enough room on all bikes (but make it subject to that)
 	// check that all of them are now on bikes
 	// check that there are no bikers left with on bike = false
-
 	s.ProcessJoiningRequests(make([]uuid.UUID, 0))
+
 	for bikeID, agents := range requests {
 		bike := s.GetMegaBikes()[bikeID]
 		for _, agent := range agents {
@@ -142,7 +143,7 @@ func TestRunActionProcess(t *testing.T) {
 		s := server.GenerateServer()
 		s.Initialize(iterations)
 		// required otherwise agents are not initialized to bikes
-		s.FoundingInstitutions()
+		// s.FoundingInstitutions()
 
 		for _, bike := range s.GetMegaBikes() {
 			fmt.Println(len(bike.GetAgents()))
@@ -204,7 +205,7 @@ func TestRunActionProcessDictator(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// make bike with dictatorship (by getting one of the existing bikes and making it a dictatorship bike)
 	foundBike := false
@@ -255,7 +256,7 @@ func TestRunActionProcessLeader(t *testing.T) {
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
 
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// make bike with dictatorship (by getting one of the existing bikes and making it a dictatorship bike)
 	foundBike := false
@@ -300,6 +301,7 @@ func TestRunActionProcessLeader(t *testing.T) {
 }
 
 func TestProcessJoiningRequestsWithLimbo(t *testing.T) { // debug
+	globals.MegaBikeCount += 2 // accomodate two spare bikes
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
@@ -308,12 +310,11 @@ func TestProcessJoiningRequestsWithLimbo(t *testing.T) { // debug
 	targetBikes := make([]uuid.UUID, 2)
 
 	i := 0
-	for bikeId := range s.GetMegaBikes() {
-		if i == 2 {
-			break
+	for bikeId, bike := range s.GetMegaBikes() {
+		if len(bike.GetAgents()) == 0 {
+			targetBikes[i] = bikeId
+			i++
 		}
-		targetBikes[i] = bikeId
-		i += 1
 	}
 
 	// 2: set one agent requesting the first bike and two other requesting the second one
@@ -324,13 +325,22 @@ func TestProcessJoiningRequestsWithLimbo(t *testing.T) { // debug
 	limbo := make([]uuid.UUID, 1)
 	for _, agent := range s.GetAgentMap() {
 		if i == 0 {
+			if agent.GetBikeStatus() {
+				agent.ToggleOnBike()
+			}
 			agent.SetBike(targetBikes[0])
 			requests[targetBikes[0]][0] = agent.GetID()
 		} else if i == 1 {
+			if agent.GetBikeStatus() {
+				agent.ToggleOnBike()
+			}
 			// add it to second bike for request
 			agent.SetBike(targetBikes[1])
 			requests[targetBikes[1]][0] = agent.GetID()
 		} else if i == 2 {
+			if agent.GetBikeStatus() {
+				agent.ToggleOnBike()
+			}
 			//remove it from bike but add it to limbo (to mimick request made in this turn)
 			agent.SetBike(targetBikes[1])
 			limbo[0] = agent.GetID()
@@ -344,8 +354,8 @@ func TestProcessJoiningRequestsWithLimbo(t *testing.T) { // debug
 	// all agents should be accepted as there should be enough room on all bikes (but make it subject to that)
 	// check that all of them are now on bikes
 	// check that there are no bikers left with on bike = false
-
 	s.ProcessJoiningRequests(limbo)
+
 	for bikeID, agents := range requests {
 		bike := s.GetMegaBikes()[bikeID]
 		for _, agent := range agents {
@@ -478,7 +488,7 @@ func TestLootboxShareDictator(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 	// required otherwise agents are not initialized to bikes
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	// make bike with dictatorship (by getting one of the existing bikes and making it a dictatorship bike)
 	foundBike := false

@@ -27,7 +27,7 @@ func main() {
 
 // 	s := &server.Server{}
 // 	s.Initialize(1)
-// 	s.FoundingInstitutions()
+// 	// s.FoundingInstitutions()
 // 	iters := 10000
 // 	agents := len(s.GetAgentMap())
 // 	s.TimeRuleEval(true, iters, agents)

@@ -47,6 +47,8 @@ type IBaseBiker interface {
 	GetBikeStatus() bool // returns whether the biker is on a bike or not
 	GetTrustworthiness() float64
 
+	HandleAgentUnalive(uuid.UUID)
+
 	SetBike(uuid.UUID)                       // sets the megaBikeID. this is either the id of the bike that the agent is on or the one that it's trying to join
 	SetForces(forces utils.Forces)           // sets the forces (to be updated in DecideForces())
 	UpdateColour(totColours utils.Colour)    // called if a box of the desired colour has been looted
@@ -103,6 +105,8 @@ func (bb *BaseBiker) GetPoints() int {
 	return bb.points
 }
 
+func (bb *BaseBiker) HandleAgentUnalive(id uuid.UUID) {}
+
 // the function will be called by the server to:
 // - reduce the energy level based on the force spent pedalling (energyLevel will be neg.ve)
 // - increase the energy level after a lootbox has been looted (energyLevel will be pos.ve)
@@ -140,6 +144,9 @@ func (bb *BaseBiker) DecideAllocation() voting.IdVoteMap {
 // the biker itself doesn't technically have a location (as it's on the map only when it's on a bike)
 // in fact this function is only called when the biker needs to make a decision about the pedaling forces
 func (bb *BaseBiker) GetLocation() utils.Coordinates {
+	if !bb.GetBikeStatus() {
+		return utils.Coordinates{X: -1, Y: -1}
+	}
 	megaBikes := bb.gameState.GetMegaBikes()
 	return megaBikes[bb.megaBikeId].GetPosition()
 }
@@ -176,7 +183,9 @@ func (bb *BaseBiker) DecideAction() BikerAction {
 
 // the function is passed in the id of the voted lootbox and the default base bikers steer to that lootbox.
 func (bb *BaseBiker) DecideForce(direction uuid.UUID) {
+	// fmt.Println("I'm trying...")
 	if direction == uuid.Nil {
+		// fmt.Println("But failed.")
 		return
 	}
 	// NEAREST BOX STRATEGY (MVP)
@@ -295,7 +304,19 @@ func (bb *BaseBiker) ProposeNewRadius(pRad float64) float64 {
 }
 
 func (bb *BaseBiker) ProposeDirectionFromSubset(subset map[uuid.UUID]ILootBox) uuid.UUID {
-	return uuid.Nil
+	currLocation := bb.GetLocation()
+	shortestDist := math.MaxFloat64
+	var nearestBox uuid.UUID
+	var currDist float64
+	for _, loot := range subset {
+		x, y := loot.GetPosition().X, loot.GetPosition().Y
+		currDist = math.Sqrt(math.Pow(currLocation.X-x, 2) + math.Pow(currLocation.Y-y, 2))
+		if currDist < shortestDist {
+			nearestBox = loot.GetID()
+			shortestDist = currDist
+		}
+	}
+	return nearestBox
 }
 
 func (bb *BaseBiker) ToggleOnBike() {

@@ -111,7 +111,6 @@ func TestDefaultRuleAlwaysPasses(t *testing.T) {
 	testServer.Initialize(5)
 	testAgent := agent.NewAgentSOSA(objects.GetBaseBiker(1, uuid.New(), testServer))
 	testServer.AddAgent(testAgent)
-	testServer.FoundingInstitutions()
 	rule := objects.GenerateNullPassingRule()
 
 	if !rule.EvaluateAgentRule(testAgent) {

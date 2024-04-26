@@ -39,6 +39,7 @@ func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UU
 			}
 		}
 	}
+
 	return bikeRequests
 }
 

@@ -38,6 +38,27 @@ func TestInitialize(t *testing.T) {
 	fmt.Printf("\nInitialize passed \n")
 }
 
+func TestInitialAssignment(t *testing.T) {
+	s := server.GenerateServer()
+	s.Initialize(0)
+
+	for _, bike := range s.GetMegaBikes() {
+		if len(bike.GetAgents()) > 8 {
+			t.Error("Bike has too many agents")
+		}
+	}
+
+	for _, agent := range s.GetAgentMap() {
+		if !agent.GetBikeStatus() {
+			t.Error("Agent has bike status as false")
+		}
+
+		if agent.GetBike() == uuid.Nil {
+			t.Error("Agent has null bike ID")
+		}
+	}
+}
+
 // func TestRunGame(t *testing.T) {
 // 	iterations := 2
 // 	s := server.GenerateServer()

@@ -201,6 +201,10 @@ func (a AgentDump) GetTrustworthiness() float64 {
 	panic(bannedFunctionErrorMessage)
 }
 
+func (a AgentDump) HandleAgentUnalive(uuid.UUID) {
+	panic(bannedFunctionErrorMessage)
+}
+
 func (b BikeDump) AddAgent(objects.IBaseBiker) {
 	panic(bannedFunctionErrorMessage)
 }

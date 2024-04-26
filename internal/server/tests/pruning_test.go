@@ -21,7 +21,7 @@ func getRule(dist float64, mute bool) *objects.Rule {
 func TestCanPruneLootboxes(t *testing.T) {
 	s := &server.Server{}
 	s.Initialize(1)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		bike.ClearRuleMap()
@@ -47,7 +47,7 @@ func TestCanPruneLootboxes(t *testing.T) {
 func TestCanOverPruneLootboxes(t *testing.T) {
 	s := &server.Server{}
 	s.Initialize(1)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		bike.ClearRuleMap()
@@ -73,7 +73,7 @@ func TestCanOverPruneLootboxes(t *testing.T) {
 func TestPositionUnchangedAfterPruning(t *testing.T) {
 	s := &server.Server{}
 	s.Initialize(1)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		bike.ClearRuleMap()
@@ -109,7 +109,7 @@ func TestPositionUnchangedAfterPruning(t *testing.T) {
 func TestPositionChangedAfterPruning(t *testing.T) {
 	s := &server.Server{}
 	s.Initialize(1)
-	s.FoundingInstitutions()
+	// s.FoundingInstitutions()
 
 	for _, bike := range s.GetMegaBikes() {
 		bike.ClearRuleMap()

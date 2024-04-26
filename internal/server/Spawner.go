@@ -5,7 +5,6 @@ import (
 	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
-	"fmt"
 
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
 	"github.com/google/uuid"
@@ -27,8 +26,6 @@ func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objec
 
 	bikersPerTeam := *globals.BikerAgentCount / (len(AgentInitFunctions))
 	extraBaseBikers := *globals.BikerAgentCount % (len(AgentInitFunctions))
-
-	fmt.Println(bikersPerTeam, extraBaseBikers)
 
 	agentGenerators := []baseserver.AgentGeneratorCountPair[objects.IBaseBiker]{
 		// Spawn base bikers
@@ -70,6 +67,30 @@ func (s *Server) spawnMegaBike() {
 	s.megaBikes[megaBike.GetID()] = megaBike
 	megaBike.InitialiseRuleMap()
 	// megaBike.ActivateAllGlobalRules()
+}
+
+func (s *Server) spawnInitialMegaBikesAndRiders() {
+	for i := 0; i < globals.MegaBikeCount; i++ {
+		s.spawnMegaBike()
+	}
+
+	bikeArray := make([]objects.IMegaBike, 0)
+
+	for _, bike := range s.GetMegaBikes() {
+		bikeArray = append(bikeArray, bike)
+	}
+
+	bikeAssignIdx := 0
+
+	for _, agent := range s.GetAgentMap() {
+		bike := bikeArray[bikeAssignIdx]
+		if len(bike.GetAgents()) == 8 {
+			bikeAssignIdx += 1
+			bike = bikeArray[bikeAssignIdx]
+		}
+		s.AddAgentToBike(agent, bike)
+	}
+
 }
 
 func (s *Server) replenishMegaBikes() {
