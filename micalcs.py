@@ -11,7 +11,19 @@ from emergence.utils.jvm import JVM
 
 path = "../MegaBike/vectorisedDumps/"
 
-def load_run(path, d, f):
+def handle_nans(X, V, drop = True):
+    x_nan_ind = np.any(~np.any(np.isnan(X), axis=1), axis = 1)
+    v_nan_ind = ~np.any(np.isnan(V), axis = 1)
+    nan_ind = np.all(np.array([x_nan_ind, v_nan_ind]).T, axis = 1)
+    if drop:
+        return X[nan_ind, :], V[nan_ind, :]
+    else:
+        for i,n in enumerate(nan_ind):
+            X[i] = np.nan_to_num(X[i], nan=np.nanmean(X[i]))
+            V[i] = np.nan_to_num(V[i], nan=np.nanmean(V[i]))
+        return X, V
+
+def load_run(path, d, f, calctype = 'Gaussian'):
     print(f"Loading run {f}")
     with open(f"{path}{d}/{f}/bike_data.pickle", 'rb') as dat:
         bike = pickle.load(dat)
@@ -21,21 +33,25 @@ def load_run(path, d, f):
         print(f"Loaded agents with shape {agents.shape}")
 
     N, T, D = agents.shape
-    X = np.nan_to_num(agents.transpose(1, 0, 2), -100)
-    V = np.nan_to_num(bike, -100)
-    calc = JidtCalc(X, V, MutualInfo.get('Gaussian'), pointwise = False, dt = 1,
-                    filename = f"../MegaBike/MICalcs/{d}/{f}")
+    #X = np.nan_to_num(agents.transpose(1, 0, 2), -100)
+    #V = np.nan_to_num(bike, -100)
+    X = agents.transpose(1, 0, 2)
+    V = bike
+    X, V = handle_nans(X, V)
+    print(f"Kept agent/bike data with shape {X.shape}")
+    calc = JidtCalc(X, V, MutualInfo.get(calctype), pointwise = False, dt = 1,
+                    filename = f"../MegaBike/MICalcs/{d}/{calctype}/{f}")
 
 
-def run_calcs(d):
+def run_calcs(d, calctype):
     JVM.start()
     runs = lambda d: os.listdir(f"{path}/{d}")
     for f in runs(d):
-        load_run(path, d, f)
-    JVM.stop()
+        load_run(path, d, f, calctype)
+    #JVM.stop()
 
 
-def plot_agent_nets(calc, figpath, ax = plt.gca(), viz_scale = 100):
+def plot_agent_nets(calc, figpath, ax = plt.gca(), viz_scale = 10):
     net = nx.DiGraph()
     edges = [ (u+1, v+1, w) for (u,v),w in calc.xmiCalcs.items() ]
     net.add_weighted_edges_from(edges)
@@ -59,6 +75,7 @@ def plot_agent_nets(calc, figpath, ax = plt.gca(), viz_scale = 100):
     nx.draw_networkx_labels(net, pos = pos, ax = ax,
                             labels = dict(zip(nodelist,nodelist)),
                             font_color = 'white')
+    #TODO: nice colourmap
     #cmaps = plt.cm.ScalarMappable(norm = plt.Normalize(
     #    vmin = min(widths.values()), vmax = max(widths.values())))
     #plt.colorbar(cmaps, cax = ax)
@@ -66,28 +83,31 @@ def plot_agent_nets(calc, figpath, ax = plt.gca(), viz_scale = 100):
     plt.savefig(figpath, dpi = 300)
 
 
-def agg_calcs(d):
-    cpath = f"../MegaBike/MICalcs/{d}"
+cpath = f"../MegaBike/MICalcs/{d}/"
+def agg_calcs(d, calctype):
     JVM.start()
 
     calc = None
     emergence = []
 
-    cfiles = [ f for f in os.listdir(f"{cpath}") if 'pkl' in f ]
+    cfiles = [ f for f in os.listdir(f"{cpath}{calctype}/") if 'pkl' in f ]
     for cfilename in cfiles:
-        with open(f"{cpath}/{cfilename}", 'rb') as f:
+        with open(f"{cpath}{calctype}/{cfilename}", 'rb') as f:
             calc = pickle.load(f)
-        plot_agent_nets(calc, f"{cpath}/{cfilename.split('.')[0]}.png")
+        #plot_agent_nets(calc, f"{cpath}{calctype}/{cfilename.split('.')[0]}.png")
         emergence.append([ calc.psi(q = 7)
                          , calc.gamma()
                          , calc.delta(q = 7) ])
 
     emergence = np.array(emergence)
     df = pd.DataFrame(index = range(1, 31), columns = ['Psi', 'Gamma', 'Delta' ], data = emergence)
-    df.to_csv(f"{cpath}/{d}_emergence_criteria.csv")
-
+    df.to_csv(f"{cpath}/{d}_{calctype}_emergence_criteria.csv")
     JVM.stop()
 
 
-run_calcs('immutable')
-agg_calcs('immutable')
+for estimator in [ 'Kernel', 'Gaussian', 'Kraskov1' ]:
+    run_calcs('mutable', estimator)
+    agg_calcs('mutable', estimator)
+
+    run_calcs('immutable', estimator)
+    agg_calcs('immutable', estimator)
