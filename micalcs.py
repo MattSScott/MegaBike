@@ -83,31 +83,32 @@ def plot_agent_nets(calc, figpath, ax = plt.gca(), viz_scale = 10):
     plt.savefig(figpath, dpi = 300)
 
 
-cpath = f"../MegaBike/MICalcs/{d}/"
 def agg_calcs(d, calctype):
     JVM.start()
 
     calc = None
     emergence = []
 
+    cpath = f"../MegaBike/MICalcs/{d}/"
     cfiles = [ f for f in os.listdir(f"{cpath}{calctype}/") if 'pkl' in f ]
     for cfilename in cfiles:
         with open(f"{cpath}{calctype}/{cfilename}", 'rb') as f:
             calc = pickle.load(f)
         #plot_agent_nets(calc, f"{cpath}{calctype}/{cfilename.split('.')[0]}.png")
-        emergence.append([ calc.psi(q = 7)
+        emergence.append([ cfilename.split('_')[0]
+                         , calc.psi(q = 7)
                          , calc.gamma()
                          , calc.delta(q = 7) ])
 
-    emergence = np.array(emergence)
-    df = pd.DataFrame(index = range(1, 31), columns = ['Psi', 'Gamma', 'Delta' ], data = emergence)
+    df = pd.DataFrame(index = range(1, 31), columns = ['Hash', 'Psi', 'Gamma', 'Delta' ], data = emergence)
     df.to_csv(f"{cpath}/{d}_{calctype}_emergence_criteria.csv")
     JVM.stop()
 
 
-for estimator in [ 'Kernel', 'Gaussian', 'Kraskov1' ]:
-    run_calcs('mutable', estimator)
-    agg_calcs('mutable', estimator)
+if __name__ == "__main__":
+    for estimator in [ 'Kraskov1' ]: #, 'Kernel', 'Gaussian' ]:
+        run_calcs('mutable', estimator)
+        agg_calcs('mutable', estimator)
 
-    run_calcs('immutable', estimator)
-    agg_calcs('immutable', estimator)
+        run_calcs('immutable', estimator)
+        agg_calcs('immutable', estimator)
