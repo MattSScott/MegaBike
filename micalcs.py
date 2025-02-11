@@ -9,7 +9,7 @@ from emergence.calc.jidt import JidtCalc
 from emergence.micalc import MutualInfo
 from emergence.utils.jvm import JVM
 
-path = "../MegaBike/vectorisedDumps/"
+path = "./vectorisedDumps/"
 
 def handle_nans(X, V, drop = True):
     x_nan_ind = np.any(~np.any(np.isnan(X), axis=1), axis = 1)
@@ -40,7 +40,7 @@ def load_run(path, d, f, calctype = 'Gaussian'):
     X, V = handle_nans(X, V)
     print(f"Kept agent/bike data with shape {X.shape}")
     calc = JidtCalc(X, V, MutualInfo.get(calctype), pointwise = False, dt = 1,
-                    filename = f"../MegaBike/MICalcs/{d}/{calctype}/{f}")
+                    filename = f"./MICalcs/{d}/{calctype}/{f}")
 
 
 def run_calcs(d, calctype):
@@ -107,8 +107,8 @@ def agg_calcs(d, calctype):
 
 if __name__ == "__main__":
     for estimator in [ 'Kraskov1' ]: #, 'Kernel', 'Gaussian' ]:
-        run_calcs('mutable', estimator)
-        agg_calcs('mutable', estimator)
+        run_calcs('homogenous', estimator)
+        agg_calcs('homogenous', estimator)
 
-        run_calcs('immutable', estimator)
-        agg_calcs('immutable', estimator)
+        run_calcs('heterogenous', estimator)
+        agg_calcs('heterogenous', estimator)

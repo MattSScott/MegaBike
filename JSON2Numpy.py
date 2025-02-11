@@ -71,7 +71,7 @@ def parse_bike_data(bike_data):
 
 
 def pickler():
-    dirs = ["mutable", "immutable"]
+    dirs = ["homogenous", "heterogenous"]
     for d in dirs:
         read_dir = f"gameDumps/{d}"
         write_dir = f"vectorisedDumps/{d}"

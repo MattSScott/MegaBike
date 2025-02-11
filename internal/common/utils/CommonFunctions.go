@@ -16,8 +16,13 @@ func GenerateRandomCoordinates() Coordinates {
 // GenerateRandomCoordinates creates random X and Y coordinates within the grid boundaries.
 func GenerateRandomColour() Colour {
 	// Generate a random index between 0 and the number of colours - 1.
+
+	// STANDARD VERSION BELOW
 	randomIndex := rand.Intn(int(NumOfColours))
 	return Colour(randomIndex)
+
+	// // experiment - make them all the same colour
+	// return Colour(2)
 }
 
 func GenerateRandomFloat(min float64, max float64) float64 {

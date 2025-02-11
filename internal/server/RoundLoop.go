@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int) {
+func (s *Server) 	RunRoundLoop(iterationDump *SimplifiedIterationDump, round int) {
 
 	// for id, agent := range s.GetAgentMap() {
 	// 	fmt.Println(id, agent.GetEnergyLevel())
