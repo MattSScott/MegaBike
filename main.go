@@ -16,8 +16,8 @@ func initialiseFlagConstants() {
 func main() {
 	flag.Parse()
 	initialiseFlagConstants()
-	s := server.GenerateServer()
-	s.Initialize(100)
+	s := server.GenerateServer() // returns a zero-valued server object
+	s.Initialize(100) //sets up the environment
 	s.Start()
 }
 
