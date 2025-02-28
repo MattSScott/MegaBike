@@ -107,8 +107,8 @@ def agg_calcs(d, calctype):
 
 if __name__ == "__main__":
     for estimator in [ 'Kraskov1' ]: #, 'Kernel', 'Gaussian' ]:
-        # run_calcs('homogenous', estimator)
-        # agg_calcs('homogenous', estimator)
+        run_calcs('homogenous', estimator)
+        agg_calcs('homogenous', estimator)
 
         run_calcs('heterogenous', estimator)
         agg_calcs('heterogenous', estimator)

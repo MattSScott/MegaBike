@@ -127,14 +127,17 @@ func (a *AgentSOSA) DecideGovernance() utils.Governance {
 	// Need to decide weights for each type of Governance
 	// Can add an invalid weighting so that it is not 50/50
 
-	randomNumber := rand.Float64()
-	if randomNumber < democracyWeight {
-		return utils.Democracy
-	} else if randomNumber < democracyWeight+leadershipWeight {
-		return utils.Leadership
-	} else {
-		return utils.Dictatorship
-	}
+	// randomNumber := rand.Float64()
+	// if randomNumber < democracyWeight {
+	// 	return utils.Democracy
+	// } else if randomNumber < democracyWeight+leadershipWeight {
+	// 	return utils.Leadership
+	// } else {
+	// 	return utils.Dictatorship
+	// }
+
+	// i can edit this to return agents with differnet preferneces
+	return utils.PerfectDemocracy 
 }
 
 func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
@@ -372,7 +375,18 @@ func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 	a.SetForces(force)
 }
 
-func (a *AgentSOSA) DictateDirection() uuid.UUID {
+func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
+	// Move in opposite direction to Awdi in full force
+	if a.Modules.Environment.IsAwdiNear() {
+		// fmt.Printf("[DictateDirection] Agent %s is near Awdi\n", a.GetID())
+		return a.Modules.Environment.GetNearestLootboxAwayFromAwdi()
+	}
+	// Otherwise, move towards the lootbox with the highest gain
+	return a.Modules.Environment.GetHighestGainLootbox()
+}
+
+// to edit
+func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
 	// Move in opposite direction to Awdi in full force
 	if a.Modules.Environment.IsAwdiNear() {
 		// fmt.Printf("[DictateDirection] Agent %s is near Awdi\n", a.GetID())

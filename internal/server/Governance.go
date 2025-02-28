@@ -6,44 +6,139 @@ import (
 	"SOMAS2023/internal/common/voting"
 
 	"github.com/google/uuid"
+	"math/rand"
 )
 
-// obtain direction for current round from the dictator
-func (s *Server) RunRulerAction(bike objects.IMegaBike) uuid.UUID {
+// obtain direction for current round from the representatives
+func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 	agents := s.GetAgentMap()
-	ruler, ok := agents[bike.GetRuler()]
-	if ok {
-		// get dictators direction choice
-		direction := ruler.DictateDirection()
-		return direction
-	}
-	return uuid.Nil
-}
+	governance := bike.GetGovernance()
+	reps := bike.GetRepresentatives()
+	var direction uuid.UUID
 
-// elect ruler (happens during the foundation stage, or when a bike with ruler-lead
-// governance is left without ruler for any of various reasons)
-func (s *Server) RulerElection(agents []objects.IBaseBiker, governance utils.Governance) uuid.UUID {
-	votes := make(map[uuid.UUID]voting.IdVoteMap, len(agents))
-	voteWeight := make(map[uuid.UUID]float64)
-	for _, agent := range agents {
-		voteWeight[agent.GetID()] = 1
-		switch governance {
-		case utils.Dictatorship:
-			votes[agent.GetID()] = agent.VoteDictator()
-		case utils.Leadership:
-			votes[agent.GetID()] = agent.VoteLeader()
+	// decide differently based on each governance...
+	switch governance {
+	case utils.PerfectAristocracy:
+		selectedAgents := make([]objects.IBaseBiker, 0, len(reps))
+		suggestedDirections := make([]uuid.UUID, 0, len(reps))
+		countsPerDirection := make(map[uuid.UUID]int)
+		maxCounts := 0
+		
+		// create a slice of representative agents
+		for _, id := range reps {
+			if agent, exists := agents[id]; exists {
+				selectedAgents = append(selectedAgents, agent)
+			}
 		}
-	}
 
-	// required as a list of interfaces that implement IVoter is not percieved as a list of IVoters due to Go weirdness
-	IVotes := make(map[uuid.UUID]voting.IVoter, len(votes))
-	for i, vote := range votes {
-		IVotes[i] = vote
-	}
+		// create a slice of their suggested directions
+		for _, ag := range selectedAgents {
+			suggestedDirections = append(suggestedDirections, ag.DecideDirectionBenevolently())
+		}
 
-	ruler := voting.WinnerFromDist(IVotes, voteWeight)
-	return ruler
+		// aggregate these to find the majority voted direction
+		for _, lootbox := range suggestedDirections {
+			countsPerDirection[lootbox] += 1
+			if countsPerDirection[lootbox] > maxCounts {
+				maxCounts = countsPerDirection[lootbox]
+				direction = lootbox
+			}
+		}
+
+		return direction
+
+	case utils.DegenerateAristocracy:
+		selectedAgents := make([]objects.IBaseBiker, 0, len(reps))
+		suggestedDirections := make([]uuid.UUID, 0, len(reps))
+		countsPerDirection := make(map[uuid.UUID]int)
+		maxCounts := 0
+		
+		// create a slice of representative agents
+		for _, id := range reps {
+			if agent, exists := agents[id]; exists {
+				selectedAgents = append(selectedAgents, agent)
+			}
+		}
+
+		// create a slice of their suggested directions
+		for _, ag := range selectedAgents {
+			suggestedDirections = append(suggestedDirections, ag.DecideDirectionMalevolently())
+		}
+
+		// aggregate these to find the majority voted direction
+		for _, lootbox := range suggestedDirections {
+			countsPerDirection[lootbox] += 1
+			if countsPerDirection[lootbox] > maxCounts {
+				maxCounts = countsPerDirection[lootbox]
+				direction = lootbox
+			}
+		}
+
+		return direction
+		
+	case utils.PerfectMonarchy:
+		monarch := agents[reps[0]]
+		direction = monarch.DecideDirectionBenevolently()
+		return direction
+
+	case utils.DegenerateMonarchy:
+		monarchID := reps[0]
+		monarch := agents[monarchID]
+		direction = monarch.DecideDirectionMalevolently()
+		return direction
+
+	default:
+		panic("trying to run representative action in a non-representative governance")
+	}
 }
+
+// select representatives for the bike. is not a democratic process:
+// each bike is fixed with a governance style and agents on the bike are randomly selected to fit that style.
+// happens at the beginning of each iteration, or when a bike with certain governance styles is left without representatives for any of various reasons
+func (s *Server) RepresentativeElection(agentsOnBike []objects.IBaseBiker, governance utils.Governance) []uuid.UUID {
+	// votes := make(map[uuid.UUID]voting.IdVoteMap, len(agents))
+	// voteWeight := make(map[uuid.UUID]float64)
+	// for _, agent := range agents {
+	// 	voteWeight[agent.GetID()] = 1
+	// 	switch governance {
+	// 	case utils.PerfectMonarchy:
+	// 		votes[agent.GetID()] = agent.VoteDictator()
+	// 	case utils.DegenerateMonarchy:
+	// 		votes[agent.GetID()] = agent.VoteDictator()
+	// 	}
+	// }
+
+	// // required as a list of interfaces that implement IVoter is not percieved as a list of IVoters due to Go weirdness
+	// IVotes := make(map[uuid.UUID]voting.IVoter, len(votes))
+	// for i, vote := range votes {
+	// 	IVotes[i] = vote
+	// }
+
+	// ruler := voting.WinnerFromDist(IVotes, voteWeight)
+	// return ruler
+	if len(agentsOnBike) != 0 {
+		switch governance {
+		case utils.PerfectAristocracy, utils.DegenerateAristocracy:
+			reps := make([]uuid.UUID, 3)
+			chosenAgentIndices := rand.Perm(len(agentsOnBike))[0:3]
+			for i, v := range chosenAgentIndices{
+				reps[i] = agentsOnBike[v].GetID()
+			}
+			return reps
+		case utils.PerfectMonarchy, utils.DegenerateMonarchy:
+			reps := make([]uuid.UUID, 1)
+			chosenAgentIndex := rand.Intn(len(agentsOnBike))
+			reps[0] = agentsOnBike[chosenAgentIndex].GetID()
+			return reps
+		default:
+			panic("trying to run a representative election on a bike without incorrect governance style")
+		}
+	} else {
+		return []uuid.UUID{}
+	}
+		
+}
+
 
 func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.ILootBox {
 	relevantRules := bike.GetActiveRulesForAction(objects.Lootbox)

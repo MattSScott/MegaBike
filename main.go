@@ -20,17 +20,3 @@ func main() {
 	s.Initialize(100) //sets up the environment
 	s.Start()
 }
-
-// func main() {
-// 	flag.Parse()
-// 	initialiseFlagConstants()
-
-// 	s := &server.Server{}
-// 	s.Initialize(1)
-// 	// s.FoundingInstitutions()
-// 	iters := 10000
-// 	agents := len(s.GetAgentMap())
-// 	s.TimeRuleEval(true, iters, agents)
-// 	s.TimeRuleEval(false, iters, agents)
-// 	fmt.Printf("Run for %d rules for %d agents.\n", iters, agents)
-// }

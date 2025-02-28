@@ -13,10 +13,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// const LootBoxCount = BikerAgentCount * 2.5 // 2.5 lootboxes available per Agent
-// const MegaBikeCount = 11                   // Megabikes should have 8 riders
-// const BikerAgentCount = 56                 // 56 agents in total
-
 type IBaseBikerServer interface {
 	baseserver.IServer[objects.IBaseBiker]
 	objects.IGameState
@@ -24,10 +20,10 @@ type IBaseBikerServer interface {
 	Initialize(iterations int)                                                           // returns the awdi interface
 	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                            // returns a map from bike id to the id of all agents trying to joing that bike
 	GetRandomBikeId() uuid.UUID                                                          // gets the id of any random bike in the map
-	RulerElection(agents []objects.IBaseBiker, governance utils.Governance) uuid.UUID    // runs the ruler election
-	RunRulerAction(bike objects.IMegaBike) uuid.UUID                                     // gets the direction from the dictator
+	RepresentativeElection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID    // runs the representative election
+	RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID                                     // gets the direction from the dictator
 	RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UUID]float64) uuid.UUID // gets the direction in voting-based governances
-	NewGameStateDump(iteration int) GameStateDump                                        // creates a new game state dump
+	// NewGameStateDump(iteration int) GameStateDump                                        // creates a new game state dump
 	GetLeavingDecisions() []uuid.UUID                                                    // gets the list of agents that want to leave their bike
 	HandleKickoutProcess() []uuid.UUID                                                   // handles the kickout process
 	ProcessJoiningRequests(inLimbo []uuid.UUID)                                          // processes the joining requests
@@ -50,7 +46,7 @@ type Server struct {
 	megaBikeRiders map[uuid.UUID]uuid.UUID // maps riders to their bike
 	awdi           objects.IAwdi
 	deadAgents     map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
-	// foundingChoices map[uuid.UUID]utils.Governance
+	foundingChoices map[uuid.UUID]utils.Governance
 	globalRuleCache *objects.GlobalRuleCache
 }
 
@@ -58,6 +54,7 @@ func GenerateServer() IBaseBikerServer {
 	return &Server{}
 }
 
+// Spawns everything in
 func (s *Server) Initialize(iterations int) {
 	s.BaseServer = *baseserver.CreateServer[objects.IBaseBiker](s.GetAgentGenerators(), iterations)
 	s.lootBoxes = make(map[uuid.UUID]objects.ILootBox)
@@ -72,20 +69,24 @@ func (s *Server) Initialize(iterations int) {
 	s.awdi.InjectGameState(s)
 }
 
-// func (s *Server) Initialize(iterations int) IBaseBikerServer {
-// 	server := &Server{
-// 		BaseServer:     *baseserver.CreateServer[objects.IBaseBiker](s.GetAgentGenerators(), iterations),
-// 		lootBoxes:      make(map[uuid.UUID]objects.ILootBox),
-// 		megaBikes:      make(map[uuid.UUID]objects.IMegaBike),
-// 		megaBikeRiders: make(map[uuid.UUID]uuid.UUID),
-// 		deadAgents:     make(map[uuid.UUID]objects.IBaseBiker),
-// 		awdi:           objects.GetIAwdi(),
-// 	}
-// 	server.replenishLootBoxes()
-// 	server.replenishMegaBikes()
+func (s *Server) Start() {
+	fmt.Printf("Server initialised with %d agents \n\n", len(s.GetAgentMap()))
 
-// 	return server
-// }
+	gameState := NewSimplifiedGameStateDump()
+
+	for i := 0; i < s.GetIterations(); i++ {
+		fmt.Printf("Game Loop %d running... \n \n", i+1)
+		s.RunSimLoop(utils.RoundIterations, gameState, i)
+		fmt.Printf("Game Loop %d completed.\n", i+1)
+		fmt.Println(len(s.GetAgentMap()))
+		if len(s.GetAgentMap()) == 0 {
+			break
+		}
+	}
+	s.outputSimulationResult(*gameState)
+}
+
+
 
 func (s *Server) PopulateGlobalRuleCache() {
 	// generate 100 rules split across N actions
@@ -164,66 +165,6 @@ func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 	return s.deadAgents
 }
 
-// func (s *Server) outputResults(gameStates [][]GameStateDump) {
-// 	stats := CalculateStatistics(gameStates)
-
-// 	lifeSpans := stats.Average.AgentLifetime
-
-// 	avg := 0.0
-// 	size := float64(len(lifeSpans))
-
-// 	for _, val := range lifeSpans {
-// 		avg += val
-// 	}
-
-// 	avg /= size
-// 	fmt.Println(avg)
-
-// 	f, err := os.Create("output.txt") // creating...
-// 	if err != nil {
-// 		fmt.Printf("error creating file: %v", err)
-// 		return
-// 	}
-// 	defer f.Close()
-// 	_, err = f.WriteString(fmt.Sprintf("%f", avg))
-// 	if err != nil {
-// 		fmt.Printf("error writing string: %v", err)
-// 	}
-
-// 	// statisticsJson, _ := json.MarshalIndent(stats.Average.AgentLifetime, "", "    ")
-// 	// fmt.Println("Average Statistics:\n" + string(statisticsJson))
-// }
-
-// func (s *Server) outputResults(gameStates [][]GameStateDump) {
-// 	statistics := CalculateStatistics(gameStates)
-
-// 	statisticsJson, err := json.MarshalIndent(statistics.Average, "", "    ")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Println("Average Statistics:\n" + string(statisticsJson))
-
-// 	file, err := os.Create("statistics.xlsx")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer file.Close()
-// 	if err := statistics.ToSpreadsheet().Write(file); err != nil {
-// 		panic(err)
-// 	}
-
-// 	file, err = os.Create("game_dump.json")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer file.Close()
-// 	encoder := json.NewEncoder(file)
-// 	encoder.SetIndent("", "    ")
-// 	if err := encoder.Encode(gameStates); err != nil {
-// 		panic(err)
-// 	}
-// }
-
 func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
 	result := make(map[uuid.UUID]int)
 	for idx, gameState := range dump.Iterations {
@@ -241,7 +182,7 @@ func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
 func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 
 	relativePath, _ := os.Getwd()
-	gameDumpPath := "\\gameDumps\\homogenous\\" //change to homo/heterogenous depending on colour composition
+	gameDumpPath := "\\gameDumps\\heterogenous\\" //change to homo/heterogenous depending on colour composition
 	gameDumpHash := uuid.New().String()
 
 	gameDumpFile := relativePath + gameDumpPath + gameDumpHash + ".json"

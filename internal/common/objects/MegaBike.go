@@ -15,14 +15,14 @@ type IMegaBike interface {
 	UpdateMass()
 	KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID
 	GetGovernance() utils.Governance
-	GetRuler() uuid.UUID
+	GetRepresentatives() []uuid.UUID
 	GetKickedOutCount() int
 	ResetKickedOutCount()
 	GetCurrentPool() float64
 	UpdateCurrentPool(val float64)
 	ResetCurrentPool()
 	SetGovernance(governance utils.Governance)
-	SetRuler(ruler uuid.UUID)
+	SetRepresentatives(reps []uuid.UUID)
 	GetActiveRulesForAction(action Action) []*Rule
 	AddToRuleMap(rule *Rule)
 	ClearRuleMap()
@@ -37,7 +37,7 @@ type MegaBike struct {
 	agents              []IBaseBiker
 	kickedOutCount      int
 	governance          utils.Governance
-	ruler               uuid.UUID
+	representatives     []uuid.UUID
 	globalRuleCacheView RuleCacheOperations
 	activeRuleMap       map[Action][]*Rule
 	linearRuleList      []*Rule
@@ -45,11 +45,11 @@ type MegaBike struct {
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
-func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
+func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *MegaBike {
 	return &MegaBike{
 		PhysicsObject:       GetPhysicsObject(utils.MassBike),
-		governance:          utils.Democracy,
-		ruler:               uuid.Nil,
+		governance:          governance,
+		representatives:     make([]uuid.UUID, 0),
 		globalRuleCacheView: ruleCache,
 		activeRuleMap:       make(map[Action][]*Rule),
 		linearRuleList:      make([]*Rule, 0),
@@ -57,7 +57,7 @@ func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 	}
 }
 
-// adds
+// adds agents to bike
 func (mb *MegaBike) AddAgent(biker IBaseBiker) {
 	mb.agents = append(mb.agents, biker)
 }
@@ -195,16 +195,16 @@ func (mb *MegaBike) GetGovernance() utils.Governance {
 	return mb.governance
 }
 
-func (mb *MegaBike) GetRuler() uuid.UUID {
-	return mb.ruler
+func (mb *MegaBike) GetRepresentatives() []uuid.UUID {
+	return mb.representatives
 }
 
 func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 	mb.governance = governance
 }
 
-func (mb *MegaBike) SetRuler(ruler uuid.UUID) {
-	mb.ruler = ruler
+func (mb *MegaBike) SetRepresentatives(reps []uuid.UUID) {
+	mb.representatives = reps
 }
 
 func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {

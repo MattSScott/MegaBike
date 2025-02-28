@@ -86,9 +86,12 @@ type PhysicalState struct {
 type Governance int
 
 const (
-	Democracy Governance = iota
-	Leadership
-	Dictatorship
+	PerfectMonarchy Governance = iota
+	DegenerateMonarchy
+	PerfectAristocracy
+	DegenerateAristocracy
+	PerfectDemocracy
+	DegenerateDemocracy
 	Invalid
 )
 

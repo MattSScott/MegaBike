@@ -8,6 +8,7 @@ import (
 
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
 	"github.com/google/uuid"
+	"fmt"
 )
 
 type AgentInitFunction func(baseBiker *objects.BaseBiker) objects.IBaseBiker
@@ -62,16 +63,17 @@ func (s *Server) replenishLootBoxes() {
 	}
 }
 
-func (s *Server) spawnMegaBike() {
-	megaBike := objects.GetMegaBike(s)
+func (s *Server) spawnMegaBike(governance utils.Governance) {
+	megaBike := objects.GetMegaBike(s, governance)
 	s.megaBikes[megaBike.GetID()] = megaBike
 	megaBike.InitialiseRuleMap()
-	// megaBike.ActivateAllGlobalRules()
 }
 
 func (s *Server) spawnInitialMegaBikesAndRiders() {
 	for i := 0; i < globals.MegaBikeCount; i++ {
-		s.spawnMegaBike()
+		governance := utils.Governance(i) 
+		s.spawnMegaBike(governance)
+		fmt.Println("Spawning Megabike with Governance", governance)
 	}
 
 	bikeArray := make([]objects.IMegaBike, 0)
@@ -96,6 +98,6 @@ func (s *Server) spawnInitialMegaBikesAndRiders() {
 func (s *Server) replenishMegaBikes() {
 	neededBikes := globals.MegaBikeCount - len(s.megaBikes)
 	for i := 0; i < neededBikes; i++ {
-		s.spawnMegaBike()
+		s.spawnMegaBike(utils.PerfectDemocracy) // needs changing
 	}
 }

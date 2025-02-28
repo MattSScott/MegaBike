@@ -115,8 +115,10 @@ func CumulativeDist(voters map[uuid.UUID]IVoter, weights map[uuid.UUID]float64) 
 
 // return the votesMap
 func GetVotesMap(voters map[uuid.UUID]IVoter) map[uuid.UUID]map[uuid.UUID]float64 {
+
 	if len(voters) == 0 {
 		panic("no votes provided")
+		// fmt.Println("empty bike in leadership mode")
 	}
 	// Vote checks for each voter
 	VotesOfAgents := make(map[uuid.UUID]map[uuid.UUID]float64)
@@ -137,6 +139,8 @@ func GetVotesMap(voters map[uuid.UUID]IVoter) map[uuid.UUID]map[uuid.UUID]float6
 
 	return VotesOfAgents
 }
+
+// TEMP MATT COMMENT 
 
 // returns the winner accoring to chosen voting strategy (assumes all the maps contain a voting between 0-1
 // for each option, and that all the votings sum to 1)

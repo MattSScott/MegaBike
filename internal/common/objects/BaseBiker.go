@@ -30,7 +30,8 @@ type IBaseBiker interface {
 	VoteLeader() voting.IdVoteMap
 
 	// dictator functions
-	DictateDirection() uuid.UUID                // ** called only when the agent is the dictator
+	DecideDirectionMalevolently() uuid.UUID                // ** called only when the agent is a degenerate aristocrat or monarch
+	DecideDirectionBenevolently() uuid.UUID     			// ** only called when the agent is a perfect aristocrat or monarch
 	DecideKickOut() []uuid.UUID                 // ** decide which agents to kick out (dictator)
 	DecideDictatorAllocation() voting.IdVoteMap // ** decide the allocation (dictator)
 
@@ -373,7 +374,7 @@ func (bb *BaseBiker) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool
 
 func (bb *BaseBiker) DecideGovernance() utils.Governance {
 	// Change behaviour here to return different governance
-	return utils.Democracy
+	return utils.PerfectDemocracy
 }
 
 func (bb *BaseBiker) ResetPoints() {
@@ -427,10 +428,17 @@ func (bb *BaseBiker) VoteDictator() voting.IdVoteMap {
 	return votes
 }
 
-func (bb *BaseBiker) DictateDirection() uuid.UUID {
+func (bb *BaseBiker) DecideDirectionBenevolently() uuid.UUID {
 	nearest := bb.nearestLoot()
 	return nearest
 }
+
+// to edit.
+func (bb *BaseBiker) DecideDirectionMalevolently() uuid.UUID {
+	nearest := bb.nearestLoot()
+	return nearest
+}
+
 
 // defaults to voting for first agent in the list
 func (bb *BaseBiker) VoteLeader() voting.IdVoteMap {
