@@ -140,8 +140,6 @@ func GetVotesMap(voters map[uuid.UUID]IVoter) map[uuid.UUID]map[uuid.UUID]float6
 	return VotesOfAgents
 }
 
-// TEMP MATT COMMENT 
-
 // returns the winner accoring to chosen voting strategy (assumes all the maps contain a voting between 0-1
 // for each option, and that all the votings sum to 1)
 func WinnerFromDist(voters map[uuid.UUID]IVoter, voteWeight map[uuid.UUID]float64) uuid.UUID {
@@ -161,7 +159,6 @@ func WinnerFromDist(voters map[uuid.UUID]IVoter, voteWeight map[uuid.UUID]float6
 	case utils.COPELANDSCORING:
 		winner = CopelandScoring(VotesOfAgents, voteWeight)
 	}
-	// TODO call group 8 voting function
 	return winner
 }
 

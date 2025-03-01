@@ -22,12 +22,12 @@ type IBaseBikerServer interface {
 	GetRandomBikeId() uuid.UUID                                                          // gets the id of any random bike in the map
 	RepresentativeElection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID    // runs the representative election
 	RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID                                     // gets the direction from the dictator
-	RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UUID]float64) uuid.UUID // gets the direction in voting-based governances
+	RunDemocraticAction(bike objects.IMegaBike, governance utils.Governance) uuid.UUID // gets the direction in voting-based governances
 	// NewGameStateDump(iteration int) GameStateDump                                        // creates a new game state dump
 	GetLeavingDecisions() []uuid.UUID                                                    // gets the list of agents that want to leave their bike
 	HandleKickoutProcess() []uuid.UUID                                                   // handles the kickout process
 	ProcessJoiningRequests(inLimbo []uuid.UUID)                                          // processes the joining requests
-	RunActionProcess()                                                                   // runs the action (direction choice + pedalling) process for each bike
+	RunDirectionDecisionProcess()                                                                   // runs the action (direction choice + pedalling) process for each bike
 	AwdiCollisionCheck()                                                                 // checks for collisions between awdi and bikes
 	AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike)                     // adds an agent to a bike (which also has some side effects on some server data structures)
 	// FoundingInstitutions()                                                                                       // runs the founding institutions process

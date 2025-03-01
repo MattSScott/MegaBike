@@ -23,8 +23,8 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 
 	// ----- 2. Action phase -----
 	for _, bike := range s.megaBikes { 
-		fmt.Println("agents on bike:", len(bike.GetAgents()))
 		fmt.Println("governance system:", bike.GetGovernance())
+		fmt.Println("agents on bike:", len(bike.GetAgents()))
 		s.UpdateBikeRules(bike)
 		s.PerformRoleAssignment(bike)
 	}

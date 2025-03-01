@@ -18,7 +18,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 
 	s.runActionDeliberation(objects.MoveBike)
 	s.runActionDeliberation(objects.KickAgent)
-	s.RunActionProcess()
+	s.RunDirectionDecisionProcess()
 
 	// ----- 2. Move objects in the world ----- 
 
@@ -389,7 +389,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 }
 
 // run the process on deciding this round's direction according to each governance's rules and on deciding the forces
-func (s *Server) RunActionProcess() {
+func (s *Server) RunDirectionDecisionProcess() {
 
 	for _, bike := range s.GetMegaBikes() {
 
@@ -400,35 +400,30 @@ func (s *Server) RunActionProcess() {
 
 		// get the direction for this round (either the voted on or what's decided by the representatives)
 		// TODO: edit degenerate and perfect democracy so that they are different
+
 		var direction uuid.UUID
 		governance := bike.GetGovernance()
+
 		switch governance {
 		case utils.PerfectDemocracy:
-			// make map of weights of 1 for all agents on bike
-			weights := make(map[uuid.UUID]float64)
-			for _, agent := range agents {
-				weights[agent.GetID()] = 1.0
-			}
+			direction = s.RunDemocraticAction(bike, governance)
 
-			direction = s.RunDemocraticAction(bike, weights)
 			// agents incur an energetic penalty for participating in a vote
 			for _, agent := range agents {
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
 			}
-		case utils.DegenerateDemocracy:
-			// make map of weights of 1 for all agents on bike
-			weights := make(map[uuid.UUID]float64)
-			for _, agent := range agents {
-				weights[agent.GetID()] = 1.0
-			}
 
-			direction = s.RunDemocraticAction(bike, weights)
-			// agetns incur in an energetic penalty for partecipating in a vote
+		case utils.DegenerateDemocracy:
+			direction = s.RunDemocraticAction(bike, governance)
+			// agents incur in an energetic penalty for participating in a vote
 			for _, agent := range agents {
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
 			}
+
 		case utils.PerfectAristocracy, utils.DegenerateAristocracy, utils.PerfectMonarchy, utils.DegenerateMonarchy:
 			direction = s.RunRepresentativeAction(bike)
+			
+			// not voting here so no negative energy for now
 		}
 
 		for _, agent := range agents {
@@ -439,6 +434,8 @@ func (s *Server) RunActionProcess() {
 		}
 	}
 }
+
+
 
 // move the physics objects (i.e. mega bikes and awdi) according to the forces and orientations
 func (s *Server) MovePhysicsObject(po objects.IPhysicsObject) {

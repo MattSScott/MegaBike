@@ -3,7 +3,7 @@ package server
 import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
-	"SOMAS2023/internal/common/voting"
+	// "SOMAS2023/internal/common/voting"
 
 	"github.com/google/uuid"
 	"math/rand"
@@ -139,7 +139,7 @@ func (s *Server) RepresentativeElection(agentsOnBike []objects.IBaseBiker, gover
 		
 }
 
-
+// somehow reduces the number of lootboxes available - maybe todo with radius?
 func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.ILootBox {
 	relevantRules := bike.GetActiveRulesForAction(objects.Lootbox)
 
@@ -192,19 +192,20 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 	// fmt.Println(nRule.GetRuleMatrix())
 }
 
-// select this round's decision following a voting-based approach (with weights in the case of a leadership-led governance)
-func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UUID]float64) uuid.UUID {
-	// map of the proposed lootboxes by bike (for each bike a list of lootbox proposals is made, with one lootbox proposed by each agent on the bike)
+// select this round's decision following a voting-based approach
+func (s *Server) RunDemocraticAction(bike objects.IMegaBike, governance utils.Governance) uuid.UUID {
+
 	agents := bike.GetAgents()
+	// maps agent id to their proposed lootbox id
 	proposedDirections := make(map[uuid.UUID]uuid.UUID)
 	validLootboxes := s.PruneLootboxes(bike)
 
-	// fmt.Println(len(s.lootBoxes), len(validLootboxes))
 
 	for _, agent := range agents {
 		// agents that have decided to stay on the bike (and that haven't been kicked off it)
 		// will participate in the voting for the directions
-		// ---------------------------VOTING ROUTINE - STEP 1 ---------------------
+
+		// Step 1: get every agent on the bikes' proposed direction
 		if agent.GetBikeStatus() {
 			// proposedDirection := agent.ProposeDirection()
 			proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
@@ -219,22 +220,79 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UU
 		}
 	}
 
+	
 	if len(proposedDirections) == 0 {
 		return uuid.Nil
 	}
 
-	finalVotes := make(map[uuid.UUID]voting.LootboxVoteMap, len(agents))
-	for _, agent := range agents {
-		// ---------------------------VOTING ROUTINE - STEP 2 ---------------------
-		// pass the pitched directions of a bike to all agents on that bike and get their final vote
-		finalVotes[agent.GetID()] = agent.FinalDirectionVote(proposedDirections)
+
+	// different behaviours depending on the kind of democracy
+	if governance == utils.PerfectDemocracy {
+		// look for consensus
+		directions := []uuid.UUID{}
+		for _, direction := range proposedDirections {
+			directions = append(directions, direction)
+		}
+
+		consensusReached := true
+		for i := 1; i < len(directions); i++ {
+			if directions[i] != directions[0] {
+				consensusReached = false
+				break
+			}
+		}
+		
+		if consensusReached == true {
+			return directions[0] // could be any element of the slice they are all the asme
+		} else {
+			return uuid.Nil // assuming this means 'don't move'
+		}
+
+
+	} else if governance == utils.DegenerateDemocracy {
+		// look for majority
+
+		directions := []uuid.UUID{}
+		for _, direction := range proposedDirections {
+			directions = append(directions, direction)
+		}
+
+		// Use a map to count occurrences of each UUID
+		counts := make(map[uuid.UUID]int)
+		
+		// Count each UUID
+		for _, lootbox := range directions {
+			counts[lootbox]++
+		}
+		
+		// Check if any lootbox UUID is voted for by a majority. If so, then return this lootbox.
+		threshold := len(directions) / 2
+		for lootbox, count := range counts {
+			if count > threshold {
+				return lootbox
+			}
+		}
+
+		return uuid.Nil
+	} else {
+		panic("tring to run a democratic action in a non-democracy")
 	}
 
-	// ---------------------------VOTING ROUTINE - STEP 3 --------------
-	// get the winning direction from the final votes
-	direction := s.GetWinningDirection(finalVotes, weights)
-	if _, ok := s.lootBoxes[direction]; !ok {
-		panic("agents voted on a non-existent lootbox")
-	}
-	return direction
+
+	// old more complex voting system for aggregating all agents ranked preferences
+	// kept here as may be useful for more complex additions later on
+
+	// // Step 2: iterate through the agents, telling them the proposed directions and letting them rank order them based on preference.
+	// finalVotes := make(map[uuid.UUID]voting.LootboxVoteMap, len(agents))
+	// for _, agent := range agents {
+	// 	finalVotes[agent.GetID()] = agent.FinalDirectionVote(proposedDirections)
+	// }
+
+	// // Step 3: get the winning direction from the final votes
+	// direction := s.GetWinningDirection(finalVotes, weights)
+	// if _, ok := s.lootBoxes[direction]; !ok {
+	// 	panic("agents voted on a non-existent lootbox")
+	// }
+
+	// return direction
 }
