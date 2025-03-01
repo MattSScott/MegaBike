@@ -27,7 +27,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	for _, bike := range s.megaBikes { 
 		fmt.Println("governance system:", bike.GetGovernance())
 		fmt.Println("agents on bike:", len(bike.GetAgents()))
-		fmt.Println("representatives for this bike:", bike.GetRepresentatives())
+		fmt.Println("num of reps for this bike:", len(bike.GetRepresentatives()))
 		s.UpdateBikeRules(bike)
 		s.PerformRoleAssignment(bike)
 	}
@@ -70,7 +70,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 }
 
 
-// handles bikers leaving the bike, potential kick outs and the acceptance process (in this order)
+// handles bikers voluntarily leaving the bike / getting kicked out, followed by the requesting to join and acceptance process 
 func (s *Server) RunBikeSwitch() {
 
 	inLimbo := make([]uuid.UUID, 0)
@@ -90,60 +90,46 @@ func (s *Server) RunBikeSwitch() {
 
 }
 
-// remove all agents from bikes, respawn dead agents (if required), replenish energy (if required), reset points (if required)
-// replenish environment objects
-func (s *Server) ResetGameState() {
+// get list of agents that want to leave their bike in current round
+func (s *Server) GetLeavingDecisions() []uuid.UUID {
+	leavingAgents := make([]uuid.UUID, 0)
 
-	// respawn people who died in previous round (conditional)
-	if utils.RespawnEveryRound && utils.ReplenishEnergyEveryRound {
-		for _, agent := range s.deadAgents {
-			s.AddAgent(agent)
+	for agentId, agent := range s.GetAgentMap() {
+		if agent.GetBikeStatus() {
+
+			agent.UpdateAgentInternalState() // is this necessary
+			
+			switch agent.DecideAction() {
+			case objects.Pedal:
+				continue
+			case objects.ChangeBike:
+				// the bike id is set to be the desired bike and onbike is set to false
+				// so by looking at the values of onBike and megaBikeID it will be known
+				// whether the agent is trying to join a bike (and which one)
+
+				// the request is handled at the beginning of the next round, so the moving
+				// will only be finalised then
+				leavingAgents = append(leavingAgents, agentId)
+				s.RemoveAgentFromBike(agent)
+			default:
+				panic("agent decided invalid action")
+			}
 		}
 	}
 
-	// replenish energy (conditional)
-	if utils.ReplenishEnergyEveryRound {
-		for _, agent := range s.GetAgentMap() {
-			agent.UpdateEnergyLevel(1.0)
-		}
+	// if ruler has left the bike will need to run elections
+	// again edit for aristocracy case where still some aristocrats
+	for _, bike := range s.GetMegaBikes() {
+		reps := bike.GetRepresentatives()
+		for _, id := range reps {
+			if slices.Contains(leavingAgents, id) && len(bike.GetAgents()) != 0 {
+				reps := s.RepresentativeElection(bike.GetAgents(), bike.GetGovernance())
+				bike.SetRepresentatives(reps)
+			}
 	}
-
-	// empty the dead agent map
-	clear(s.deadAgents)
-
-	// zero the points (conditional)
-	if utils.ResetPointsEveryRound {
-		for _, agent := range s.GetAgentMap() {
-			agent.ResetPoints()
-		}
 	}
-
-	// for _, bike := range s.GetMegaBikes() {
-	// 	bike.SetRuler(uuid.Nil)
-	// }
-
-	// for _, agent := range s.GetAgentMap() {
-	// 	agent.SetBike(uuid.Nil)
-	// }
-
-	s.replenishLootBoxes()
-	s.replenishMegaBikes()
+	return leavingAgents
 }
-
-
-// assign roles to agents (i.e. assign representatives)
-func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
-	governanceSystem := bike.GetGovernance()
-	// if governance system is some form of monarchy or aristocracy, need representatives.
-	if governanceSystem == utils.PerfectMonarchy || governanceSystem == utils.DegenerateMonarchy || governanceSystem == utils.PerfectAristocracy || governanceSystem == utils.DegenerateAristocracy {
-		// run election process
-		agentsOnBike := bike.GetAgents()
-		reps := s.RepresentativeElection(agentsOnBike, governanceSystem)
-		bike.SetRepresentatives(reps)
-	}
-}
-
-
 
 // handles the kick out process according to each bike's governance
 func (s *Server) HandleKickoutProcess() []uuid.UUID {
@@ -237,47 +223,6 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 
 	}
 	return allKicked
-}
-
-// get list of agents that want to leave their bike in current round
-func (s *Server) GetLeavingDecisions() []uuid.UUID {
-	leavingAgents := make([]uuid.UUID, 0)
-
-	for agentId, agent := range s.GetAgentMap() {
-		if agent.GetBikeStatus() {
-
-			agent.UpdateAgentInternalState() // is this necessary
-			
-			switch agent.DecideAction() {
-			case objects.Pedal:
-				continue
-			case objects.ChangeBike:
-				// the bike id is set to be the desired bike and onbike is set to false
-				// so by looking at the values of onBike and megaBikeID it will be known
-				// whether the agent is trying to join a bike (and which one)
-
-				// the request is handled at the beginning of the next round, so the moving
-				// will only be finalised then
-				leavingAgents = append(leavingAgents, agentId)
-				s.RemoveAgentFromBike(agent)
-			default:
-				panic("agent decided invalid action")
-			}
-		}
-	}
-
-	// if ruler has left the bike will need to run elections
-	// again edit for aristocracy case where still some aristocrats
-	for _, bike := range s.GetMegaBikes() {
-		reps := bike.GetRepresentatives()
-		for _, id := range reps {
-			if slices.Contains(leavingAgents, id) && len(bike.GetAgents()) != 0 {
-				reps := s.RepresentativeElection(bike.GetAgents(), bike.GetGovernance())
-				bike.SetRepresentatives(reps)
-			}
-	}
-	}
-	return leavingAgents
 }
 
 // dispatch joining requests to the bikes of competence and move bikers from limbo to their desired bike subject to the
@@ -419,6 +364,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 	}
 }
 
+// still don't understand the point of this function when we have runbikeswitch
 func (s *Server) SetDestinationBikes() {
 	for _, agent := range s.GetAgentMap() {
 		if !agent.GetBikeStatus() {
@@ -432,4 +378,55 @@ func (s *Server) SetDestinationBikes() {
 			agent.SetBike(targetBike)
 		}
 	}
+}
+
+// assign roles to agents (i.e. assign representatives)
+func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
+	governanceSystem := bike.GetGovernance()
+	// if governance system is some form of monarchy or aristocracy, need representatives.
+	if governanceSystem == utils.PerfectMonarchy || governanceSystem == utils.DegenerateMonarchy || governanceSystem == utils.PerfectAristocracy || governanceSystem == utils.DegenerateAristocracy {
+		// run selection process
+		agentsOnBike := bike.GetAgents()
+		reps := s.RepresentativeElection(agentsOnBike, governanceSystem)
+		bike.SetRepresentatives(reps)
+	}
+}
+
+// remove all agents from bikes, respawn dead agents (if required), replenish energy (if required), reset points (if required), replenish environmental objects
+func (s *Server) ResetGameState() {
+
+	// respawn people who died in previous round (conditional)
+	if utils.RespawnEveryRound && utils.ReplenishEnergyEveryRound {
+		for _, agent := range s.deadAgents {
+			s.AddAgent(agent)
+		}
+	}
+
+	// replenish energy (conditional)
+	if utils.ReplenishEnergyEveryRound {
+		for _, agent := range s.GetAgentMap() {
+			agent.UpdateEnergyLevel(1.0)
+		}
+	}
+
+	// empty the dead agent map
+	clear(s.deadAgents)
+
+	// zero the points (conditional)
+	if utils.ResetPointsEveryRound {
+		for _, agent := range s.GetAgentMap() {
+			agent.ResetPoints()
+		}
+	}
+
+	// for _, bike := range s.GetMegaBikes() {
+	// 	bike.SetRuler(uuid.Nil)
+	// }
+
+	// for _, agent := range s.GetAgentMap() {
+	// 	agent.SetBike(uuid.Nil)
+	// }
+
+	s.replenishLootBoxes()
+	s.replenishMegaBikes()
 }
