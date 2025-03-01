@@ -3,7 +3,7 @@ package server
 import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
-	// "SOMAS2023/internal/common/voting"
+	"SOMAS2023/internal/common/voting"
 
 	"github.com/google/uuid"
 	"math/rand"
@@ -295,4 +295,18 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike, governance utils.Go
 	// }
 
 	// return direction
+}
+
+func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID {
+	// get overall winner direction using chosen voting strategy
+
+	// this allows to get a slice of the interface from that of the specific type
+	// this way we can substitute agent.FInalDirectionVote with another function that returns
+	// another type of voting type which still implements INormaliseVoteMap
+	IfinalVotes := make(map[uuid.UUID]voting.IVoter)
+	for i, v := range finalVotes {
+		IfinalVotes[i] = v
+	}
+
+	return voting.WinnerFromDist(IfinalVotes, weights)
 }

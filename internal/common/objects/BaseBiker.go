@@ -29,9 +29,9 @@ type IBaseBiker interface {
 	VoteDictator() voting.IdVoteMap
 	VoteLeader() voting.IdVoteMap
 
-	// dictator functions
-	DecideDirectionMalevolently() uuid.UUID                // ** called only when the agent is a degenerate aristocrat or monarch
-	DecideDirectionBenevolently() uuid.UUID     			// ** only called when the agent is a perfect aristocrat or monarch
+	// representative functions
+	DecideDirectionMalevolently() uuid.UUID                // ** called only when the agent is a degenerate aristocrat or monarch, equivalent of propose direction
+	DecideDirectionBenevolently() uuid.UUID     			// ** only called when the agent is a perfect aristocrat or monarch, equivalent of propose direction.
 	DecideKickOut() []uuid.UUID                 // ** decide which agents to kick out (dictator)
 	DecideDictatorAllocation() voting.IdVoteMap // ** decide the allocation (dictator)
 
