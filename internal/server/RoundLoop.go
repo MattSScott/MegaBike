@@ -129,17 +129,10 @@ func (s *Server) RunDirectionDecisionProcess() {
 		governance := bike.GetGovernance()
 
 		switch governance {
-		case utils.PerfectDemocracy:
-			direction = s.RunDemocraticAction(bike, governance)
+		case utils.PerfectDemocracy, utils.DegenerateDemocracy:
+			direction = s.RunDemocraticAction(bike)
 
 			// agents incur an energetic penalty for participating in a vote
-			for _, agent := range agents {
-				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
-			}
-
-		case utils.DegenerateDemocracy:
-			direction = s.RunDemocraticAction(bike, governance)
-			// agents incur in an energetic penalty for participating in a vote
 			for _, agent := range agents {
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
 			}

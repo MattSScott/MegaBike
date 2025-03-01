@@ -193,9 +193,10 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 }
 
 // select this round's decision following a voting-based approach
-func (s *Server) RunDemocraticAction(bike objects.IMegaBike, governance utils.Governance) uuid.UUID {
+func (s *Server) RunDemocraticAction(bike objects.IMegaBike) uuid.UUID {
 
 	agents := bike.GetAgents()
+	governance := bike.GetGovernance()
 	// maps agent id to their proposed lootbox id
 	proposedDirections := make(map[uuid.UUID]uuid.UUID)
 	validLootboxes := s.PruneLootboxes(bike)
@@ -242,7 +243,7 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike, governance utils.Go
 			}
 		}
 		
-		if consensusReached == true {
+		if consensusReached {
 			return directions[0] // could be any element of the slice they are all the asme
 		} else {
 			return uuid.Nil // assuming this means 'don't move'

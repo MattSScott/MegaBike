@@ -13,7 +13,6 @@ import (
 
 type AgentInitFunction func(baseBiker *objects.BaseBiker) objects.IBaseBiker
 
-// COHORT EXPERIMENTS
 var AgentInitFunctions = []AgentInitFunction{
 	teamSOSA.GetBiker, // Team SOSA
 }
