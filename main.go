@@ -17,6 +17,6 @@ func main() {
 	flag.Parse()
 	initialiseFlagConstants()
 	s := server.GenerateServer() // returns a zero-valued server object
-	s.Initialize(5) //sets up the environment, parameter =num of iterations usually 100
+	s.Initialize(20) //sets up the environment, parameter =num of iterations usually 100
 	s.Start()
 }

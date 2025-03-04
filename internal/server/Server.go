@@ -21,7 +21,7 @@ type IBaseBikerServer interface {
 	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                            // returns a map from bike id to the id of all agents trying to joing that bike
 	GetRandomBikeId() uuid.UUID                                                          // gets the id of any random bike in the map
 	RepresentativeElection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID    // runs the representative election
-	ReplaceRepresentative(bike objects.IMegaBike, departingAgentIdx int)							// replaces a representative when they depart without needing a new election
+	HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int)							// replaces a representative when they die /
 	RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID                                     // gets the direction from the dictator
 	RunDemocraticAction(bike objects.IMegaBike) uuid.UUID // gets the direction in voting-based governances
 	// NewGameStateDump(iteration int) GameStateDump                                        // creates a new game state dump
@@ -125,8 +125,6 @@ func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
 	for _, agent := range s.GetAgentMap() {
 		agent.HandleAgentUnalive(agent.GetID())
 	}
-
-	fmt.Println("Agent", utils.TranslateToName(id), "died")
 }
 
 // ensures that adding agents to a bike is atomic (ie no agent is added to a bike while still resulting as on another bike)

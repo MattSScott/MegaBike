@@ -5,6 +5,7 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
+	// "fmt"
 	"math"
 	"math/rand"
 	"runtime"
@@ -193,8 +194,8 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 // }
 
 func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap {
-	socialCapital := a.DecideAllocation()
 
+	socialCapital := a.DecideAllocation()
 	// Calculate the total social capital
 	totalSocialCapital := 0.0
 	for _, sc := range socialCapital {
@@ -211,6 +212,7 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 				panic("fuck")
 			}
 		}
+
 		return result
 	} else if governance == utils.DegenerateMonarchy  || governance == utils.DegenerateAristocracy {
 		// same as perfect monarchy, but cut every elses share by 50% and give yourself the rest.

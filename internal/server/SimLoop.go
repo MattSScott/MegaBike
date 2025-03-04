@@ -39,6 +39,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	}
 
 
+	// cleanup and admin
 	s.ResetGameState() 
 	iterationDump := s.GenerateIterationDump()
 
@@ -48,7 +49,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 		s.RunRoundLoop(iterationDump, i)
 	}
 	
-	// ----- Code for recording game state: -----
+	// ----- Extra: Code for recording game state: -----
 
 	avgKicks := 0.0
 
@@ -92,7 +93,7 @@ func (s *Server) RunBikeSwitch() {
 
 }
 
-// get list of agents that want to leave their bike in current round
+// get list of agents that want to leave their bike in current iteration
 func (s *Server) GetLeavingDecisions() []uuid.UUID {
 
 	leavingAgents := make([]uuid.UUID, 0)
@@ -126,7 +127,10 @@ func (s *Server) GetLeavingDecisions() []uuid.UUID {
 		for departingRepIdx, departingRepID := range reps {
 			// if this rep is leaving, replace them
 			if len(bike.GetAgents()) !=0 && slices.Contains(leavingAgents, departingRepID) {
-				s.ReplaceRepresentative(bike, departingRepIdx)
+				fmt.Println("rep voluntarily left bike with ", len(bike.GetAgents()), "agents")
+				fmt.Println("reps before replacement", len(reps))
+				s.HandleDepartingRepresentative(bike, departingRepIdx)
+				fmt.Println("reps after replacement", len(reps))
 			}
 		}
 	}
@@ -136,11 +140,12 @@ func (s *Server) GetLeavingDecisions() []uuid.UUID {
 
 // handles the kick out process according to each bike's governance
 func (s *Server) HandleKickoutProcess() []uuid.UUID {
+
 	allKicked := make([]uuid.UUID, 0)
 	for _, bike := range s.GetMegaBikes() {
 		agents := bike.GetAgents()
 
-		if len(agents) != 0 {
+		if len(agents) > 1 {
 
 			kickedAgents := make([]uuid.UUID, 0)
 
@@ -157,21 +162,18 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 				kickedAgents = bike.KickOutAgent(weights)
 
 			case utils.PerfectAristocracy, utils.DegenerateAristocracy:
+				// for now a random aristocrat decides, todo: aggregrate them.
 				reps := bike.GetRepresentatives()
 
-				agentsKickedByRep := map[uuid.UUID][]uuid.UUID{}
-				for _, id := range reps{
-					agentsKickedByRep[id] = s.GetAgentMap()[id].DecideKickOut()
-				}
-
-				// for now just choose randomly from the aristocrat suggestions
 				randIndex := rand.Intn(len(reps))
-				randomRep := reps[randIndex]
-				kickedAgents = agentsKickedByRep[randomRep]
+				chosenAristocrat := s.GetAgentMap()[reps[randIndex]]
+				kickedAgents = chosenAristocrat.DecideKickOut()
 
 			case utils.PerfectMonarchy, utils.DegenerateMonarchy:
+				reps := bike.GetRepresentatives()
+
 				// both perfect and degen kick out min social capital. no need to differentiate there.
-				monarch := s.GetAgentMap()[bike.GetRepresentatives()[0]]
+				monarch := s.GetAgentMap()[reps[0]]
 				kickedAgents = monarch.DecideKickOut()
 
 			}
@@ -183,26 +185,16 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 				// remove them
 				s.RemoveAgentFromBike(s.GetAgentMap()[kickedAgentID])
 				reps := bike.GetRepresentatives()
-				gov := bike.GetGovernance()
-				agentsOnBike := bike.GetAgents()
 
 				// if a representative was kicked out will need to select a new one
 				if slices.Contains(reps, kickedAgentID){
-
-					// handling cases where we cant replace a representative. maybe incorporate into the function
-					if (gov == utils.DegenerateAristocracy || gov == utils.PerfectAristocracy) && len(agentsOnBike) < 3{
-						continue
-					} else if (gov == utils.PerfectMonarchy || gov == utils.DegenerateMonarchy) && len(agentsOnBike) < 1 {
-						continue
-					} else {
 						departingRepIdx := slices.Index(reps, kickedAgentID)
-						s.ReplaceRepresentative(bike, departingRepIdx)
+						s.HandleDepartingRepresentative(bike, departingRepIdx)
 					}
-				}
 			}
 		}
-
 	}
+
 	return allKicked
 }
 

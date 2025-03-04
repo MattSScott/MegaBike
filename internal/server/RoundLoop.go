@@ -6,8 +6,8 @@ import (
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	// "fmt"
-	"math/rand"
+	"fmt"
+	// "math/rand"
 
 	"github.com/google/uuid"
 )
@@ -58,32 +58,22 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	roundDump := s.GenerateRoundDump()
 	iterationDump.AddRoundToIteration(roundDump)
 
-	// if the representative(s) die then re-elect them
+
+
+	// if the representative(s) die then re-select them
 	for _, bike := range s.GetMegaBikes() {
-		gov := bike.GetGovernance()
 		agents := bike.GetAgents()
-		if len(agents) != 0 && (gov == utils.PerfectMonarchy || gov == utils.DegenerateMonarchy) {
-			reps := bike.GetRepresentatives()
-			
-			// if bike leader dead, reassign leadership
-			if _, ok := s.deadAgents[reps[0]]; ok {
-				agents := bike.GetAgents()
-				reps := s.RepresentativeElection(agents, gov)
-				bike.SetRepresentatives(reps)
-			}
-		} else if len(agents) != 0 && (gov == utils.PerfectAristocracy || gov == utils.DegenerateAristocracy) {
+
+		if len(agents) != 0 {
 			reps := bike.GetRepresentatives()
 
-			// for now, just relect the whole aristocracy if someone is dead
-			// TODO 1) just replace the dead person 2) make sure it continues if there are fewer than 3 reps
-			for _, id := range(reps){
-				if _, ok := s.deadAgents[id]; ok {
-					agents := bike.GetAgents()
-					reps := s.RepresentativeElection(agents, gov)
-					bike.SetRepresentatives(reps)
-					break
+			// iterate over reps, and if theyre dead then replace them.
+			for deadRepIdx, repID := range reps {
+				if _, ok := s.deadAgents[repID]; ok {
+					s.HandleDepartingRepresentative(bike, deadRepIdx)
 				}
 			}
+			
 		}
 	}
 
@@ -224,16 +214,15 @@ func (s *Server) LootboxCheckAndDistributions() {
 						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
 						
 					case utils.DegenerateAristocracy, utils.PerfectAristocracy:
+						// for now just choose an aristocrat randomly to decide
+						// todo: find a way to aggregate the aristocrat distributions
 						reps := megabike.GetRepresentatives()
-						allocationByRep := map[uuid.UUID]voting.IdVoteMap{}
-						for _, id := range reps {
-							allocationByRep[id] = s.GetAgentMap()[id].DecideRepresentativeAllocation(gov)
-						}
+						// fmt.Println("num of reps", len(reps))
+						// randIndex := rand.Intn(len(reps))
+						// fmt.Println("index chosen", randIndex)
+						chosenAristocrat := s.GetAgentMap()[reps[0]]
+						winningAllocation = chosenAristocrat.DecideRepresentativeAllocation(gov)
 						
-						// for now just choose one randomly.
-						randIndex := rand.Intn(len(reps))
-						randomRep := reps[randIndex]
-						winningAllocation = allocationByRep[randomRep]
 					}
 					
 
@@ -295,7 +284,7 @@ func (s *Server) AwdiCollisionCheck() {
 func (s *Server) unaliveAgents() {
 	for _, agent := range s.GetAgentMap() {
 		if agent.GetEnergyLevel() <= 0 {
-			// fmt.Printf("Agent %s got game ended\n", id)
+			fmt.Printf("Agent %s ran out of energy \n", utils.TranslateToName(agent.GetID()))
 			s.RemoveAgent(agent)
 		}
 	}

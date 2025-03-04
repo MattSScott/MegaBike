@@ -100,21 +100,21 @@ func (s *Server) RepresentativeElection(agentsOnBike []objects.IBaseBiker, gover
 	if len(agentsOnBike) != 0 {
 		switch governance {
 		case utils.PerfectAristocracy, utils.DegenerateAristocracy:
-			reps := make([]uuid.UUID, 3)
+			reps := make([]uuid.UUID, 0)
 			var chosenAgentIndices []int
 			if len(agentsOnBike) > 3 {
 				chosenAgentIndices = rand.Perm(len(agentsOnBike))[0:3]
 			} else {
 				chosenAgentIndices = rand.Perm(len(agentsOnBike))
 			}
-			for i, v := range chosenAgentIndices {
-				reps[i] = agentsOnBike[v].GetID()
+			for _, v := range chosenAgentIndices {
+				reps = append(reps, agentsOnBike[v].GetID())
 			}
 			return reps
 		case utils.PerfectMonarchy, utils.DegenerateMonarchy:
-			reps := make([]uuid.UUID, 1)
+			reps := make([]uuid.UUID, 0)
 			chosenAgentIndex := rand.Intn(len(agentsOnBike))
-			reps[0] = agentsOnBike[chosenAgentIndex].GetID()
+			reps = append(reps, agentsOnBike[chosenAgentIndex].GetID())
 			return reps
 		default:
 			panic("trying to run a representative election on a bike without incorrect governance style")
@@ -300,17 +300,33 @@ func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVote
 
 
 // new functions added
-func (s *Server) ReplaceRepresentative(bike objects.IMegaBike, departingRepIdx int) {
-	reps := bike.GetRepresentatives()
-	agentsOnBike := bike.GetAgents()
 
-	// randomly choose an agent to be a rep. if agent is already rep, choose another one.
-	replacementRepID := agentsOnBike[rand.Intn(len(agentsOnBike))].GetID()
-	for slices.Contains(reps, replacementRepID) {
-			replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
-	}
+
+// replace rep if possible, otherwise we just remove them 
+func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int) {
+	
+	gov := bike.GetGovernance()
+
+	//attempt to replace them
+	if (((gov == utils.DegenerateAristocracy || gov == utils.PerfectAristocracy) && len(bike.GetAgents()) >= 3) || ((gov ==utils.PerfectMonarchy || gov == utils.DegenerateMonarchy) && len(bike.GetAgents()) >= 1)) {
+	
+		reps := bike.GetRepresentatives()
+		agentsOnBike := bike.GetAgents()
+
+		// randomly choose an agent to be a rep. if agent is already rep, choose another one.
+		replacementRepID := agentsOnBike[rand.Intn(len(agentsOnBike))].GetID()
+		for slices.Contains(reps, replacementRepID) {
+				replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
+		}
 
 	// replace the old rep with a new rep
-	reps[departingRepIdx] = replacementRepID
+	reps[repIdxToReplace] = replacementRepID
 	bike.SetRepresentatives(reps)
+	} else {
+		// otherwise we just remove them from the rep list
+		reps := bike.GetRepresentatives()
+		reps = slices.Delete(reps, repIdxToReplace, repIdxToReplace+1)
+		bike.SetRepresentatives(reps)
+		 
+	}
 }
