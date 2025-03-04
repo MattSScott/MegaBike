@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
+
 // the simulation loop represents 100 rounds
 func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int) {
 
@@ -29,9 +30,12 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	for _, bike := range s.megaBikes { 
 		s.UpdateBikeRules(bike)
 		s.PerformRoleAssignment(bike)
-		fmt.Println("governance system:", bike.GetGovernance())
-		fmt.Println("num agents on bike:", len(bike.GetAgents()))
-		fmt.Println("reps for this bike:", bike.GetRepresentatives())
+
+		repString := ""
+		for _, repID := range bike.GetRepresentatives() {
+			repString += utils.TranslateToName(repID) + " "
+		}
+		fmt.Println("Bike", bike.GetGovernance(), "has", len(bike.GetAgents()), "agents with the following reps:", repString)
 	}
 
 
@@ -90,6 +94,7 @@ func (s *Server) RunBikeSwitch() {
 
 // get list of agents that want to leave their bike in current round
 func (s *Server) GetLeavingDecisions() []uuid.UUID {
+
 	leavingAgents := make([]uuid.UUID, 0)
 
 	for agentId, agent := range s.GetAgentMap() {
@@ -328,10 +333,6 @@ func (s *Server) ResetGameState() {
 			agent.ResetPoints()
 		}
 	}
-
-	// for _, bike := range s.GetMegaBikes() {
-	// 	bike.SetRuler(uuid.Nil)
-	// }
 
 	// for _, agent := range s.GetAgentMap() {
 	// 	agent.SetBike(uuid.Nil)

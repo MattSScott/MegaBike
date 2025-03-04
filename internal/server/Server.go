@@ -111,6 +111,7 @@ func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
 
 // when an agent dies it needs to be removed from its bike, the riders map and the agents map + it's added to the dead agents map
 func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
+
 	id := agent.GetID()
 	// add agent to dead agent map
 	s.deadAgents[id] = agent
@@ -124,6 +125,8 @@ func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
 	for _, agent := range s.GetAgentMap() {
 		agent.HandleAgentUnalive(agent.GetID())
 	}
+
+	fmt.Println("Agent", utils.TranslateToName(id), "died")
 }
 
 // ensures that adding agents to a bike is atomic (ie no agent is added to a bike while still resulting as on another bike)
