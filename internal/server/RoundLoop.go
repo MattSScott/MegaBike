@@ -196,6 +196,8 @@ func (s *Server) LootboxCheckAndDistributions() {
 				if totAgents > 0 {
 					gov := s.GetMegaBikes()[bikeid].GetGovernance()
 					var winningAllocation voting.IdVoteMap
+
+
 					switch gov {
 					case utils.PerfectDemocracy, utils.DegenerateDemocracy:
 						allAllocations := make(map[uuid.UUID]voting.IdVoteMap)
@@ -217,20 +219,19 @@ func (s *Server) LootboxCheckAndDistributions() {
 						winningAllocation = voting.CumulativeDist(Iallocations, weights)
 
 					case utils.DegenerateMonarchy, utils.PerfectMonarchy:
-						// representatives decide the allocation
-						//TODO: differentiate between degen and perfect
 						reps := megabike.GetRepresentatives()
 						monarch := s.GetAgentMap()[reps[0]]
-						winningAllocation = monarch.DecideDictatorAllocation()
+						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
+						
 					case utils.DegenerateAristocracy, utils.PerfectAristocracy:
 						reps := megabike.GetRepresentatives()
 						allocationByRep := map[uuid.UUID]voting.IdVoteMap{}
-						for _, id := range reps{
-							allocationByRep[id] = s.GetAgentMap()[id].DecideDictatorAllocation()
+						for _, id := range reps {
+							allocationByRep[id] = s.GetAgentMap()[id].DecideRepresentativeAllocation(gov)
 						}
 						
-						//TODO: find some way to aggregate the aristocrat distributions, for now just choose one randomly.
-						randIndex := rand.Intn(3)
+						// for now just choose one randomly.
+						randIndex := rand.Intn(len(reps))
 						randomRep := reps[randIndex]
 						winningAllocation = allocationByRep[randomRep]
 					}

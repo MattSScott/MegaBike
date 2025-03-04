@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"math/rand"
+	"slices"
 )
 
 // obtain direction for current round from the representatives
@@ -96,32 +97,17 @@ func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 // each bike is fixed with a governance style and agents on the bike are randomly selected to fit that style.
 // happens at the beginning of each iteration, or when a bike with certain governance styles is left without representatives for any of various reasons
 func (s *Server) RepresentativeElection(agentsOnBike []objects.IBaseBiker, governance utils.Governance) []uuid.UUID {
-	// votes := make(map[uuid.UUID]voting.IdVoteMap, len(agents))
-	// voteWeight := make(map[uuid.UUID]float64)
-	// for _, agent := range agents {
-	// 	voteWeight[agent.GetID()] = 1
-	// 	switch governance {
-	// 	case utils.PerfectMonarchy:
-	// 		votes[agent.GetID()] = agent.VoteDictator()
-	// 	case utils.DegenerateMonarchy:
-	// 		votes[agent.GetID()] = agent.VoteDictator()
-	// 	}
-	// }
-
-	// // required as a list of interfaces that implement IVoter is not percieved as a list of IVoters due to Go weirdness
-	// IVotes := make(map[uuid.UUID]voting.IVoter, len(votes))
-	// for i, vote := range votes {
-	// 	IVotes[i] = vote
-	// }
-
-	// ruler := voting.WinnerFromDist(IVotes, voteWeight)
-	// return ruler
 	if len(agentsOnBike) != 0 {
 		switch governance {
 		case utils.PerfectAristocracy, utils.DegenerateAristocracy:
 			reps := make([]uuid.UUID, 3)
-			chosenAgentIndices := rand.Perm(len(agentsOnBike))[0:3]
-			for i, v := range chosenAgentIndices{
+			var chosenAgentIndices []int
+			if len(agentsOnBike) > 3 {
+				chosenAgentIndices = rand.Perm(len(agentsOnBike))[0:3]
+			} else {
+				chosenAgentIndices = rand.Perm(len(agentsOnBike))
+			}
+			for i, v := range chosenAgentIndices {
 				reps[i] = agentsOnBike[v].GetID()
 			}
 			return reps
@@ -310,4 +296,21 @@ func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVote
 	}
 
 	return voting.WinnerFromDist(IfinalVotes, weights)
+}
+
+
+// new functions added
+func (s *Server) ReplaceRepresentative(bike objects.IMegaBike, departingRepIdx int) {
+	reps := bike.GetRepresentatives()
+	agentsOnBike := bike.GetAgents()
+
+	// randomly choose an agent to be a rep. if agent is already rep, choose another one.
+	replacementRepID := agentsOnBike[rand.Intn(len(agentsOnBike))].GetID()
+	for slices.Contains(reps, replacementRepID) {
+			replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
+	}
+
+	// replace the old rep with a new rep
+	reps[departingRepIdx] = replacementRepID
+	bike.SetRepresentatives(reps)
 }

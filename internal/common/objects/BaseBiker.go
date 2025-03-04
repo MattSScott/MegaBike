@@ -32,8 +32,8 @@ type IBaseBiker interface {
 	// representative functions
 	DecideDirectionMalevolently() uuid.UUID                // ** called only when the agent is a degenerate aristocrat or monarch, equivalent of propose direction
 	DecideDirectionBenevolently() uuid.UUID     			// ** only called when the agent is a perfect aristocrat or monarch, equivalent of propose direction.
-	DecideKickOut() []uuid.UUID                 // ** decide which agents to kick out (dictator)
-	DecideDictatorAllocation() voting.IdVoteMap // ** decide the allocation (dictator)
+	DecideKickOut() []uuid.UUID                 // ** decide which agents to kick out 
+	DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap // ** decide the allocation 
 
 	// leader functions
 	DecideWeights(action utils.Action) map[uuid.UUID]float64 // decide on weights for various actions
@@ -470,7 +470,7 @@ func (bb *BaseBiker) DecideKickOut() []uuid.UUID {
 }
 
 // only called when the agent is the dictator
-func (bb *BaseBiker) DecideDictatorAllocation() voting.IdVoteMap {
+func (bb *BaseBiker) DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap {
 	bikeID := bb.GetBike()
 	fellowBikers := bb.gameState.GetMegaBikes()[bikeID].GetAgents()
 	distribution := make(voting.IdVoteMap)

@@ -192,7 +192,7 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 // 	return socialCapital
 // }
 
-func (a *AgentSOSA) DecideDictatorAllocation() voting.IdVoteMap {
+func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap {
 	socialCapital := a.DecideAllocation()
 
 	// Calculate the total social capital
@@ -201,16 +201,42 @@ func (a *AgentSOSA) DecideDictatorAllocation() voting.IdVoteMap {
 		totalSocialCapital += sc
 	}
 
-	// Distribute the allocation based on each agent's share of the total social capital
-	result := make(voting.IdVoteMap)
-	for agentID, sc := range socialCapital {
-		result[agentID] = sc / totalSocialCapital
-		if math.IsNaN(result[agentID]) {
-			runtime.Breakpoint()
-			panic("fuck")
+	if governance == utils.PerfectMonarchy || governance == utils.PerfectAristocracy {
+		// Distribute the allocation based on each agent's share of the total social capital
+		result := make(voting.IdVoteMap)
+		for agentID, sc := range socialCapital {
+			result[agentID] = sc / totalSocialCapital
+			if math.IsNaN(result[agentID]) {
+				runtime.Breakpoint()
+				panic("fuck")
+			}
 		}
+		return result
+	} else if governance == utils.DegenerateMonarchy  || governance == utils.DegenerateAristocracy {
+		// same as perfect monarchy, but cut every elses share by 50% and give yourself the rest.
+		ownID := a.GetID()
+		shareDistributed := float64(0)
+		
+		result := make(voting.IdVoteMap)
+		for agentID, sc := range socialCapital {
+			if agentID != ownID {
+				agentShare:= sc*0.5 / totalSocialCapital
+				result[agentID] = agentShare
+				shareDistributed += agentShare
+				if math.IsNaN(result[agentID]) {
+					runtime.Breakpoint()
+					panic("fuck")
+				}
+			}
+		}
+
+		monarchShare := 1 - shareDistributed
+		result[ownID] = monarchShare
+
+		return result
+	} else {
+		panic("deciding rep allocation gone wrong - governance isnt a monarchy")
 	}
-	return result
 }
 
 func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
