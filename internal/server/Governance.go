@@ -37,7 +37,7 @@ func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 			suggestedDirections = append(suggestedDirections, ag.DecideDirectionBenevolently())
 		}
 
-		// aggregate these to find the majority voted direction
+		// aggregate these to find the most voted direction
 		for _, lootbox := range suggestedDirections {
 			countsPerDirection[lootbox] += 1
 			if countsPerDirection[lootbox] > maxCounts {

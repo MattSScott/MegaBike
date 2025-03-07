@@ -47,7 +47,7 @@ type Server struct {
 	megaBikeRiders map[uuid.UUID]uuid.UUID // maps riders to their bike
 	awdi           objects.IAwdi
 	deadAgents     map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
-	foundingChoices map[uuid.UUID]utils.Governance
+	// foundingChoices map[uuid.UUID]utils.Governance
 	globalRuleCache *objects.GlobalRuleCache
 }
 

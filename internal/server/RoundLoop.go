@@ -7,7 +7,7 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
-	// "math/rand"
+	"math/rand"
 
 	"github.com/google/uuid"
 )
@@ -215,12 +215,10 @@ func (s *Server) LootboxCheckAndDistributions() {
 						
 					case utils.DegenerateAristocracy, utils.PerfectAristocracy:
 						// for now just choose an aristocrat randomly to decide
-						// todo: find a way to aggregate the aristocrat distributions
+						// TODO: find a way to aggregate the aristocrat distributions
 						reps := megabike.GetRepresentatives()
-						// fmt.Println("num of reps", len(reps))
-						// randIndex := rand.Intn(len(reps))
-						// fmt.Println("index chosen", randIndex)
-						chosenAristocrat := s.GetAgentMap()[reps[0]]
+						randIndex := rand.Intn(len(reps))
+						chosenAristocrat := s.GetAgentMap()[reps[randIndex]]
 						winningAllocation = chosenAristocrat.DecideRepresentativeAllocation(gov)
 						
 					}
@@ -247,9 +245,9 @@ func (s *Server) LootboxCheckAndDistributions() {
 	}
 
 	// despawn lootboxes that have been looted
-	for id, loot := range looted {
-		if loot > 0 {
-			delete(s.lootBoxes, id)
+	for lootboxID, numBikesLooted := range looted {
+		if numBikesLooted > 0 {
+			delete(s.lootBoxes, lootboxID)
 		}
 	}
 }
