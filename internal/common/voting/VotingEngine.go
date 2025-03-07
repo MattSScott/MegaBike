@@ -31,22 +31,36 @@ func (ivm IdVoteMap) GetVotes() map[uuid.UUID]float64 {
 }
 
 // this function will take in a list of maps from ids to their corresponding vote (yes/ no in the case of acceptance)
-// and retunr a list of ids that can be accepted according to some metric (ie more than half voted yes)
+// and return a list of ids that can be accepted according to some metric (ie all voted yes / majority voted yes)
 // ranked according to a metric (ie overall number of yes's)
-func GetAcceptanceRanking(rankings map[uuid.UUID]map[uuid.UUID]bool, weights map[uuid.UUID]float64) []uuid.UUID {
+func GetAcceptanceRanking(decisionsByVoter map[uuid.UUID]map[uuid.UUID]bool, weights map[uuid.UUID]float64, governance utils.Governance) []uuid.UUID {
+
 	// sum the number of acceptance rankings for all the agents
 	cumulativeRank := make(map[uuid.UUID]float64)
-	quorum := float64(len(rankings)) / 2.0
-	for voter, ranking := range rankings {
-		for agent, outcome := range ranking {
+
+	var quorum float64
+
+	// if perfect dem need consensus, in degen need majority. for aristocracy no minimum
+	if governance == utils.PerfectDemocracy {
+		quorum = float64(len(decisionsByVoter))-1
+	} else if governance == utils.DegenerateDemocracy{
+		quorum = float64(len(decisionsByVoter)) / 2.0
+	} else{
+		quorum = 0.0
+	}
+
+	for voter, decisions := range decisionsByVoter {
+		for agent, outcome := range decisions {
 			val, ok := cumulativeRank[agent]
 			if outcome && ok {
 				cumulativeRank[agent] = val + weights[voter]
 			} else if outcome {
-				cumulativeRank[agent] = 1.0
+				cumulativeRank[agent] = weights[voter]
 			}
 		}
 	}
+
+	// passed unsorted contains a map of pendingAgentIDs->ranking, with only those agents who have above the quorum level of support
 	passedUnsorted := make(map[uuid.UUID]float64)
 	for agent, val := range cumulativeRank {
 		if val > quorum {
@@ -56,16 +70,19 @@ func GetAcceptanceRanking(rankings map[uuid.UUID]map[uuid.UUID]bool, weights map
 
 	// sort according to ranking
 	unsortedAcceptedList := make([]uuid.UUID, len(passedUnsorted))
+
 	i := 0
 	for key := range passedUnsorted {
 		unsortedAcceptedList[i] = key
 		i += 1
 	}
+
 	sort.Slice(unsortedAcceptedList, func(i, j int) bool {
 		return passedUnsorted[unsortedAcceptedList[i]] > passedUnsorted[unsortedAcceptedList[j]]
 	})
+	
+	// now actually sorted
 	return unsortedAcceptedList
-	// return make([]uuid.UUID, 0)
 }
 
 func SumOfValues(voteMap IVoter) float64 {

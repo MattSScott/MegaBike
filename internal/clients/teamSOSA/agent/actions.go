@@ -87,8 +87,9 @@ func (a *AgentSOSA) DecideWeights(action utils.Action) map[uuid.UUID]float64 {
 	return weights
 }
 
+// returns a slice of agents to kick out (currently just does one)
 func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
-	// Only called when the agent is the dictator.
+	// Only called when the agent is a representative agent.
 	// We kick out the agent with the lowest social capital on the bike.
 	// GetBikerWithMinSocialCapital returns only one agent, if more agents with min SC, it randomly chooses one.
 	kickOut_agents := make([]uuid.UUID, 0)
@@ -241,6 +242,7 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 	}
 }
 
+// returns a map of UUID -> {0,1} for an agent where 0 signifies 'don't kick' and 1 signifies 'do kick'
 func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	VoteMap := make(map[uuid.UUID]int)
 	kickoutThreshold := modules.KickThreshold
@@ -263,6 +265,7 @@ func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	return VoteMap
 }
 
+// returns a map of pending agents id -> decision
 func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool {
 	// Accept all agents we don't know about or are higher in social capital.
 	// If we know about them and they have a lower social capital, reject them.

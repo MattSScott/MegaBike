@@ -5,8 +5,7 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
-	"math/rand"
-
+	// "math/rand"
 	"slices"
 
 	"github.com/google/uuid"
@@ -35,11 +34,12 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 		for _, repID := range bike.GetRepresentatives() {
 			repString += utils.TranslateToName(repID) + " "
 		}
+
 		fmt.Println("Bike", bike.GetGovernance(), "has", len(bike.GetAgents()), "agents with the following reps:", repString)
 	}
 
 
-	// cleanup and admin
+	// Cleanup and boilerplate
 	s.ResetGameState() 
 	iterationDump := s.GenerateIterationDump()
 
@@ -93,44 +93,44 @@ func (s *Server) RunBikeSwitch() {
 
 }
 
-// get list of agents that want to leave their bike in current iteration
+// returns slice of all agents that want to leave their bike in current iteration
 func (s *Server) GetLeavingDecisions() []uuid.UUID {
 
 	leavingAgents := make([]uuid.UUID, 0)
 
+	// iterate over all agents to create a slice of all agents in the game who have decided to leave their bikes. remove them from their bike.
 	for agentId, agent := range s.GetAgentMap() {
 		if agent.GetBikeStatus() {
 
-			agent.UpdateAgentInternalState() // is this necessary
+			agent.UpdateAgentInternalState()
 			
 			switch agent.DecideAction() {
 			case objects.Pedal:
 				continue
 			case objects.ChangeBike:
+				leavingAgents = append(leavingAgents, agentId)
+				s.RemoveAgentFromBike(agent)
+
+				// Note: 
 				// the bike id is set to be the desired bike and onbike is set to false
 				// so by looking at the values of onBike and megaBikeID it will be known
 				// whether the agent is trying to join a bike (and which one)
 
 				// the request is handled at the beginning of the next round, so the moving
 				// will only be finalised then
-				leavingAgents = append(leavingAgents, agentId)
-				s.RemoveAgentFromBike(agent)
 			default:
 				panic("agent decided invalid action")
 			}
 		}
 	}
 
-	// if representatives have left the bike, need to replace them 
+	// if representatives have left the bike, need to replace / handle that.
 	for _, bike := range s.GetMegaBikes() {
 		reps := bike.GetRepresentatives()
-		for departingRepIdx, departingRepID := range reps {
-			// if this rep is leaving, replace them
-			if len(bike.GetAgents()) !=0 && slices.Contains(leavingAgents, departingRepID) {
-				fmt.Println("rep voluntarily left bike with ", len(bike.GetAgents()), "agents")
-				fmt.Println("reps before replacement", len(reps))
-				s.HandleDepartingRepresentative(bike, departingRepIdx)
-				fmt.Println("reps after replacement", len(reps))
+		for repIdx, repID := range reps {
+			// if this rep is leaving...
+			if len(bike.GetAgents()) !=0 && slices.Contains(leavingAgents, repID) {
+				s.HandleDepartingRepresentative(bike, repIdx)
 			}
 		}
 	}
@@ -138,10 +138,12 @@ func (s *Server) GetLeavingDecisions() []uuid.UUID {
 	return leavingAgents
 }
 
-// handles the kick out process according to each bike's governance
+// returns a slice of all agents that are kicked from their bike in the current iteration.
+// process differs based on governance
 func (s *Server) HandleKickoutProcess() []uuid.UUID {
 
 	allKicked := make([]uuid.UUID, 0)
+
 	for _, bike := range s.GetMegaBikes() {
 		agents := bike.GetAgents()
 
@@ -151,42 +153,62 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 
 			switch bike.GetGovernance() {
 			case utils.PerfectDemocracy, utils.DegenerateDemocracy:
-				// make map of weights of 1 for all agents on bike (as they all have the same voting power)
-				agents := bike.GetAgents()
-				weights := make(map[uuid.UUID]float64)
-				for _, agent := range agents {
-					weights[agent.GetID()] = 1.0
-				}
-
-				// get which agents are getting kicked out
-				kickedAgents = bike.KickOutAgent(weights)
+				// agents vote for they want to kick out
+				// behaviour of this function changes based on which type of dem. it is
+				kickedAgents = bike.KickOutAgent()
 
 			case utils.PerfectAristocracy, utils.DegenerateAristocracy:
-				// for now a random aristocrat decides, todo: aggregrate them.
-				reps := bike.GetRepresentatives()
 
-				randIndex := rand.Intn(len(reps))
-				chosenAristocrat := s.GetAgentMap()[reps[randIndex]]
-				kickedAgents = chosenAristocrat.DecideKickOut()
+				reps := bike.GetRepresentatives()
+				agents := s.GetAgentMap()
+				
+				// iterate over the reps and find agents which are suggested to be kicked by all reps. (i.e. intersection)
+				for i, repID := range reps {
+					aristocrat := agents[repID]
+					aristocratDecision := aristocrat.DecideKickOut()
+					
+					if i == 0 {
+						// Use first aristocrat's decisions as starting point
+						kickedAgents = aristocratDecision
+						continue
+					}
+					
+					// Create map from the current kickedAgents slice
+					// if an agent is in this map, it is currently one which all reps share in common
+					currentCommonMap := make(map[uuid.UUID]bool)
+					for _, id := range kickedAgents {
+						currentCommonMap[id] = true
+					}
+					
+					// Filter to only keep UUIDs that are in current aristocrat's decision
+					// generate a new common list by looking at all ids in the current reps slice, and seeing if that is in the current common map
+					// if so, it is shared by all agents up to this point so can be added to the new common list.
+					newCommonList := make([]uuid.UUID, 0)
+					for _, id := range aristocratDecision {
+						if currentCommonMap[id] {
+							newCommonList = append(newCommonList, id)
+						}
+					}
+					
+					// Update kicked agents for next iteration
+					kickedAgents = newCommonList
+				}
+
 
 			case utils.PerfectMonarchy, utils.DegenerateMonarchy:
 				reps := bike.GetRepresentatives()
-
-				// both perfect and degen kick out min social capital. no need to differentiate there.
 				monarch := s.GetAgentMap()[reps[0]]
 				kickedAgents = monarch.DecideKickOut()
-
 			}
 
-			// perform kickout and replace rep if one is kicked out
 			allKicked = append(allKicked, kickedAgents...)
+
+			//iterate over kicked agents. remove them from bike, and attempt to replace them if they were a rep
 			for _, kickedAgentID := range kickedAgents {
 
-				// remove them
 				s.RemoveAgentFromBike(s.GetAgentMap()[kickedAgentID])
 				reps := bike.GetRepresentatives()
 
-				// if a representative was kicked out will need to select a new one
 				if slices.Contains(reps, kickedAgentID){
 						departingRepIdx := slices.Index(reps, kickedAgentID)
 						s.HandleDepartingRepresentative(bike, departingRepIdx)
@@ -198,60 +220,95 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 	return allKicked
 }
 
-// dispatch joining requests to the bikes of competence and move bikers from limbo to their desired bike subject to the acceptance process outcome
+
+// collect join request and process them, adding agents to bikes if they are accepted.
 func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
-
-	// -------------------------- PROCESS JOINING REQUESTS -------------------------
-	// 1. group agents that have onBike = false by the bike they are trying to join
+	
+	// returns a map of bikeID -> slice of agents that want to join it.
 	bikeRequests := s.GetJoiningRequests(inLimbo)
-	// panic(s.megaBikes)
 
-	// 2. pass to agents on each of the desired bikes a list of all agents trying to join
+	// iterate through each bike and handle the acceptance process for the pending agents wishing to join it.
 	for bikeID, pendingAgents := range bikeRequests {
+
 		bike := s.megaBikes[bikeID]
 		agents := bike.GetAgents()
-		// fmt.Println(len(agents))
+		reps := bike.GetRepresentatives()
+		
 		// if there are no agents on the target bike accept all of them (until all seats are filled)
 		if len(agents) == 0 {
-			// as iterating over a map is pseudo-random it's enough to stop whrn the capacity is reached
+			// as iterating over a map is pseudo-random it's enough to stop when the capacity is reached
 			// to ensure a fair (= random) selection in the case of an empty target bike
-			for i, pendingAgent := range pendingAgents {
+			for i, pendingAgentID := range pendingAgents {
 				if i <= utils.BikersOnBike {
-					acceptedAgent := s.GetAgentMap()[pendingAgent]
+					acceptedAgent := s.GetAgentMap()[pendingAgentID]
 					s.AddAgentToBike(acceptedAgent, bike)
 				} else {
 					break
 				}
 			}
 		} else {
+
 			acceptedRanked := make([]uuid.UUID, 0)
 
 			// the acceptance process is different for each governance type
+			gov := bike.GetGovernance()
 
-			// TODO: customise these for each type of governance
-			switch bike.GetGovernance() {
+			switch gov {
 
-			case utils.PerfectDemocracy, utils.DegenerateDemocracy, utils.PerfectAristocracy, utils.DegenerateAristocracy:
+			case utils.PerfectDemocracy, utils.DegenerateDemocracy:
+
 				// make map of weights of 1 for all agents on bike
 				weights := make(map[uuid.UUID]float64)
 				for _, agent := range agents {
 					weights[agent.GetID()] = 1.0
 				}
 
-				// get approval votes from each agent
-				responses := make(map[uuid.UUID]map[uuid.UUID]bool, len(agents)) // list containing all the agents' ranking
+				// maps each agents ID to a map of their decision for each pending agent
+				responses := make(map[uuid.UUID]map[uuid.UUID]bool, len(agents)) 
+
+				// fill out the map
 				for _, agent := range agents {
 					responses[agent.GetID()] = agent.DecideJoining(pendingAgents)
 				}
 
-				// accept agents based on the response outcome (only capacity-n bikers can be accepted)
-				acceptedRanked = voting.GetAcceptanceRanking(responses, weights)
+				// get a slice of uuids of the pending agents who passed the threshold to be accepted, ranked by num of yes's
+				acceptedRanked = voting.GetAcceptanceRanking(responses, weights, gov)
+
+
+			case utils.PerfectAristocracy, utils.DegenerateAristocracy:
+				// EXPERIMENTAL METHOD
+
+				// make map of weights of 1 for aristocrats and 0 for non aristocrats.
+				weights := make(map[uuid.UUID]float64)
+				for _, agent := range agents {
+					if slices.Contains(reps, agent.GetID()) {
+						weights[agent.GetID()] = 1.0
+					} else {
+						weights[agent.GetID()] = 0.0
+					}
+				}
+
+				// maps each agents ID to a map of their decision for each pending agent
+				responses := make(map[uuid.UUID]map[uuid.UUID]bool, len(agents)) 
+
+				// fill out the map
+				for _, agent := range agents {
+					responses[agent.GetID()] = agent.DecideJoining(pendingAgents)
+				}
+
+				// get a slice of uuids, ranked by num of yes's.
+				acceptedRanked = voting.GetAcceptanceRanking(responses, weights, gov)
 				
 			case utils.PerfectMonarchy, utils.DegenerateMonarchy:
+
 				monarch := s.GetAgentMap()[bike.GetRepresentatives()[0]]
-				acceptedRankedMap := monarch.DecideJoining(pendingAgents)
-				for agentID, accepted := range acceptedRankedMap {
+				
+				//returns a map of pendingagentID->decision
+				acceptedMap := monarch.DecideJoining(pendingAgents)
+
+				for agentID, accepted := range acceptedMap {
 					if accepted {
+						// not actually ranked, just a slice of accepted agents
 						acceptedRanked = append(acceptedRanked, agentID)
 					}
 				}
@@ -271,7 +328,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 	}
 }
 
-// still don't understand the point of this function when we have runbikeswitch
+// if agent is not on a bike, set their target bike ready for the next iteration when they can try to join it.
 func (s *Server) SetDestinationBikes() {
 	for _, agent := range s.GetAgentMap() {
 		if !agent.GetBikeStatus() {

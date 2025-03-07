@@ -22,7 +22,8 @@ func (s *Server) GetAwdi() objects.IAwdi {
 
 // get a map of megaBikeIDs mapping to the ids of all Bikers that are trying to join it
 func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UUID {
-	// iterate over all agents, if their onBike is false add to the map their id in correspondance of that of their desired bike
+	
+	// iterate over all agents, if their onBike is false add to the map their id in correspondence of that of their desired bike
 	bikeRequests := make(map[uuid.UUID][]uuid.UUID)
 
 	for agentID, agent := range s.GetAgentMap() {

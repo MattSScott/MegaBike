@@ -13,7 +13,7 @@ type IMegaBike interface {
 	RemoveAgent(bikerId uuid.UUID)
 	GetAgents() []IBaseBiker
 	UpdateMass()
-	KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID
+	KickOutAgent() []uuid.UUID
 	GetGovernance() utils.Governance
 	GetRepresentatives() []uuid.UUID
 	GetKickedOutCount() int
@@ -162,28 +162,42 @@ func (mb *MegaBike) ResetKickedOutCount() {
 	mb.kickedOutCount = 0
 }
 
-// only called for level 0 and level 1
-func (mb *MegaBike) KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID {
-	voteCount := make(map[uuid.UUID]float64)
+// returns a slice of agent ids to kick out
+func (mb *MegaBike) KickOutAgent() []uuid.UUID {
+
+	// a map of agent id -> number of votes
+	voteCount := make(map[uuid.UUID]int)
+
 	// Count votes for each agent
 	for _, agent := range mb.agents {
-		agentVotes := agent.VoteForKickout() // Assuming this now returns map[uuid.UUID]int
-		for agentID, votes := range agentVotes {
-			agentWeight := weights[agentID]
+		agentVotes := agent.VoteForKickout() // Assuming this now returns map[uuid.UUID]int, where each agent ID is mapped to 0 (no) or 1 (yes)
+		for agentID, vote := range agentVotes {
 			if val, ok := voteCount[agentID]; ok {
-				voteCount[agentID] = float64(val) + agentWeight*float64(votes)
+				voteCount[agentID] = val + vote
 			} else {
-				voteCount[agentID] = float64(votes) * agentWeight
+				voteCount[agentID] = vote
 			}
 		}
 	}
 
-	// Find all agents with votes > half the number of agents
 	agentsToKickOut := make([]uuid.UUID, 0)
-	for agentID, votes := range voteCount {
-		if votes > float64(len(mb.agents))/2.0 {
-			agentsToKickOut = append(agentsToKickOut, agentID)
+
+	if mb.governance == utils.PerfectDemocracy {
+		// Find all agents where there is consensus, i.e. agents that have everyone voting for them but themselves
+		for agentID, votes := range voteCount {
+			if votes > (len(mb.agents))-1 {
+				agentsToKickOut = append(agentsToKickOut, agentID)
+			}
+		} 
+	} else if mb.governance == utils.DegenerateDemocracy {
+		// Find all agents where there is a majority, i.e. votes > half the number of agents
+		for agentID, votes := range voteCount {
+			if votes > len(mb.agents)/2 {
+				agentsToKickOut = append(agentsToKickOut, agentID)
+			}
 		}
+	} else {
+		panic("non-democratic bike performing an agent kickout")
 	}
 
 	mb.kickedOutCount += len(agentsToKickOut)
