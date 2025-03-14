@@ -40,6 +40,7 @@ func (dm *DecisionModule) MakeAcceptAgentDecision(inputs DecisionInputs) bool {
 	return socialCapitalScore > AcceptThreshold
 }
 
+// returns if you should change bike or not, and the uuid of the target bike if 'yes'
 func (dm *DecisionModule) MakeBikeChangeDecision(inputs DecisionInputs) (bool, uuid.UUID) {
 	// Logic to decide on bike change
 	shouldChangeBike := false

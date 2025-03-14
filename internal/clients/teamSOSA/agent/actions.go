@@ -5,7 +5,6 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	// "fmt"
 	"math"
 	"math/rand"
 	"runtime"
@@ -13,6 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// returns: slice containing the bikers on our bike.
 func (a *AgentSOSA) GetFellowBikers() []objects.IBaseBiker {
 	bikes := a.Modules.Environment.GameState.GetMegaBikes()
 	if _, ok := bikes[a.GetBike()]; !ok {
@@ -29,65 +29,7 @@ func (a *AgentSOSA) GetFellowBikers() []objects.IBaseBiker {
 	return fellowBikers
 }
 
-// We vote for ourselves and the agent with the highest social capital.
-func (a *AgentSOSA) VoteDictator() voting.IdVoteMap {
-	votes := make(voting.IdVoteMap)
-	agentIDStruct := a.Modules.Environment.GetBikerWithMaxSocialCapital(a.Modules.AgentParameters)
-	agentId := agentIDStruct.ID
-
-	if len(a.GetFellowBikers()) > 1 && agentId != a.GetID() && agentId != uuid.Nil {
-		fellowBikers := a.GetFellowBikers()
-		for _, fellowBiker := range fellowBikers {
-			if fellowBiker.GetID() == agentId || fellowBiker.GetID() == a.GetID() {
-				votes[fellowBiker.GetID()] = 0.5
-			} else {
-				votes[fellowBiker.GetID()] = 0.0
-			}
-		}
-	} else {
-		fellowBikers := a.GetFellowBikers()
-		for _, fellowBiker := range fellowBikers {
-			if fellowBiker.GetID() == a.GetID() {
-				votes[fellowBiker.GetID()] = 1.0
-			} else {
-				votes[fellowBiker.GetID()] = 0.0
-			}
-		}
-	}
-	return votes
-}
-
-func (a *AgentSOSA) calculateUntrustworthyWeighting(id uuid.UUID) float64 {
-	if a.GetID() == id {
-		return 1.0
-	}
-	return 0.0
-}
-
-func (a *AgentSOSA) DecideWeights(action utils.Action) map[uuid.UUID]float64 {
-	// All actions have equal weights. Weighting by AgentId based on social capital.
-	// We set the weight for an Agent to be equal to its Social Capital.
-	weights := make(map[uuid.UUID]float64)
-	agents := a.GetFellowBikers()
-	compRoll := rand.Float64()
-	willComply := compRoll < a.Modules.AgentParameters.Trustworthiness
-	for _, agent := range agents {
-		// if agent Id is not in the a.Modules.SocialCapital.SocialCapital map, set the weight to 0.5 (neither trust or distrust)
-		if _, ok := a.Modules.AgentParameters.TrustNetwork[agent.GetID()]; !ok {
-			// add agent to the map
-			a.Modules.AgentParameters.TrustNetwork[agent.GetID()] = 0.5
-		}
-		agentWeighting := a.calculateUntrustworthyWeighting(agent.GetID()) // weight own action by 100%, if non compliant
-		if willComply {                                                    // give 'fair' weighting based on trust, if agent is trustworthy
-			agentWeighting = a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
-		}
-		weights[agent.GetID()] = agentWeighting
-		// fmt.Printf("[DecideWeights G2] Agent %s has weight %f\n", agent.GetID(), weights[agent.GetID()])
-	}
-	return weights
-}
-
-// returns a slice of agents to kick out (currently just does one)
+// returns: slice of agents to kick out (currently just does one)
 func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
 	// Only called when the agent is a representative agent.
 	// We kick out the agent with the lowest social capital on the bike.
@@ -101,47 +43,7 @@ func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
 	return kickOut_agents
 }
 
-func (a *AgentSOSA) VoteLeader() voting.IdVoteMap {
-	// We vote 0.5 for ourselves if the agent with the highest SC Agent(that we've met so far) on our bike. If we're alone on a bike, we vote 1 for ourselves.
-	votes := make(voting.IdVoteMap)
-	fellowBikers := a.GetFellowBikers()
-	if len(a.GetFellowBikers()) > 0 {
-		agentIDStruct := a.Modules.Environment.GetBikerWithMaxSocialCapital(a.Modules.AgentParameters)
-		agentId := agentIDStruct.ID
-		for _, fellowBiker := range fellowBikers {
-			if fellowBiker.GetID() == agentId {
-				votes[fellowBiker.GetID()] = 0.5
-			} else if fellowBiker.GetID() == a.GetID() {
-				votes[a.GetID()] = 0.5
-			} else {
-				votes[fellowBiker.GetID()] = 0.0
-			}
-		}
-	} else {
-		votes[a.GetID()] = 1.0
-	}
-
-	return votes
-}
-
-func (a *AgentSOSA) DecideGovernance() utils.Governance {
-	// All possibilities except dictatorship.
-	// Need to decide weights for each type of Governance
-	// Can add an invalid weighting so that it is not 50/50
-
-	// randomNumber := rand.Float64()
-	// if randomNumber < democracyWeight {
-	// 	return utils.Democracy
-	// } else if randomNumber < democracyWeight+leadershipWeight {
-	// 	return utils.Leadership
-	// } else {
-	// 	return utils.Dictatorship
-	// }
-
-	// i can edit this to return agents with differnet preferneces
-	return utils.PerfectDemocracy 
-}
-
+// returns: map containing bikerID -> distribution (i.e. share of resources) 
 func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 	allocation := make(map[uuid.UUID]float64)
 	allocation[a.GetID()] = 1.0
@@ -171,29 +73,7 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 	return allocation
 }
 
-// func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
-// 	socialCapital := maps.Clone(a.Modules.AgentParameters.TrustNetwork)
-// 	// Iterate through agents in social capital
-// 	for id := range socialCapital {
-// 		// Iterate through fellow bikers
-// 		for _, biker := range a.GetFellowBikers() {
-// 			// If this agent is a fellow biker, move on
-// 			if biker.GetID() == id {
-// 				continue
-// 			}
-// 		}
-// 		if math.IsNaN(socialCapital[id]) {
-// 			runtime.Breakpoint()
-// 			panic("dhsd")
-// 		}
-// 		// This agent is not a fellow biker - remove it from SC
-// 		delete(socialCapital, id)
-// 	}
-// 	// We give ourselves 1.0
-// 	socialCapital[a.GetID()] = 1.0
-// 	return socialCapital
-// }
-
+// returns: map containing bikerID -> distribution (i.e. share of resources) (only called by reps)
 func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap {
 
 	socialCapital := a.DecideAllocation()
@@ -238,11 +118,11 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 
 		return result
 	} else {
-		panic("deciding rep allocation gone wrong - governance isnt a monarchy")
+		panic("deciding rep allocation gone wrong")
 	}
 }
 
-// returns a map of UUID -> {0,1} for an agent where 0 signifies 'don't kick' and 1 signifies 'do kick'
+// returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
 func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	VoteMap := make(map[uuid.UUID]int)
 	kickoutThreshold := modules.KickThreshold
@@ -265,7 +145,7 @@ func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	return VoteMap
 }
 
-// returns a map of pending agents id -> decision
+// returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
 func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool {
 	// Accept all agents we don't know about or are higher in social capital.
 	// If we know about them and they have a lower social capital, reject them.
@@ -286,6 +166,7 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 	return decision
 }
 
+// returns: lootbox uuid to aim towards (the direction) from the choice of a subset of lootboxes
 func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
 	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
 	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColorFromSubset(agentID, agentColour, subset)
@@ -296,17 +177,7 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 	return optimalLootbox
 }
 
-func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
-	energy := a.GetEnergyLevel()
-	newRad := pRad
-	if energy < 0.75 {
-		newRad = pRad * 2
-	}
-
-	return math.Max(newRad, -100000)
-
-}
-
+// returns: lootbox uuid to aim towards (the direction)
 func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
 	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColor(agentID, agentColour)
@@ -317,55 +188,23 @@ func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	return optimalLootbox
 }
 
-func (a *AgentSOSA) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
-	// fmt.Printf("[FFinalDirectionVote] Agent %s got proposals %v\n", a.GetID(), proposals)
-	// fmt.Printf("[FFinalDirectionVote] Agent %s has Social Capitals %v\n", a.GetID(), a.Modules.SocialCapital.SocialCapital)
-
-	votes := make(voting.LootboxVoteMap)
-
-	// Assume we set our own social capital to 1.0, thus need to account for it
-	weight := 1.0 / (a.Modules.AgentParameters.GetSumOfTrust() + 1)
-
-	for proposerID, proposal := range proposals {
-		scWeight := 0.0
-		if proposerID == a.GetID() {
-			// If the proposal is our own, we vote for it with full weight
-			scWeight = weight
-		} else {
-			scWeight = weight * a.Modules.AgentParameters.TrustNetwork[proposerID]
-		}
-
-		// Check if the proposal already exists in votes, if not add it with the calculated weight
-		if _, ok := votes[proposal]; !ok {
-			votes[proposal] = scWeight
-		} else {
-			// If the proposal is already there, update it
-			votes[proposal] += scWeight
-		}
-	}
-	// fmt.Printf("[FFinalDirectionVote] Agent %s voted %v\n", a.GetID(), votes)
-	return votes
-}
-
+// returns: uuid of the target bike if they want to change, otherwise just return current bike id (?)
 func (a *AgentSOSA) ChangeBike() uuid.UUID {
 	decisionInputs := modules.DecisionInputs{AgentParameters: a.Modules.AgentParameters, Environment: a.Modules.Environment, AgentID: a.GetID()}
-	isChangeBike, bikeId := a.Modules.Decision.MakeBikeChangeDecision(decisionInputs)
-	// fmt.Printf("[ChangeBike] Agent %s decided to change bike: %v\n", a.GetID(), isChangeBike)
-	if isChangeBike {
-		// fmt.Printf("[ChangeBike] Agent %s decided to change bike to: %v\n", a.GetID(), bikeId)
+	shouldChangeBike, bikeId := a.Modules.Decision.MakeBikeChangeDecision(decisionInputs)
+	if shouldChangeBike {
 		return bikeId
 	} else {
 		return a.Modules.Environment.BikeId
 	}
 }
 
+// returns: int reflecting what the agent has decided to do this iteration (pedal the bike (0), or try to change bikes (1))
 func (a *AgentSOSA) DecideAction() objects.BikerAction {
-	// fmt.Printf("[DecideAction] Agent %s has Social Capitals %v\n", a.GetID(), a.Modules.SocialCapital.SocialCapital)
-	// a.Modules.SocialCapital.UpdateSocialCapital()
 
 	avgSocialCapital := a.Modules.AgentParameters.GetAverageTrust()
 
-	if avgSocialCapital > 0 {
+	if avgSocialCapital > 0.2 {
 		// Pedal if members of the bike have high social capital.
 		return objects.Pedal
 	} else {
@@ -374,6 +213,7 @@ func (a *AgentSOSA) DecideAction() objects.BikerAction {
 	}
 }
 
+// decides the force the biker is going to pedal with (untouched)
 func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 	if direction == uuid.Nil {
 		return
@@ -406,6 +246,7 @@ func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 	a.SetForces(force)
 }
 
+// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. only called when the agent is perfect monarch / aristocrat
 func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
 	// Move in opposite direction to Awdi in full force
 	if a.Modules.Environment.IsAwdiNear() {
@@ -416,7 +257,7 @@ func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
 	return a.Modules.Environment.GetHighestGainLootbox()
 }
 
-
+// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way, only called when agent is degen monarch / aristocrat
 func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
 
 	// Move in opposite direction to Awdi in full force - a representative still doesn't want to get obliterated
@@ -429,11 +270,200 @@ func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
 	return a.Modules.Environment.GetNearestLootboxByColor(a.GetID(), a.GetColour())
 }
 
+// sets the bike the agent is on (or wants to be on)
 func (a *AgentSOSA) SetBike(bikeId uuid.UUID) {
 	a.Modules.Environment.BikeId = bikeId
 	a.BaseBiker.SetBike(bikeId)
 }
 
+// delete the agent with the specified id from this agents trust map
 func (a *AgentSOSA) HandleAgentUnalive(id uuid.UUID) {
 	delete(a.Modules.AgentParameters.TrustNetwork, id)
 }
+
+
+
+
+// ----- do i keep? -----
+
+func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
+	energy := a.GetEnergyLevel()
+	newRad := pRad
+	if energy < 0.75 {
+		newRad = pRad * 2
+	}
+
+	return math.Max(newRad, -100000)
+
+}
+
+
+
+// ----- DEPRECATED FUNCTIONS -----
+
+// // We vote for ourselves and the agent with the highest social capital.
+// func (a *AgentSOSA) VoteDictator() voting.IdVoteMap {
+// 	votes := make(voting.IdVoteMap)
+// 	agentIDStruct := a.Modules.Environment.GetBikerWithMaxSocialCapital(a.Modules.AgentParameters)
+// 	agentId := agentIDStruct.ID
+
+// 	if len(a.GetFellowBikers()) > 1 && agentId != a.GetID() && agentId != uuid.Nil {
+// 		fellowBikers := a.GetFellowBikers()
+// 		for _, fellowBiker := range fellowBikers {
+// 			if fellowBiker.GetID() == agentId || fellowBiker.GetID() == a.GetID() {
+// 				votes[fellowBiker.GetID()] = 0.5
+// 			} else {
+// 				votes[fellowBiker.GetID()] = 0.0
+// 			}
+// 		}
+// 	} else {
+// 		fellowBikers := a.GetFellowBikers()
+// 		for _, fellowBiker := range fellowBikers {
+// 			if fellowBiker.GetID() == a.GetID() {
+// 				votes[fellowBiker.GetID()] = 1.0
+// 			} else {
+// 				votes[fellowBiker.GetID()] = 0.0
+// 			}
+// 		}
+// 	}
+// 	return votes
+// }
+
+
+// func (a *AgentSOSA) calculateUntrustworthyWeighting(id uuid.UUID) float64 {
+// 	if a.GetID() == id {
+// 		return 1.0
+// 	}
+// 	return 0.0
+// }
+
+// func (a *AgentSOSA) DecideWeights(action utils.Action) map[uuid.UUID]float64 {
+// 	// All actions have equal weights. Weighting by AgentId based on social capital.
+// 	// We set the weight for an Agent to be equal to its Social Capital.
+// 	weights := make(map[uuid.UUID]float64)
+// 	agents := a.GetFellowBikers()
+// 	compRoll := rand.Float64()
+// 	willComply := compRoll < a.Modules.AgentParameters.Trustworthiness
+// 	for _, agent := range agents {
+// 		// if agent Id is not in the a.Modules.SocialCapital.SocialCapital map, set the weight to 0.5 (neither trust or distrust)
+// 		if _, ok := a.Modules.AgentParameters.TrustNetwork[agent.GetID()]; !ok {
+// 			// add agent to the map
+// 			a.Modules.AgentParameters.TrustNetwork[agent.GetID()] = 0.5
+// 		}
+// 		agentWeighting := a.calculateUntrustworthyWeighting(agent.GetID()) // weight own action by 100%, if non compliant
+// 		if willComply {                                                    // give 'fair' weighting based on trust, if agent is trustworthy
+// 			agentWeighting = a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
+// 		}
+// 		weights[agent.GetID()] = agentWeighting
+// 		// fmt.Printf("[DecideWeights G2] Agent %s has weight %f\n", agent.GetID(), weights[agent.GetID()])
+// 	}
+// 	return weights
+// }
+
+// func (a *AgentSOSA) VoteLeader() voting.IdVoteMap {
+// 	// We vote 0.5 for ourselves if the agent with the highest SC Agent(that we've met so far) on our bike. If we're alone on a bike, we vote 1 for ourselves.
+// 	votes := make(voting.IdVoteMap)
+// 	fellowBikers := a.GetFellowBikers()
+// 	if len(a.GetFellowBikers()) > 0 {
+// 		agentIDStruct := a.Modules.Environment.GetBikerWithMaxSocialCapital(a.Modules.AgentParameters)
+// 		agentId := agentIDStruct.ID
+// 		for _, fellowBiker := range fellowBikers {
+// 			if fellowBiker.GetID() == agentId {
+// 				votes[fellowBiker.GetID()] = 0.5
+// 			} else if fellowBiker.GetID() == a.GetID() {
+// 				votes[a.GetID()] = 0.5
+// 			} else {
+// 				votes[fellowBiker.GetID()] = 0.0
+// 			}
+// 		}
+// 	} else {
+// 		votes[a.GetID()] = 1.0
+// 	}
+
+// 	return votes
+// }
+
+// func (a *AgentSOSA) DecideGovernance() utils.Governance {
+// 	// All possibilities except dictatorship.
+// 	// Need to decide weights for each type of Governance
+// 	// Can add an invalid weighting so that it is not 50/50
+
+// 	// randomNumber := rand.Float64()
+// 	// if randomNumber < democracyWeight {
+// 	// 	return utils.Democracy
+// 	// } else if randomNumber < democracyWeight+leadershipWeight {
+// 	// 	return utils.Leadership
+// 	// } else {
+// 	// 	return utils.Dictatorship
+// 	// }
+
+// 	// i can edit this to return agents with differnet preferneces
+// 	return utils.PerfectDemocracy 
+// }
+
+// func (a *AgentSOSA) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
+	// 	// fmt.Printf("[FFinalDirectionVote] Agent %s got proposals %v\n", a.GetID(), proposals)
+	// 	// fmt.Printf("[FFinalDirectionVote] Agent %s has Social Capitals %v\n", a.GetID(), a.Modules.SocialCapital.SocialCapital)
+	
+	// 	votes := make(voting.LootboxVoteMap)
+	
+	// 	// Assume we set our own social capital to 1.0, thus need to account for it
+	// 	weight := 1.0 / (a.Modules.AgentParameters.GetSumOfTrust() + 1)
+	
+	// 	for proposerID, proposal := range proposals {
+	// 		scWeight := 0.0
+	// 		if proposerID == a.GetID() {
+	// 			// If the proposal is our own, we vote for it with full weight
+	// 			scWeight = weight
+	// 		} else {
+	// 			scWeight = weight * a.Modules.AgentParameters.TrustNetwork[proposerID]
+	// 		}
+	
+	// 		// Check if the proposal already exists in votes, if not add it with the calculated weight
+	// 		if _, ok := votes[proposal]; !ok {
+	// 			votes[proposal] = scWeight
+	// 		} else {
+	// 			// If the proposal is already there, update it
+	// 			votes[proposal] += scWeight
+	// 		}
+	// 	}
+	// 	// fmt.Printf("[FFinalDirectionVote] Agent %s voted %v\n", a.GetID(), votes)
+	// 	return votes
+	// }
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ----- ALREADY COMMENTED OUT WEIRD STUFF -----
+// func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
+// 	socialCapital := maps.Clone(a.Modules.AgentParameters.TrustNetwork)
+// 	// Iterate through agents in social capital
+// 	for id := range socialCapital {
+// 		// Iterate through fellow bikers
+// 		for _, biker := range a.GetFellowBikers() {
+// 			// If this agent is a fellow biker, move on
+// 			if biker.GetID() == id {
+// 				continue
+// 			}
+// 		}
+// 		if math.IsNaN(socialCapital[id]) {
+// 			runtime.Breakpoint()
+// 			panic("dhsd")
+// 		}
+// 		// This agent is not a fellow biker - remove it from SC
+// 		delete(socialCapital, id)
+// 	}
+// 	// We give ourselves 1.0
+// 	socialCapital[a.GetID()] = 1.0
+// 	return socialCapital
+// }

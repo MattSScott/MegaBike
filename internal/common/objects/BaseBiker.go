@@ -16,7 +16,7 @@ import (
 type IBaseBiker interface {
 	baseAgent.IAgent[IBaseBiker]
 
-	DecideGovernance() utils.Governance
+	// DecideGovernance() utils.Governance
 	DecideAction() BikerAction                                   // ** determines what action the agent is going to take this round. (changeBike or Pedal)
 	DecideForce(direction uuid.UUID)                             // ** defines the vector you pass to the bike: [pedal, brake, turning]
 	DecideJoining(pendinAgents []uuid.UUID) map[uuid.UUID]bool   // ** decide whether to accept or not accept bikers, ranks the ones
@@ -27,8 +27,8 @@ type IBaseBiker interface {
 	FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap // ** stage 3 of direction voting
 	DecideAllocation() voting.IdVoteMap                                         // ** decide the allocation parameters
 	VoteForKickout() map[uuid.UUID]int
-	VoteDictator() voting.IdVoteMap
-	VoteLeader() voting.IdVoteMap
+	// VoteDictator() voting.IdVoteMap
+	// VoteLeader() voting.IdVoteMap
 
 	// representative functions
 	DecideDirectionMalevolently() uuid.UUID                // ** called only when the agent is a degenerate aristocrat or monarch, equivalent of propose direction
@@ -37,7 +37,7 @@ type IBaseBiker interface {
 	DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap // ** decide the allocation 
 
 	// leader functions
-	DecideWeights(action utils.Action) map[uuid.UUID]float64 // decide on weights for various actions
+	// DecideWeights(action utils.Action) map[uuid.UUID]float64 // decide on weights for various actions
 
 	GetForces() utils.Forces        // returns forces for current round
 	GetColour() utils.Colour        // returns the colour of the lootbox that the agent is currently seeking
@@ -174,7 +174,7 @@ func (bb *BaseBiker) nearestLoot() uuid.UUID {
 
 // in the MVP the biker's action defaults to pedaling (as it won't be able to change bikes)
 // in future implementations this function will be overridden by the agent's specific strategy
-// which will be used to determine whether to pedalor try to change bike
+// which will be used to determine whether to pedal or try to change bike
 func (bb *BaseBiker) DecideAction() BikerAction {
 	return Pedal
 }
@@ -373,10 +373,10 @@ func (bb *BaseBiker) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool
 	return decision
 }
 
-func (bb *BaseBiker) DecideGovernance() utils.Governance {
-	// Change behaviour here to return different governance
-	return utils.PerfectDemocracy
-}
+// func (bb *BaseBiker) DecideGovernance() utils.Governance {
+// 	// Change behaviour here to return different governance
+// 	return utils.PerfectDemocracy
+// }
 
 func (bb *BaseBiker) ResetPoints() {
 	bb.points = 0
@@ -415,54 +415,29 @@ func (bb *BaseBiker) VoteForKickout() map[uuid.UUID]int {
 	return voteResults
 }
 
-// defaults to voting for first agent in the list
-func (bb *BaseBiker) VoteDictator() voting.IdVoteMap {
-	votes := make(voting.IdVoteMap)
-	fellowBikers := bb.GetFellowBikers()
-	for i, fellowBiker := range fellowBikers {
-		if i == 0 {
-			votes[fellowBiker.GetID()] = 1.0
-		} else {
-			votes[fellowBiker.GetID()] = 0.0
-		}
-	}
-	return votes
-}
+// // defaults to voting for first agent in the list
+// func (bb *BaseBiker) VoteDictator() voting.IdVoteMap {
+// 	votes := make(voting.IdVoteMap)
+// 	fellowBikers := bb.GetFellowBikers()
+// 	for i, fellowBiker := range fellowBikers {
+// 		if i == 0 {
+// 			votes[fellowBiker.GetID()] = 1.0
+// 		} else {
+// 			votes[fellowBiker.GetID()] = 0.0
+// 		}
+// 	}
+// 	return votes
+// }
 
 func (bb *BaseBiker) DecideDirectionBenevolently() uuid.UUID {
 	nearest := bb.nearestLoot()
 	return nearest
 }
 
-// to edit.
+// doesnt matter what this is as overwritten anyway
 func (bb *BaseBiker) DecideDirectionMalevolently() uuid.UUID {
 	nearest := bb.nearestLoot()
 	return nearest
-}
-
-
-// defaults to voting for first agent in the list
-func (bb *BaseBiker) VoteLeader() voting.IdVoteMap {
-	votes := make(voting.IdVoteMap)
-	fellowBikers := bb.GetFellowBikers()
-	for i, fellowBiker := range fellowBikers {
-		if i == 0 {
-			votes[fellowBiker.GetID()] = 1.0
-		} else {
-			votes[fellowBiker.GetID()] = 0.0
-		}
-	}
-	return votes
-}
-
-// defaults to an equal distribution over all agents for all actions
-func (bb *BaseBiker) DecideWeights(action utils.Action) map[uuid.UUID]float64 {
-	weights := make(map[uuid.UUID]float64)
-	agents := bb.GetFellowBikers()
-	for _, agent := range agents {
-		weights[agent.GetID()] = 1.0
-	}
-	return weights
 }
 
 // only called when the agent is the dictator
@@ -721,3 +696,29 @@ func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameStat
 		gameState:    gameState,
 	}
 }
+
+
+// ----- DEPRECATED FUNCTIONS -----
+// // defaults to voting for first agent in the list
+// func (bb *BaseBiker) VoteLeader() voting.IdVoteMap {
+// 	votes := make(voting.IdVoteMap)
+// 	fellowBikers := bb.GetFellowBikers()
+// 	for i, fellowBiker := range fellowBikers {
+// 		if i == 0 {
+// 			votes[fellowBiker.GetID()] = 1.0
+// 		} else {
+// 			votes[fellowBiker.GetID()] = 0.0
+// 		}
+// 	}
+// 	return votes
+// }
+
+// // defaults to an equal distribution over all agents for all actions
+// func (bb *BaseBiker) DecideWeights(action utils.Action) map[uuid.UUID]float64 {
+// 	weights := make(map[uuid.UUID]float64)
+// 	agents := bb.GetFellowBikers()
+// 	for _, agent := range agents {
+// 		weights[agent.GetID()] = 1.0
+// 	}
+// 	return weights
+// }
