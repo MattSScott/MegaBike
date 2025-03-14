@@ -88,6 +88,17 @@ func (s *Server) Start() {
 		}
 	}
 
+	adjacencyMatrix := createAdjacencyMatrix(reassocationMap)
+
+	file, err := os.Create("adjacency_matrix.json")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	json.NewEncoder(file).Encode(adjacencyMatrix)
+
 	s.outputSimulationResult(*gameState)
 }
 
@@ -232,4 +243,39 @@ func (s *Server) RunMessagingSession() {
 			}
 		}
 	}
+}
+
+
+func createAdjacencyMatrix(reassocationMap map[uuid.UUID]map[uuid.UUID]int) [][]int {
+
+	// Step 1: Extract unique agent IDs
+	agentIDs := make([]uuid.UUID, 0, len(reassocationMap))
+	for agentID := range reassocationMap {
+		agentIDs = append(agentIDs, agentID)
+	}
+
+	// Step 2: Create a map to associate agent UUIDs with indices
+	agentIndex := make(map[uuid.UUID]int)
+	for i, agentID := range agentIDs {
+		agentIndex[agentID] = i
+	}
+
+	// Step 3: Initialize the adjacency matrix (with all zeros initially)
+	matrixSize := len(agentIDs)
+	adjacencyMatrix := make([][]int, matrixSize)
+	for i := range adjacencyMatrix {
+		adjacencyMatrix[i] = make([]int, matrixSize)
+	}
+
+	// Step 4: Populate the adjacency matrix with the re-association data
+	for agentID, associations := range reassocationMap {
+		for otherAgentID, count := range associations {
+			// Get indices for agent and other agent
+			i := agentIndex[agentID]
+			j := agentIndex[otherAgentID]
+			adjacencyMatrix[i][j] = count
+		}
+	}
+
+	return adjacencyMatrix
 }

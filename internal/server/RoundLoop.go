@@ -30,8 +30,8 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 		s.MovePhysicsObject(bike)
 	}
 
-	// Move the awdi
-	s.MovePhysicsObject(s.awdi)
+	// // Move the awdi
+	// s.MovePhysicsObject(s.awdi)
 
 
 	// ----- 3. Distributing energy from any collected lootboxes -----
