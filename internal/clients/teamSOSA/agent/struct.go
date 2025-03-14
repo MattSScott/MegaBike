@@ -30,7 +30,6 @@ func (sosa *AgentSOSA) GetTrustworthiness() float64 {
 }
 
 func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
-	baseBiker.GroupID = 2
 	return &AgentSOSA{
 		BaseBiker: baseBiker,
 		Modules: AgentModules{

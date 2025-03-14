@@ -76,6 +76,16 @@ func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, event
 	ap.TrustNetwork[agentID] = clamp(ap.TrustNetwork[agentID])
 }
 
+func NewAgentParameters() *AgentParameters {
+	return &AgentParameters{
+		Trustworthiness: rand.Float64(),
+		TrustNetwork:    make(map[uuid.UUID]float64),
+	}
+}
+
+
+// ----- DEPRECATED -----
+
 // func (sc *SocialCapital) UpdateSocialCapital() {
 // 	// fmt.Printf("[UpdateSocialCapital] Social Capital Before: %v\n", sc.SocialCapital)
 
@@ -102,10 +112,3 @@ func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, event
 // 	}
 // 	// fmt.Printf("[UpdateSocialCapital] Social Capital After: %v\n", sc.SocialCapital)
 // }
-
-func NewAgentParameters() *AgentParameters {
-	return &AgentParameters{
-		Trustworthiness: rand.Float64(),
-		TrustNetwork:    make(map[uuid.UUID]float64),
-	}
-}

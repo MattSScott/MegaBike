@@ -9,7 +9,6 @@ const (
 
 const (
 	SocialEventWeight_AgentSentMsg = 0.1
-
 	SocialEventValue_AgentSentMsg = 0.05
 )
 
@@ -35,9 +34,12 @@ const (
 	ChangeBikeSocialCapitalThreshold = 0.5 // Threshold for deciding whether to change bike or not
 )
 
-// weights for each type of governance
-const (
-	democracyWeight    = 0.50
-	leadershipWeight   = 0.50
-	dictatorshipWeight = 0.0
-)
+
+// ----- DEPRECATED -----
+
+// // weights for each type of governance
+// const (
+// 	democracyWeight    = 0.50
+// 	leadershipWeight   = 0.50
+// 	dictatorshipWeight = 0.0
+// )

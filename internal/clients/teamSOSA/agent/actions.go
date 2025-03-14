@@ -432,19 +432,6 @@ func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
 	// }
 	
 
-
-
-
-
-
-
-
-
-
-
-
-
-// ----- ALREADY COMMENTED OUT WEIRD STUFF -----
 // func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 // 	socialCapital := maps.Clone(a.Modules.AgentParameters.TrustNetwork)
 // 	// Iterate through agents in social capital

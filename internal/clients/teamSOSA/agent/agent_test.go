@@ -1,14 +1,17 @@
 package agent
 
-import (
-	"SOMAS2023/internal/clients/teamSOSA/modules"
-	"SOMAS2023/internal/common/objects"
-	"SOMAS2023/internal/common/utils"
-	"testing"
+// import (
+// 	"SOMAS2023/internal/clients/teamSOSA/modules"
+// 	"SOMAS2023/internal/common/objects"
+// 	"SOMAS2023/internal/common/utils"
+// 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-)
+// 	"github.com/google/uuid"
+// 	"github.com/stretchr/testify/assert"
+// )
+
+// this was all commented out before i got here
+
 
 // func TestNewBaseTeam2Biker(t *testing.T) {
 // 	agent := NewAgentSOSA(objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), &MockGameState{}))

@@ -45,7 +45,6 @@ type IBaseBiker interface {
 	GetBike() uuid.UUID             // tells the biker which bike it is on
 	GetEnergyLevel() float64        // returns the energy level of the agent
 	GetPoints() int
-	GetGroupID() int
 	GetBikeStatus() bool // returns whether the biker is on a bike or not
 	GetTrustworthiness() float64
 
@@ -96,7 +95,6 @@ type BaseBiker struct {
 	megaBikeId                       uuid.UUID             // if they are not on a bike it will be 0
 	gameState                        IGameState            // updated by the server at every round
 	reputation                       map[uuid.UUID]float64 // record reputation for other agents in float
-	GroupID                          int
 }
 
 func (bb *BaseBiker) GetEnergyLevel() float64 {
@@ -268,10 +266,6 @@ func (bb *BaseBiker) SetBike(bikeId uuid.UUID) {
 
 func (bb *BaseBiker) GetBike() uuid.UUID {
 	return bb.megaBikeId
-}
-
-func (bb *BaseBiker) GetGroupID() int {
-	return bb.GroupID
 }
 
 // this is called when a lootbox of the desidered colour has been looted in order to update the sought colour
@@ -679,7 +673,6 @@ func GetIBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameSta
 		onBike:       true,
 		energyLevel:  1.0,
 		points:       0,
-		GroupID:      0,
 		gameState:    gameState,
 	}
 }
@@ -692,7 +685,6 @@ func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameStat
 		onBike:       false,
 		energyLevel:  1.0,
 		points:       0,
-		GroupID:      0,
 		gameState:    gameState,
 	}
 }
@@ -721,4 +713,9 @@ func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameStat
 // 		weights[agent.GetID()] = 1.0
 // 	}
 // 	return weights
+// }
+
+
+// func (bb *BaseBiker) GetGroupID() int {
+// 	return bb.GroupID
 // }
