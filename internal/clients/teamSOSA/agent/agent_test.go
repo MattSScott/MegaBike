@@ -10,7 +10,8 @@ package agent
 // 	"github.com/stretchr/testify/assert"
 // )
 
-// this was all commented out before i got here
+
+// NOTE: this was all commented out before i got here
 
 
 // func TestNewBaseTeam2Biker(t *testing.T) {
