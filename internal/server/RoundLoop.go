@@ -7,7 +7,7 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
-	"math/rand"
+	"slices"
 
 	"github.com/google/uuid"
 )
@@ -30,8 +30,8 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 		s.MovePhysicsObject(bike)
 	}
 
-	// // Move the awdi
-	// s.MovePhysicsObject(s.awdi)
+	// Move the awdi
+	s.MovePhysicsObject(s.awdi)
 
 
 	// ----- 3. Distributing energy from any collected lootboxes -----
@@ -214,13 +214,31 @@ func (s *Server) LootboxCheckAndDistributions() {
 						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
 						
 					case utils.DegenerateAristocracy, utils.PerfectAristocracy:
-						// for now just choose an aristocrat randomly to decide
-						// TODO: find a way to aggregate the aristocrat distributions
 						reps := megabike.GetRepresentatives()
-						randIndex := rand.Intn(len(reps))
-						chosenAristocrat := s.GetAgentMap()[reps[randIndex]]
-						winningAllocation = chosenAristocrat.DecideRepresentativeAllocation(gov)
 						
+						allAllocations := make(map[uuid.UUID]voting.IdVoteMap)
+						for _, agent := range agents {
+							// the agents return their ideal lootbox split by assigning a number between 0 and 1 to
+							// each biker on their bike (including themselves) ensuring they sum to 1
+							allAllocations[agent.GetID()] = agent.DecideAllocation()
+						}
+
+						Iallocations := make(map[uuid.UUID]voting.IVoter)
+						for i, v := range allAllocations {
+							Iallocations[i] = v
+						}
+
+						// make map of weights of 1 for aristocrats and 0 for non aristocrats.
+						weights := make(map[uuid.UUID]float64)
+						for _, agent := range agents {
+							if slices.Contains(reps, agent.GetID()) {
+								weights[agent.GetID()] = 1.0
+							} else {
+								weights[agent.GetID()] = 0.0
+							}
+						}
+
+						winningAllocation = voting.CumulativeDist(Iallocations, weights)
 					}
 					
 

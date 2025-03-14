@@ -416,15 +416,17 @@ func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
 	return a.Modules.Environment.GetHighestGainLootbox()
 }
 
-// to edit
+
 func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
-	// Move in opposite direction to Awdi in full force
+
+	// Move in opposite direction to Awdi in full force - a representative still doesn't want to get obliterated
 	if a.Modules.Environment.IsAwdiNear() {
 		// fmt.Printf("[DictateDirection] Agent %s is near Awdi\n", a.GetID())
 		return a.Modules.Environment.GetNearestLootboxAwayFromAwdi()
 	}
-	// Otherwise, move towards the lootbox with the highest gain
-	return a.Modules.Environment.GetHighestGainLootbox()
+
+	// Otherwise, move towards the nearest lootbox of your own colour
+	return a.Modules.Environment.GetNearestLootboxByColor(a.GetID(), a.GetColour())
 }
 
 func (a *AgentSOSA) SetBike(bikeId uuid.UUID) {
