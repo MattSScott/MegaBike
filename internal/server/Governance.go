@@ -230,7 +230,7 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike) uuid.UUID {
 		}
 		
 		if consensusReached {
-			return directions[0] // could be any element of the slice they are all the asme
+			return directions[0] // could be any element of the slice they are all the same
 		} else {
 			return uuid.Nil // assuming this means 'don't move'
 		}

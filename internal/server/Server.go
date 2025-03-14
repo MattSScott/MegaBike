@@ -75,15 +75,19 @@ func (s *Server) Start() {
 
 	gameState := NewSimplifiedGameStateDump()
 
+	// maps each agent to another map, containing how many times they have been on a bike with each agent
+	reassocationMap := make(map[uuid.UUID]map[uuid.UUID]int)
+
 	for i := 0; i < s.GetIterations(); i++ {
 		fmt.Printf("Game Loop %d running... \n \n", i+1)
-		s.RunSimLoop(utils.Rounds, gameState, i)
+		s.RunSimLoop(utils.Rounds, gameState, i, reassocationMap)
 		fmt.Printf("Game Loop %d completed.\n", i+1)
 		fmt.Println(len(s.GetAgentMap()))
 		if len(s.GetAgentMap()) == 0 {
 			break
 		}
 	}
+
 	s.outputSimulationResult(*gameState)
 }
 

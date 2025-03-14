@@ -13,7 +13,7 @@ import (
 
 
 // the simulation loop represents 100 rounds
-func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int) {
+func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int, reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
 
 	// ----- 0. Gossip Phase -----
 	s.RunMessagingSession()
@@ -22,6 +22,37 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	if iteration != 0 {
 		s.RunBikeSwitch() 
 		s.SetDestinationBikes()
+	}
+
+	// record assocations in the map
+	for agentID, agent := range s.GetAgentMap() {
+		bikes := s.GetMegaBikes()
+
+		// check if bike is in bikes map
+		if _, ok := bikes[agent.GetBike()]; !ok {
+			continue
+		}
+
+		// get a slice of the fellow bikers this agent has for this iteration
+		bike := bikes[agent.GetBike()]
+		fellowBikers := make([]objects.IBaseBiker, 0)
+		for _, biker := range bike.GetAgents() {
+			if biker.GetBikeStatus() {
+				fellowBikers = append(fellowBikers, biker)
+			}
+		}
+
+		// increment the count for each of these fellow bikers in the agent's map.
+		for _, fellowBiker := range fellowBikers {
+			    // Make sure the inner map exists
+				if _, exists := reassocationMap[agentID]; !exists {
+					reassocationMap[agentID] = make(map[uuid.UUID]int)
+				}
+				
+				// Increment the count
+				reassocationMap[agentID][fellowBiker.GetID()]++
+		}
+
 	}
 
 
