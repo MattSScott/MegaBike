@@ -204,7 +204,7 @@ func (a *AgentSOSA) DecideAction() objects.BikerAction {
 
 	avgSocialCapital := a.Modules.AgentParameters.GetAverageTrust()
 
-	if avgSocialCapital > 0.2 {
+	if avgSocialCapital > modules.StayOnBikeThreshold {
 		// Pedal if members of the bike have high social capital.
 		return objects.Pedal
 	} else {
