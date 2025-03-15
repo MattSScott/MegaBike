@@ -14,7 +14,9 @@ import (
 type IBaseBiker interface {
 	baseAgent.IAgent[IBaseBiker] // Embedding base agent
 
-	// ----- Basic Decision Making Functions (to be overridden by a particular strategy) -----
+	// ----- Part 1: Functions to be overridden by a specific agent implementation
+
+	// Decision Making (all agents)
 
 	DecideAction() BikerAction                                   // returns: int reflecting what the agent has decided to do this iteration (pedal the bike (0), or try to change bikes (1))
 	DecideJoining(pendinAgents []uuid.UUID) map[uuid.UUID]bool   // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
@@ -24,45 +26,18 @@ type IBaseBiker interface {
 	ProposeNewRadius(float64) float64                            // returns: TODO
 	DecideAllocation() voting.IdVoteMap                          // returns: map containing bikerID -> distribution (i.e. share of resources)
 	VoteForKickout() map[uuid.UUID]int                           // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
-	DecideForce(direction uuid.UUID)                             // decides the force the biker is going to pedal with
-	HandleAgentUnalive(id uuid.UUID)                             // decides how to handle a dead agent
+	DecideForce(direction uuid.UUID)                             // decides: the force the biker is going to pedal with
+	HandleAgentUnalive(id uuid.UUID)                             // decides: how to handle a dead agent
 
-	// representative versions
+	// Decision Making (extra representative functions)
 
 	DecideDirectionMalevolently() uuid.UUID                                      // returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. only called when the agent is perfect monarch / aristocrat
 	DecideDirectionBenevolently() uuid.UUID                                      // returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way, only called when agent is degen monarch / aristocrat
 	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
 	DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap // returns: map containing bikerID -> distribution (i.e. share of resources) (only called by reps)
 
-	// ----- Getters -----
+	// Message Handlers (self-explanatory)
 
-	GetForces() utils.Forces        // returns: forces for current round
-	GetColour() utils.Colour        // returns: the colour of the lootbox that the agent is currently seeking
-	GetLocation() utils.Coordinates // returns: the agent's location
-	GetBike() uuid.UUID             // returns: the uuid of the bike the agent is currently on
-	GetEnergyLevel() float64        // returns: energy level of the agent
-	GetPoints() int                 // returns: the points the agent currently has
-	GetBikeStatus() bool            // returns: whether the biker is on a bike or not
-	GetTrustworthiness() float64    // returns: the trustworthiness of an agent
-	GetFellowBikers() []IBaseBiker  // returns: slice containing the bikers on our bike.
-
-	// ----- Setters, Updaters, Togglers and Resetters -----
-
-	SetBike(uuid.UUID)                       // sets: the megaBikeID. (this is either the id of the bike that the agent is on or the one that it's trying to join)
-	SetForces(forces utils.Forces)           // sets: the force (called within DecideForce())
-	UpdatePoints(pointGained int)            // increases the points of an agent by pointsGained
-	UpdateEnergyLevel(energyLevel float64)   // increases the energy level of the agent by the allocated lootbox share or decreases by expended energy
-	ToggleOnBike()                           // called when removing or adding a biker on a bike
-	ResetPoints()							 // resets agents points to 0
-
-
-	// DONE UP TO HERE
-
-	GetReputation() map[uuid.UUID]float64 // get reputation value of all other agents
-	QueryReputation(uuid.UUID) float64    // query for reputation value of specific agent with UUID
-	SetReputation(uuid.UUID, float64)     // set reputation value of specific agent with UUID
-
-	// Message Handlers
 	HandleKickoutMessage(msg KickoutAgentMessage)
 	HandleReputationMessage(msg ReputationOfAgentMessage)
 	HandleJoiningMessage(msg JoiningAgentMessage)
@@ -74,19 +49,52 @@ type IBaseBiker interface {
 	HandleVoteRulerMessage(msg VoteRulerMessage)
 	HandleVoteKickoutMessage(msg VoteKickoutMessage)
 	HandleVoteAllocationMessage(msg VoteAllocationMessage)
-
 	GetAllMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
-	// ----- Currently not included -----
-	//FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap // ** stage 3 of direction voting
 
-	// ----- Deprecated -----
+	// ----- Part 2: Core Functions (do not need to implement these, can inherit basebiker's) -----
+
+	// Getters
+
+	GetForces() utils.Forces        // returns: forces for current round
+	GetColour() utils.Colour        // returns: the colour of the lootbox that the agent is currently seeking
+	GetLocation() utils.Coordinates // returns: the agent's location
+	GetBike() uuid.UUID             // returns: the uuid of the bike the agent is currently on
+	GetEnergyLevel() float64        // returns: energy level of the agent
+	GetPoints() int                 // returns: the points the agent currently has
+	GetBikeStatus() bool            // returns: whether the biker is on a bike or not
+	GetTrustworthiness() float64    // returns: the trustworthiness of an agent
+	GetFellowBikers() []IBaseBiker  // returns: slice containing the bikers on our bike.
+
+	// Setters
+
+	SetBike(uuid.UUID)                       // sets: the megaBikeID. (this is either the id of the bike that the agent is on or the one that it's trying to join)
+	SetForces(forces utils.Forces)           // sets: the force (called within DecideForce())
+	UpdatePoints(pointGained int)            // increases: the points of an agent by pointsGained
+	UpdateEnergyLevel(energyLevel float64)   // increases: the energy level of the agent by the allocated lootbox share or decreases by expended energy
+	ToggleOnBike()                           // toggles: whether a user is on bike or not. called when removing or adding a biker on a bike
+	ResetPoints()							 // resets: agents points to 0
+
+
+	// ----- Part 3: Misc -----
+
+	// base biker trust system (i think)
+
+	GetReputation() map[uuid.UUID]float64 // get reputation value of all other agents
+	QueryReputation(uuid.UUID) float64    // query for reputation value of specific agent with UUID
+	SetReputation(uuid.UUID, float64)     // set reputation value of specific agent with UUID
+
+
+
+	// ----- Part 4: Deprecated -----
 	// DecideGovernance() utils.Governance
 	// VoteDictator() voting.IdVoteMap
 	// VoteLeader() voting.IdVoteMap
 	// DecideWeights(action utils.Action) map[uuid.UUID]float64 // decide on weights for various actions (for the leader)
 	//SetDeterministicColour(col utils.Colour) // allows for deterministic setting of colour
+	//FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap // ** stage 3 of direction voting
 }
+
 
 type BikerAction int
 
