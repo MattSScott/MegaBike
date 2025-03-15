@@ -95,11 +95,15 @@ const (
 	Invalid
 )
 
-type Action int
+// ----- Deprecated -----
 
-const (
-	Kickout Action = iota
-	Joining
-	Direction
-	Allocation
-)
+// below type seems to never be used?? so commented out
+
+// type Action int
+
+// const (
+// 	Kickout Action = iota
+// 	Joining
+// 	Direction
+// 	Allocation
+// )

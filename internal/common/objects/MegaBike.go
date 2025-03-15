@@ -277,6 +277,8 @@ func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
 
 
 
+
+
 func (mb *MegaBike) ActivateAllGlobalRules() {
 	globalRuleView := mb.globalRuleCacheView
 	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
@@ -297,7 +299,6 @@ func (mb *MegaBike) InitialiseRuleMap() {
 
 	mb.AddToRuleMap(rule)
 }
-
 
 func (mb *MegaBike) ViewLinearRuleList() []*Rule {
 	return mb.linearRuleList
