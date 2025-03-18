@@ -13,7 +13,7 @@ type ILootBox interface {
 type LootBox struct {
 	*PhysicsObject
 	colour    utils.Colour
-	totalLoot float64
+	totalLoot float64				// between 2 and 4
 }
 
 // GetLootBox is a constructor for LootBox that initializes it with a new UUID and default position.
@@ -25,12 +25,12 @@ func GetLootBox() *LootBox {
 	}
 }
 
-// returns the total loot of the object
+// returns: the total loot of the lootbox
 func (lb *LootBox) GetTotalResources() float64 {
 	return lb.totalLoot
 }
 
-// GetColour returns the color of the BikerAgent.
+// returns: the color of the lootbox
 func (lb *LootBox) GetColour() utils.Colour {
 	return lb.colour
 }

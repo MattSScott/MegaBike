@@ -37,7 +37,7 @@ func (a *Awdi) InjectGameState(gameState IGameState) {
 	a.gameState = gameState
 }
 
-// Calculates and returns the desired force of the awdi based on the current gamestate
+// updates: the force of the awdi, which is dependent on whether it has a target bike or not.
 func (awdi *Awdi) UpdateForce() {
 	// Compute the target Megabike, which will update awdi.target
 	awdi.ComputeTarget()
@@ -49,7 +49,7 @@ func (awdi *Awdi) UpdateForce() {
 	}
 }
 
-// Calculates and returns the desired orientation of the awdi based on the current gamestate
+// updates: the awdis orientation if it has a target bike
 func (awdi *Awdi) UpdateOrientation() {
 	// If no target, awdi will not change orientation
 	// Otherwise, new orientation is calculated based on positioning of target
@@ -58,7 +58,7 @@ func (awdi *Awdi) UpdateOrientation() {
 	}
 }
 
-// Computes the target Megabike based on current gameState
+// computes: the target Megabike based on current gameState
 func (awdi *Awdi) ComputeTarget() {
 	// search for target
 	minDistance := math.Inf(1)
@@ -97,6 +97,7 @@ func (awdi *Awdi) ComputeTarget() {
 	}
 }
 
+// returns: the ID of the target megabike
 func (awdi *Awdi) GetTargetID() uuid.UUID {
 	if awdi.target != nil {
 		return awdi.target.GetID()

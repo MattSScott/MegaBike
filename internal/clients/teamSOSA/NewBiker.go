@@ -6,7 +6,6 @@ import (
 )
 
 // SOSA agent init function
-
 func GetBiker(baseBiker *objects.BaseBiker) objects.IBaseBiker {
 	return agent.NewAgentSOSA(baseBiker)
 }

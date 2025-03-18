@@ -56,14 +56,14 @@ func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *Me
 	}
 }
 
-// Physics Object Stuff
+// ----- Physics -----
 
-// gets the orientation of the megabike
+// returns: the orientation of the megabike
 func (mb *MegaBike) GetOrientation() float64 {
 	return mb.orientation
 }
 
-// Calculates and returns the total force of the Megabike based on the Biker's force
+// updates: the total force of the Megabike based on the biker's force
 func (mb *MegaBike) UpdateForce() {
 	if len(mb.agents) == 0 {
 		mb.force = 0.0
@@ -82,7 +82,7 @@ func (mb *MegaBike) UpdateForce() {
 	mb.force = (float64(totalPedal) - float64(totalBrake))
 }
 
-// Calculates the final orientation of the Megabike, between -1 and 1 (-180° to 180°), given the Biker's Turning forces
+// updates: the final orientation of the Megabike, between -1 and 1 (-180° to 180°), given the Biker's Turning forces
 func (mb *MegaBike) UpdateOrientation() {
 	var xSum, ySum float64
 	numOfSteeringAgents := 0
@@ -112,14 +112,14 @@ func (mb *MegaBike) UpdateOrientation() {
 
 
 
-// Megabike Interface Specific Stuff
+// ----- General -----
 
-// adds agents to bike
+// adds an agent to the bike
 func (mb *MegaBike) AddAgent(biker IBaseBiker) {
 	mb.agents = append(mb.agents, biker)
 }
 
-// Remove agent from bike, given its ID
+// removes: an agent from the bike, given its ID
 func (mb *MegaBike) RemoveAgent(bikerId uuid.UUID) {
 	// Create a new slice to store the updated agents
 	var updatedAgents []IBaseBiker
@@ -135,18 +135,19 @@ func (mb *MegaBike) RemoveAgent(bikerId uuid.UUID) {
 	mb.agents = updatedAgents
 }
 
+// returns: a slice containing the agents on the bike
 func (mb *MegaBike) GetAgents() []IBaseBiker {
 	return mb.agents
 }
 
-// Calculate the mass of the bike with all it's agents
+// updates: the mass of the bike accounting for all its agents
 func (mb *MegaBike) UpdateMass() {
 	mass := utils.MassBike
 	mass += float64(len(mb.agents))
 	mb.mass = mass
 }
 
-// returns a slice of agent ids to kick out
+// returns: a slice of agent ids to kick out
 func (mb *MegaBike) KickOutAgent() []uuid.UUID {
 
 	// a map of agent id -> number of votes
@@ -189,42 +190,55 @@ func (mb *MegaBike) KickOutAgent() []uuid.UUID {
 	return agentsToKickOut
 }
 
+// returns: the governance style of the megabike
 func (mb *MegaBike) GetGovernance() utils.Governance {
 	return mb.governance
 }
 
+// returns: a slice containing the UUIDs of the representatives
 func (mb *MegaBike) GetRepresentatives() []uuid.UUID {
 	return mb.representatives
 }
 
-// get the count of kicked out agents
+// returns: the count of kicked out agents
 func (mb *MegaBike) GetKickedOutCount() int {
 	return mb.kickedOutCount
 }
 
+// resets: the kicked out count
 func (mb *MegaBike) ResetKickedOutCount() {
 	mb.kickedOutCount = 0
 }
 
+// returns: the megabike current pool
 func (mb *MegaBike) GetCurrentPool() float64 {
 	return mb.currentPool
 }
 
+// updates: the current pool given a value
 func (mb *MegaBike) UpdateCurrentPool(val float64) {
 	mb.currentPool += val
 }
 
+// resets: the current pool to 0
 func (mb *MegaBike) ResetCurrentPool() {
 	mb.currentPool = 0
 }
 
+// sets: the governance of the megabike
 func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 	mb.governance = governance
 }
 
+// sets: the representatives of the megabike
 func (mb *MegaBike) SetRepresentatives(reps []uuid.UUID) {
 	mb.representatives = reps
 }
+
+
+// ----- Rule Stuff -----
+
+// do i need this?
 
 func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
 	output := []*Rule{}
@@ -274,10 +288,6 @@ func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
 
 	return true
 }
-
-
-
-
 
 func (mb *MegaBike) ActivateAllGlobalRules() {
 	globalRuleView := mb.globalRuleCacheView
