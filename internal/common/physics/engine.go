@@ -5,9 +5,7 @@ import (
 	"math"
 )
 
-/*
-The Engine is responsible for calculating physics for the environment
-*/
+// ----- The Engine is responsible for calculating physics for the environment -----
 
 func CalcAcceleration(f float64, m float64, v float64) float64 {
 	if m == 0 {

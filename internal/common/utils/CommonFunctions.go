@@ -5,9 +5,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// GenerateRandomCoordinates creates random X and Y coordinates within the grid boundaries.
+// returns: random X and Y coordinates within the grid boundaries.
 func GenerateRandomCoordinates() Coordinates {
-	// Generate random coordinates
 	return Coordinates{
 		X: rand.Float64() * GridWidth,
 		Y: rand.Float64() * GridHeight,
