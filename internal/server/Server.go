@@ -55,7 +55,7 @@ func GenerateServer() IBaseBikerServer {
 	return &Server{}
 }
 
-// Spawns everything in
+// spawns everything in
 func (s *Server) Initialize(iterations int) {
 	s.BaseServer = *baseserver.CreateServer[objects.IBaseBiker](s.GetAgentGenerators(), iterations)
 	s.lootBoxes = make(map[uuid.UUID]objects.ILootBox)
@@ -70,6 +70,7 @@ func (s *Server) Initialize(iterations int) {
 	s.awdi.InjectGameState(s)
 }
 
+// begins the game
 func (s *Server) Start() {
 	fmt.Printf("Server initialised with %d agents \n\n", len(s.GetAgentMap()))
 
@@ -220,21 +221,32 @@ func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 	fmt.Println(gameDumpFile)
 }
 
-// had to override to address the fact that agents only have access to the game dump
-// version of agents, so if the recipients are set to be those it will panic as they
-// can't call the handler functions
+// agents get a chance to send their messages if they desire
 func (s *Server) RunMessagingSession() {
+
+	// note:  had to override to address the fact that agents only have access to the game dump
+	// version of agents, so if the recipients are set to be those it will panic as they
+	// can't call the handler functions
+
+	// create an array of agent objects
 	agentArray := s.GenerateAgentArrayFromMap()
 
 	for _, agent := range s.GetAgentMap() {
+
+		// retrieve all the messages this agent wants to send
 		allMessages := agent.GetAllMessages(agentArray)
+
+		// for each message ...
 		for _, msg := range allMessages {
 			recipients := msg.GetRecipients()
-			// make recipient list with actual agents
+
+			// make recipient list with actual agents (i.e. alive agents that are in the game)
 			usableRecipients := make([]objects.IBaseBiker, len(recipients))
 			for i, recipient := range recipients {
 				usableRecipients[i] = s.GetAgentMap()[recipient.GetID()]
 			}
+
+			// iterate over these recipients of the message and invoke their message handler.
 			for _, recip := range usableRecipients {
 				if agent.GetID() == recip.GetID() {
 					continue

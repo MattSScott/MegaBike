@@ -22,37 +22,9 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	if iteration != 0 {
 		s.RunBikeSwitch() 
 		s.SetDestinationBikes()
-	}
 
-	// record assocations in the map
-	for agentID, agent := range s.GetAgentMap() {
-		bikes := s.GetMegaBikes()
-
-		// check if bike is in bikes map
-		if _, ok := bikes[agent.GetBike()]; !ok {
-			continue
-		}
-
-		// get a slice of the fellow bikers this agent has for this iteration
-		bike := bikes[agent.GetBike()]
-		fellowBikers := make([]objects.IBaseBiker, 0)
-		for _, biker := range bike.GetAgents() {
-			if biker.GetBikeStatus() {
-				fellowBikers = append(fellowBikers, biker)
-			}
-		}
-
-		// increment the count for each of these fellow bikers in the agent's map.
-		for _, fellowBiker := range fellowBikers {
-			    // Make sure the inner map exists
-				if _, exists := reassocationMap[agentID]; !exists {
-					reassocationMap[agentID] = make(map[uuid.UUID]int)
-				}
-				
-				// Increment the count
-				reassocationMap[agentID][fellowBiker.GetID()]++
-		}
-
+		// EXPERIMENTAL: record associations in the map
+		s.RecordAssociations(reassocationMap)
 	}
 
 
@@ -80,7 +52,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 		s.RunRoundLoop(iterationDump, i)
 	}
 	
-	// ----- Extra: Code for recording game state: -----
+	// ----- Recording game state -----
 
 	avgKicks := 0.0
 
@@ -418,4 +390,37 @@ func (s *Server) ResetGameState() {
 
 	s.replenishLootBoxes()
 	s.replenishMegaBikes()
+}
+
+// ----- EXPERIMENTAL -----
+func (s *Server) RecordAssociations(reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
+	for agentID, agent := range s.GetAgentMap() {
+		bikes := s.GetMegaBikes()
+
+		// check if bike is in bikes map
+		if _, ok := bikes[agent.GetBike()]; !ok {
+			continue
+		}
+
+		// get a slice of the fellow bikers this agent has for this iteration
+		bike := bikes[agent.GetBike()]
+		fellowBikers := make([]objects.IBaseBiker, 0)
+		for _, biker := range bike.GetAgents() {
+			if biker.GetBikeStatus() {
+				fellowBikers = append(fellowBikers, biker)
+			}
+		}
+
+		// increment the count for each of these fellow bikers in the agent's map.
+		for _, fellowBiker := range fellowBikers {
+			    // Make sure the inner map exists
+				if _, exists := reassocationMap[agentID]; !exists {
+					reassocationMap[agentID] = make(map[uuid.UUID]int)
+				}
+				
+				// Increment the count
+				reassocationMap[agentID][fellowBiker.GetID()]++
+		}
+
+	}
 }

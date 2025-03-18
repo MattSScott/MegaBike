@@ -60,7 +60,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 
 
 
-	// if the representative(s) die then re-select them
+	// handle the case where reps die
 	for _, bike := range s.GetMegaBikes() {
 		agents := bike.GetAgents()
 
