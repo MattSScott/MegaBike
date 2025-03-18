@@ -10,7 +10,7 @@ import (
 	"slices"
 )
 
-// obtain direction for current round from the representatives
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the representatives
 func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 	agents := s.GetAgentMap()
 	governance := bike.GetGovernance()
@@ -93,10 +93,13 @@ func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 	}
 }
 
-// select representatives for the bike. is not a democratic process:
-// each bike is fixed with a governance style and agents on the bike are randomly selected to fit that style.
-// happens at the beginning of each iteration, or when a bike with certain governance styles is left without representatives for any of various reasons
-func (s *Server) RepresentativeElection(agentsOnBike []objects.IBaseBiker, governance utils.Governance) []uuid.UUID {
+// returns: slice of uuids of initially selected representatives
+func (s *Server) RepresentativeSelection(agentsOnBike []objects.IBaseBiker, governance utils.Governance) []uuid.UUID {
+
+	// select representatives for the bike. is not a democratic process:
+	// each bike is fixed with a governance style and agents on the bike are randomly selected to fit that style.
+	// happens at the beginning of each iteration
+
 	if len(agentsOnBike) != 0 {
 		switch governance {
 		case utils.PerfectAristocracy, utils.DegenerateAristocracy:
@@ -125,60 +128,7 @@ func (s *Server) RepresentativeElection(agentsOnBike []objects.IBaseBiker, gover
 		
 }
 
-// somehow reduces the number of lootboxes available - maybe todo with radius?
-func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.ILootBox {
-	relevantRules := bike.GetActiveRulesForAction(objects.Lootbox)
-
-	validLootboxes := make(map[uuid.UUID]objects.ILootBox, len(s.lootBoxes))
-
-	for id, lb := range s.lootBoxes {
-		validLootboxes[id] = lb
-	}
-
-	for _, r := range relevantRules {
-		for id, l := range s.lootBoxes {
-			if _, ok := validLootboxes[id]; !ok {
-				continue
-			}
-			if !r.EvaluateLootboxRule(bike, l) {
-				delete(validLootboxes, id)
-			}
-		}
-	}
-
-	return validLootboxes
-}
-
-func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
-	tRad := 0.0
-	nAg := 0.0
-
-	rule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
-	pRad := rule.GetRuleMatrix()[0][1]
-
-	// fmt.Println(rule)
-
-	for _, agent := range bike.GetAgents() {
-		if agent.GetBikeStatus() {
-			tRad += agent.ProposeNewRadius(pRad)
-			nAg += 1
-		}
-	}
-
-	if nAg == 0 {
-		return
-	}
-
-	tRad /= nAg
-
-	newRuleMatrix := [][]float64{{1, tRad}}
-	rule.UpdateRuleMatrix(newRuleMatrix)
-
-	// nRule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
-	// fmt.Println(nRule.GetRuleMatrix())
-}
-
-// select this round's decision following a voting-based approach
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the agents
 func (s *Server) RunDemocraticAction(bike objects.IMegaBike) uuid.UUID {
 
 	agents := bike.GetAgents()
@@ -284,30 +234,12 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike) uuid.UUID {
 	// return direction
 }
 
-func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID {
-	// get overall winner direction using chosen voting strategy
-
-	// this allows to get a slice of the interface from that of the specific type
-	// this way we can substitute agent.FInalDirectionVote with another function that returns
-	// another type of voting type which still implements INormaliseVoteMap
-	IfinalVotes := make(map[uuid.UUID]voting.IVoter)
-	for i, v := range finalVotes {
-		IfinalVotes[i] = v
-	}
-
-	return voting.WinnerFromDist(IfinalVotes, weights)
-}
-
-
-// new functions added
-
-
-// replace rep if possible, otherwise we just remove them 
+// handles: when a representative leaves / dies / exits a bike. replace rep if possible, otherwise we just remove them 
 func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int) {
 	
 	gov := bike.GetGovernance()
 
-	//attempt to replace them
+	// first attempt to replace them
 	if (((gov == utils.DegenerateAristocracy || gov == utils.PerfectAristocracy) && len(bike.GetAgents()) >= 3) || ((gov ==utils.PerfectMonarchy || gov == utils.DegenerateMonarchy) && len(bike.GetAgents()) >= 1)) {
 	
 		reps := bike.GetRepresentatives()
@@ -319,9 +251,9 @@ func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToR
 				replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
 		}
 
-	// replace the old rep with a new rep
-	reps[repIdxToReplace] = replacementRepID
-	bike.SetRepresentatives(reps)
+		// replace the old rep with a new rep
+		reps[repIdxToReplace] = replacementRepID
+		bike.SetRepresentatives(reps)
 	} else {
 		// otherwise we just remove them from the rep list
 		reps := bike.GetRepresentatives()
@@ -329,4 +261,73 @@ func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToR
 		bike.SetRepresentatives(reps)
 		 
 	}
+}
+
+// returns: reduced map of uuid->lootbox based on the rules of the given megabike
+func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.ILootBox {
+	relevantRules := bike.GetActiveRulesForAction(objects.Lootbox)
+
+	validLootboxes := make(map[uuid.UUID]objects.ILootBox, len(s.lootBoxes))
+
+	for id, lb := range s.lootBoxes {
+		validLootboxes[id] = lb
+	}
+
+	for _, r := range relevantRules {
+		for id, l := range s.lootBoxes {
+			if _, ok := validLootboxes[id]; !ok {
+				continue
+			}
+			if !r.EvaluateLootboxRule(bike, l) {
+				delete(validLootboxes, id)
+			}
+		}
+	}
+
+	return validLootboxes
+}
+
+// updates: the bike rules
+func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
+	tRad := 0.0
+	nAg := 0.0
+
+	rule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
+	pRad := rule.GetRuleMatrix()[0][1]
+
+	// fmt.Println(rule)
+
+	for _, agent := range bike.GetAgents() {
+		if agent.GetBikeStatus() {
+			tRad += agent.ProposeNewRadius(pRad)
+			nAg += 1
+		}
+	}
+
+	if nAg == 0 {
+		return
+	}
+
+	tRad /= nAg
+
+	newRuleMatrix := [][]float64{{1, tRad}}
+	rule.UpdateRuleMatrix(newRuleMatrix)
+
+	// nRule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
+	// fmt.Println(nRule.GetRuleMatrix())
+}
+
+// ----- Currently unused -----
+
+// returns: uuid of chosen lootbox from a set of votes and weights (currently unused)
+func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID {
+	// this allows to get a slice of the interface from that of the specific type
+	// this way we can substitute agent.FInalDirectionVote with another function that returns
+	// another type of voting type which still implements INormaliseVoteMap
+	IfinalVotes := make(map[uuid.UUID]voting.IVoter)
+	for i, v := range finalVotes {
+		IfinalVotes[i] = v
+	}
+
+	return voting.WinnerFromDist(IfinalVotes, weights)
 }

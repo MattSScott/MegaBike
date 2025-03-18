@@ -124,7 +124,7 @@ func (s *Server) RunBikeSwitch() {
 
 }
 
-// returns slice of all agents that want to leave their bike in current iteration
+// returns: slice of all agents that want to leave their bike in current iteration
 func (s *Server) GetLeavingDecisions() []uuid.UUID {
 
 	leavingAgents := make([]uuid.UUID, 0)
@@ -169,8 +169,7 @@ func (s *Server) GetLeavingDecisions() []uuid.UUID {
 	return leavingAgents
 }
 
-// returns a slice of all agents that are kicked from their bike in the current iteration.
-// process differs based on governance
+// returns: a slice of uuids of all agents that are kicked from their bike in the current iteration.
 func (s *Server) HandleKickoutProcess() []uuid.UUID {
 
 	allKicked := make([]uuid.UUID, 0)
@@ -251,8 +250,7 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 	return allKicked
 }
 
-
-// collect join request and process them, adding agents to bikes if they are accepted.
+// collect join requests and process them, adding agents to bikes if they are accepted.
 func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 	
 	// returns a map of bikeID -> slice of agents that want to join it.
@@ -375,14 +373,14 @@ func (s *Server) SetDestinationBikes() {
 	}
 }
 
-// assign roles to agents (i.e. assign representatives)
+// assign representatives
 func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
 	governanceSystem := bike.GetGovernance()
 	// if governance system is some form of monarchy or aristocracy, need representatives.
 	if governanceSystem == utils.PerfectMonarchy || governanceSystem == utils.DegenerateMonarchy || governanceSystem == utils.PerfectAristocracy || governanceSystem == utils.DegenerateAristocracy {
 		// run selection process
 		agentsOnBike := bike.GetAgents()
-		reps := s.RepresentativeElection(agentsOnBike, governanceSystem)
+		reps := s.RepresentativeSelection(agentsOnBike, governanceSystem)
 		bike.SetRepresentatives(reps)
 	}
 }

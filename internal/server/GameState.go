@@ -8,19 +8,22 @@ import (
 	"github.com/google/uuid"
 )
 
+// returns: map of uuid->megabike
 func (s *Server) GetMegaBikes() map[uuid.UUID]objects.IMegaBike {
 	return s.megaBikes
 }
 
+// returns: map of uuid->lootbox
 func (s *Server) GetLootBoxes() map[uuid.UUID]objects.ILootBox {
 	return s.lootBoxes
 }
 
+// returns: awdi object
 func (s *Server) GetAwdi() objects.IAwdi {
 	return s.awdi
 }
 
-// get a map of megaBikeIDs mapping to the ids of all Bikers that are trying to join it
+// returns: a map of megaBikeIDs-> slice of ids of all Bikers that are trying to join it
 func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UUID {
 	
 	// iterate over all agents, if their onBike is false add to the map their id in correspondence of that of their desired bike
@@ -44,7 +47,7 @@ func (s *Server) GetJoiningRequests(inLimbo []uuid.UUID) map[uuid.UUID][]uuid.UU
 	return bikeRequests
 }
 
-// GetRandomBikeId returns the ID of a random bike.
+// returns: id of a random bike
 func (s *Server) GetRandomBikeId() uuid.UUID {
 	i, targetI := 0, rand.Intn(len(s.GetMegaBikes()))
 	// Go doesn't have a sensible way to do this...

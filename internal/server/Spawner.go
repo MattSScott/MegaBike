@@ -17,11 +17,12 @@ var AgentInitFunctions = []AgentInitFunction{
 	teamSOSA.GetBiker, // Team SOSA
 }
 
-// BASEBIKER EXPERIMENTS (uncomment this and comment out the above to run base biker experiments)
+// To run basebiker experiments, uncomment this and comment out the above.
 // var AgentInitFunctions = []AgentInitFunction{
 // 	nil,
 // }
 
+// returns: a slice of agent generator-count pairs, i.e. a slice in which each element is a 2-tuple of the form (agent generator function, number to spawn in)
 func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objects.IBaseBiker] {
 
 	bikersPerTeam := *globals.BikerAgentCount / (len(AgentInitFunctions))
@@ -37,6 +38,7 @@ func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objec
 	}
 	return agentGenerators
 }
+
 
 func (s *Server) BikerAgentGenerator(initFunc func(baseBiker *objects.BaseBiker) objects.IBaseBiker) func() objects.IBaseBiker {
 	return func() objects.IBaseBiker {
@@ -54,7 +56,6 @@ func (s *Server) spawnLootBox() {
 	s.lootBoxes[lootBox.GetID()] = lootBox
 }
 
-// replenishes lootboxes up to the externally set count
 func (s *Server) replenishLootBoxes() {
 	count := globals.LootBoxCount - len(s.lootBoxes)
 	for i := 0; i < count; i++ {
@@ -62,14 +63,9 @@ func (s *Server) replenishLootBoxes() {
 	}
 }
 
-func (s *Server) spawnMegaBike(governance utils.Governance) {
-	megaBike := objects.GetMegaBike(s, governance)
-	s.megaBikes[megaBike.GetID()] = megaBike
-	megaBike.InitialiseRuleMap()
-}
-
 func (s *Server) spawnInitialMegaBikesAndRiders() {
 	for i := 0; i < globals.MegaBikeCount; i++ {
+		// increment i each time to spawn a megabike of each governance type
 		governance := utils.Governance(i) 
 		s.spawnMegaBike(governance)
 		fmt.Println("Spawning Megabike with Governance", governance)
@@ -92,6 +88,12 @@ func (s *Server) spawnInitialMegaBikesAndRiders() {
 		s.AddAgentToBike(agent, bike)
 	}
 
+}
+
+func (s *Server) spawnMegaBike(governance utils.Governance) {
+	megaBike := objects.GetMegaBike(s, governance)
+	s.megaBikes[megaBike.GetID()] = megaBike
+	megaBike.InitialiseRuleMap()
 }
 
 func (s *Server) replenishMegaBikes() {

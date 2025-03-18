@@ -17,25 +17,25 @@ type IBaseBikerServer interface {
 	baseserver.IServer[objects.IBaseBiker]
 	objects.IGameState
 
-	Initialize(iterations int)                                                           // returns the awdi interface
-	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                            // returns a map from bike id to the id of all agents trying to joing that bike
-	GetRandomBikeId() uuid.UUID                                                          // gets the id of any random bike in the map
-	RepresentativeElection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID    // runs the representative election
-	HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int)							// replaces a representative when they die /
-	RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID                                     // gets the direction from the dictator
-	RunDemocraticAction(bike objects.IMegaBike) uuid.UUID // gets the direction in voting-based governances
-	// NewGameStateDump(iteration int) GameStateDump                                        // creates a new game state dump
-	GetLeavingDecisions() []uuid.UUID                                                    // gets the list of agents that want to leave their bike
-	HandleKickoutProcess() []uuid.UUID                                                   // handles the kickout process
-	ProcessJoiningRequests(inLimbo []uuid.UUID)                                          // processes the joining requests
-	RunDirectionDecisionProcess()                                                                   // runs the action (direction choice + pedalling) process for each bike
-	AwdiCollisionCheck()                                                                 // checks for collisions between awdi and bikes
-	AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike)                     // adds an agent to a bike (which also has some side effects on some server data structures)
-	// FoundingInstitutions()                                                                                       // runs the founding institutions process
+	Initialize(iterations int)                                                                                   // returns the awdi interface
+	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                                                    // returns a map from bike id to the id of all agents trying to joing that bike
+	GetRandomBikeId() uuid.UUID                                                                                  // gets the id of any random bike in the map
+	RepresentativeSelection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID                // runs the representative election
+	HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int)                                   // replaces a representative when they die /
+	RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID                                                    // gets the direction from the dictator
+	RunDemocraticAction(bike objects.IMegaBike) uuid.UUID                                                        // gets the direction in voting-based governances
+	GetLeavingDecisions() []uuid.UUID                                                                            // gets the list of agents that want to leave their bike
+	HandleKickoutProcess() []uuid.UUID                                                                           // handles the kickout process
+	ProcessJoiningRequests(inLimbo []uuid.UUID)                                                                  // processes the joining requests
+	RunDirectionDecisionProcess()                                                                                // runs the action (direction choice + pedalling) process for each bike
+	AwdiCollisionCheck()                                                                                         // checks for collisions between awdi and bikes
+	AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike)                                             // adds an agent to a bike (which also has some side effects on some server data structures)                                                                     // runs the founding institutions process
 	GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID // gets the winning direction according to the selected voting process
 	LootboxCheckAndDistributions()                                                                               // checks for collision between bike and lootbox and runs the distribution process
 	ResetGameState()                                                                                             // resets game state (at the beginning of a new round)
 	GetDeadAgents() map[uuid.UUID]objects.IBaseBiker                                                             // returns the map of dead agents
+	// NewGameStateDump(iteration int) GameStateDump                                        					 // creates a new game state dump
+	// FoundingInstitutions()
 }
 
 type Server struct {
@@ -102,29 +102,7 @@ func (s *Server) Start() {
 	s.outputSimulationResult(*gameState)
 }
 
-
-
-func (s *Server) PopulateGlobalRuleCache() {
-	// generate 100 rules split across N actions
-	nActions := int(objects.MAX_ACTIONS)
-	rulesPerAction := int(*globals.GlobalRuleCount / nActions)
-
-	for i := 0; i < nActions; i++ {
-		for j := 0; j < rulesPerAction; j++ {
-			s.AddToGlobalRuleCache(objects.GenerateNullPassingRuleForAction(objects.Action(i)))
-		}
-	}
-}
-
-func (s *Server) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
-	return s.globalRuleCache.ViewGlobalRuleSet()
-}
-
-func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
-	s.globalRuleCache.AddRuleToCache(rule)
-}
-
-// when an agent dies it needs to be removed from its bike, the riders map and the agents map + it's added to the dead agents map
+// when an agent dies it needs to be removed from its bike, the megabikeriders map and the agents map + it's added to the dead agents map
 func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
 
 	id := agent.GetID()
@@ -163,6 +141,7 @@ func (s *Server) AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike
 	}
 }
 
+// remove an agent from its bike
 func (s *Server) RemoveAgentFromBike(agent objects.IBaseBiker) {
 	bike := s.megaBikes[agent.GetBike()]
 	bike.RemoveAgent(agent.GetID())
@@ -178,8 +157,29 @@ func (s *Server) RemoveAgentFromBike(agent objects.IBaseBiker) {
 	delete(s.megaBikeRiders, agent.GetID())
 }
 
+// returns: map of dead agents, uuid->agent
 func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 	return s.deadAgents
+}
+
+func (s *Server) PopulateGlobalRuleCache() {
+	// generate 100 rules split across N actions
+	nActions := int(objects.MAX_ACTIONS)
+	rulesPerAction := int(*globals.GlobalRuleCount / nActions)
+
+	for i := 0; i < nActions; i++ {
+		for j := 0; j < rulesPerAction; j++ {
+			s.AddToGlobalRuleCache(objects.GenerateNullPassingRuleForAction(objects.Action(i)))
+		}
+	}
+}
+
+func (s *Server) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return s.globalRuleCache.ViewGlobalRuleSet()
+}
+
+func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
+	s.globalRuleCache.AddRuleToCache(rule)
 }
 
 func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
@@ -245,6 +245,8 @@ func (s *Server) RunMessagingSession() {
 	}
 }
 
+
+// ----- EXPERIMENTAL -----
 
 func createAdjacencyMatrix(reassocationMap map[uuid.UUID]map[uuid.UUID]int) [][]int {
 
