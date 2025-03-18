@@ -20,13 +20,14 @@ func NewUtilsModule() *UtilsModule {
 	return &UtilsModule{}
 }
 
+
 func (um *UtilsModule) ProjectForce(actual, expected utils.Forces) float64 {
 	actualVec := GetForceVector(actual)
 	expectVec := GetForceVector(expected)
 	return actualVec.CosineSimilarity(*expectVec) * actual.Pedal
 }
 
-// Get the forces to the target coordinated
+// returns: the forces to a target coordinate
 func (um *UtilsModule) GetForcesToTarget(agentPosition, targetPosition utils.Coordinates) utils.Forces {
 
 	deltaX := targetPosition.X - agentPosition.X
@@ -44,13 +45,6 @@ func (um *UtilsModule) GetForcesToTarget(agentPosition, targetPosition utils.Coo
 	}
 }
 
-// Called by Events to obtain Event Value for update Institution
-// Assume what they broadcast is the truth
-func (um *UtilsModule) RuleAdherenceValue(agentID uuid.UUID, expectedAction, actualAction utils.Forces) float64 {
-	actualVec := GetForceVector(actualAction)
-	expectVec := GetForceVector(expectedAction)
-	return actualVec.CosineSimilarity(*expectVec) * actualAction.Pedal
-}
 
 // GetForcesToTargetWithDirectionOffset calculates the forces to be applied on an agent to steer towards a target position,
 // taking into account a specified degree of angular offset.
@@ -75,3 +69,14 @@ func (um *UtilsModule) GetForcesToTargetWithDirectionOffset(force, degree float6
 		Turning: turningDecision,
 	}
 }
+
+
+// ----- Deprecated -----
+
+// // Called by Events to obtain Event Value for update Institution
+// // Assume what they broadcast is the truth
+// func (um *UtilsModule) RuleAdherenceValue(agentID uuid.UUID, expectedAction, actualAction utils.Forces) float64 {
+// 	actualVec := GetForceVector(actualAction)
+// 	expectVec := GetForceVector(expectedAction)
+// 	return actualVec.CosineSimilarity(*expectVec) * actualAction.Pedal
+// }
