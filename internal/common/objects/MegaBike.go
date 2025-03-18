@@ -58,11 +58,6 @@ func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *Me
 
 // ----- Physics -----
 
-// returns: the orientation of the megabike
-func (mb *MegaBike) GetOrientation() float64 {
-	return mb.orientation
-}
-
 // updates: the total force of the Megabike based on the biker's force
 func (mb *MegaBike) UpdateForce() {
 	if len(mb.agents) == 0 {

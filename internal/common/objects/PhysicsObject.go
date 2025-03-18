@@ -3,7 +3,7 @@ package objects
 /*
 
 The IPhysicsObject is an interface class that all moving objects (Biker and Awdi) must implement.
-The Bikers/Agents will not need to implement this interface
+The Agents will not need to implement this interface
 
 */
 
@@ -16,26 +16,21 @@ import (
 )
 
 type IPhysicsObject interface {
-	// returns the unique ID of the object
-	GetID() uuid.UUID
-	// returns the current coordinates of the object
-	GetPosition() utils.Coordinates
+	
+	// ----- Core: Don't need to be overriden -----
+	GetID() uuid.UUID				
+	GetPosition() utils.Coordinates	
 	GetVelocity() float64
 	GetOrientation() float64
 	GetForce() float64
 	GetPhysicalState() utils.PhysicalState
-
-	// Server must set these variables since it updates the gamestate
 	SetPhysicalState(state utils.PhysicalState)
-
-	// This method will update the force of the PhysicsObject based on the current GameState.
-	// I.e. for MegaBike, force will be cacluated from the bikers
-	// For the awdi, force will be calculated from the target MegaBike
-	UpdateForce()
-	// Similar to UpdateForce, this will update the desired orientation for the PhysicsObject,
-	// based on the current GameState
-	UpdateOrientation()
 	CheckForCollision(otherObject IPhysicsObject) bool
+
+	// ----- Customisable: Need to be overridden for each physics object -----
+	UpdateForce()
+	UpdateOrientation()
+
 }
 
 type PhysicsObject struct {
@@ -48,12 +43,15 @@ type PhysicsObject struct {
 	force        float64
 }
 
-// returns the unique ID of the object
+
+// ----- Core -----
+
+// returns: the unique ID of the object
 func (po *PhysicsObject) GetID() uuid.UUID {
 	return po.id
 }
 
-// returns the current coordinates of the object
+// returns: the current coordinates of the object
 func (po *PhysicsObject) GetPosition() utils.Coordinates {
 	return po.coordinates
 }
@@ -79,6 +77,7 @@ func (po *PhysicsObject) GetPhysicalState() utils.PhysicalState {
 	}
 }
 
+// Server must set these variables since it updates the gamestate
 func (po *PhysicsObject) SetPhysicalState(state utils.PhysicalState) {
 	po.mass = state.Mass
 	po.coordinates = state.Position
@@ -97,9 +96,19 @@ func (po *PhysicsObject) CheckForCollision(otherObject IPhysicsObject) bool {
 	}
 }
 
+// ----- Customisable -----
+
+
+// This method will update the force of the PhysicsObject based on the current GameState.
+// I.e. for MegaBike, force will be cacluated from the bikers
+// For the awdi, force will be calculated from the target MegaBike
 func (po *PhysicsObject) UpdateForce() {}
 
+// Similar to UpdateForce, this will update the desired orientation for the PhysicsObject,
+// based on the current GameState
 func (po *PhysicsObject) UpdateOrientation() {}
+
+
 
 func GetPhysicsObject(mass float64) *PhysicsObject {
 	return &PhysicsObject{
