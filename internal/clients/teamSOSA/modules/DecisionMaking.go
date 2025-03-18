@@ -21,14 +21,13 @@ func NewDecisionModule() *DecisionModule {
 
 // returns:  if you should change bike or not, and the uuid of the target bike if 'yes'
 func (dm *DecisionModule) MakeBikeChangeDecision(inputs DecisionInputs) (bool, uuid.UUID) {
-	// Logic to decide on bike change
 	shouldChangeBike := false
-	bikeID := uuid.Nil
+	targetBikeID := uuid.Nil
 	if inputs.AgentParameters.GetAverageTrust() < StayOnBikeThreshold {
 		shouldChangeBike = true
-		bikeID = inputs.Environment.GetBikeWithMaximumTrust(inputs.AgentParameters)
+		targetBikeID = inputs.Environment.GetBikeWithMaximumTrust(inputs.AgentParameters)
 	}
-	return shouldChangeBike, bikeID
+	return shouldChangeBike, targetBikeID
 }
 
 

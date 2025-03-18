@@ -20,6 +20,7 @@ type IAgentSOSA interface {
 	GetTrustworthiness() float64
 }
 
+// core agentSosa struct
 type AgentSOSA struct {
 	*objects.BaseBiker // Embedding the BaseBiker
 	Modules            AgentModules
@@ -29,6 +30,8 @@ func (sosa *AgentSOSA) GetTrustworthiness() float64 {
 	return sosa.Modules.AgentParameters.Trustworthiness
 }
 
+
+// returns: a pointer to an AgentSOSA object
 func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
 	return &AgentSOSA{
 		BaseBiker: baseBiker,

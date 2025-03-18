@@ -169,9 +169,9 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 
 // returns: lootbox uuid to aim towards (the direction) from the choice of a subset of lootboxes
 func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
-	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
-	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColorFromSubset(agentID, agentColour, subset)
-	nearestLootbox := a.Modules.Environment.GetNearestLootboxFromSubset(agentID, subset)
+	agentColour, agentEnergy := a.GetColour(), a.GetEnergyLevel()
+	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColourFromSubset(agentColour, subset)
+	nearestLootbox := a.Modules.Environment.GetNearestLootboxFromSubset(subset)
 	if agentEnergy < modules.EnergyToOptimalLootboxThreshold || optimalLootbox == uuid.Nil {
 		return nearestLootbox
 	}
@@ -180,9 +180,9 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 
 // returns: lootbox uuid to aim towards (the direction)
 func (a *AgentSOSA) ProposeDirection() uuid.UUID {
-	agentID, agentColour, agentEnergy := a.GetID(), a.GetColour(), a.GetEnergyLevel()
-	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColor(agentID, agentColour)
-	nearestLootbox := a.Modules.Environment.GetNearestLootbox(agentID)
+	agentColour, agentEnergy := a.GetColour(), a.GetEnergyLevel()
+	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColour(agentColour)
+	nearestLootbox := a.Modules.Environment.GetNearestLootbox()
 	if agentEnergy < modules.EnergyToOptimalLootboxThreshold || optimalLootbox == uuid.Nil {
 		return nearestLootbox
 	}
@@ -268,7 +268,7 @@ func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
 	}
 
 	// Otherwise, move towards the nearest lootbox of your own colour
-	return a.Modules.Environment.GetNearestLootboxByColor(a.GetID(), a.GetColour())
+	return a.Modules.Environment.GetNearestLootboxByColour(a.GetColour())
 }
 
 // sets the bike the agent is on (or wants to be on)

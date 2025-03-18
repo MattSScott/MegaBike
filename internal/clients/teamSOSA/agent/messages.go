@@ -17,15 +17,15 @@ func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 
 func (a *AgentSOSA) CreateKickOffMessage() obj.KickoutAgentMessage {
 	minTrustAgentStruct := a.Modules.AgentParameters.GetMinimumTrust()
-	agentId := minTrustAgentStruct.ID
+	minTrustagentId := minTrustAgentStruct.ID
 	kickOff := false
-	if agentId != a.GetID() {
+	if minTrustagentId != a.GetID() {
 		kickOff = true
 	}
 
 	return obj.KickoutAgentMessage{
 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
-		AgentId:     agentId,
+		AgentId:     minTrustagentId,
 		Kickout:     kickOff,
 	}
 }
@@ -37,6 +37,8 @@ func (a *AgentSOSA) HandleKickOffMessage(msg obj.KickoutAgentMessage) {
 	if agentId == uuid.Nil {
 		return
 	}
+
+	// should this not be 'if kickout update their trust value?
 
 	a.Modules.AgentParameters.UpdateTrustValue(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
 }

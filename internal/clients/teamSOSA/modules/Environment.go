@@ -19,46 +19,52 @@ type EnvironmentModule struct {
 	BikeId    uuid.UUID
 }
 
-///
-/// Lootboxes
-///
+// ----- Lootboxes -----
 
+// returns: the lootbox map for the agent to use
 func (e *EnvironmentModule) GetLootBoxes() map[uuid.UUID]objects.ILootBox {
 	return e.GameState.GetLootBoxes()
 }
 
+// returns: a lootbox object given an id
 func (e *EnvironmentModule) GetLootBoxById(lootboxId uuid.UUID) objects.ILootBox {
 	return e.GetLootBoxes()[lootboxId]
 }
 
+// returns: the coordinates of a lootbox given its id
 func (e *EnvironmentModule) GetLootboxPos(lootboxId uuid.UUID) utils.Coordinates {
 	return e.GetLootBoxById(lootboxId).GetPosition()
 }
 
+// returns: the uuid of a random lootbox
 func (e *EnvironmentModule) GetRandomLootbox() uuid.UUID {
+	// iterating over a map so will be a random first one
 	for _, lootbox := range e.GetLootBoxes() {
 		return lootbox.GetID()
 	}
 	panic("No lootboxes found.")
 }
 
-func (e *EnvironmentModule) GetLootBoxesByColor(color utils.Colour) map[uuid.UUID]objects.ILootBox {
+// returns: a filtered lootbox map containing only those of a given colour.
+func (e *EnvironmentModule) GetLootBoxesByColour(colour utils.Colour) map[uuid.UUID]objects.ILootBox {
 	lootboxes := e.GetLootBoxes()
 	lootboxesFiltered := make(map[uuid.UUID]objects.ILootBox)
-	for _, lootbox := range lootboxes {
-		if lootbox.GetColour() == color {
-			lootboxesFiltered[lootbox.GetID()] = lootbox
+	for lootboxId, lootbox := range lootboxes {
+		if lootbox.GetColour() == colour {
+			lootboxesFiltered[lootboxId] = lootbox
 		}
 	}
 	return lootboxesFiltered
 }
 
-func (e *EnvironmentModule) GetNearestLootbox(agentId uuid.UUID) uuid.UUID {
+// returns: uuid of the nearest lootbox
+func (e *EnvironmentModule) GetNearestLootbox() uuid.UUID {
+
 	nearestLootbox := uuid.Nil
 	minDist := math.MaxFloat64
+	// iterate over lootbox map
 	for _, lootbox := range e.GetLootBoxes() {
 		if e.IsLootboxNearAwdi(lootbox.GetID()) {
-			// fmt.Printf("[GetNearestLootbox] Lootbox %v is near awdi\n", lootbox.GetID())
 			continue
 		}
 		dist := e.GetDistanceToLootbox(lootbox.GetID())
@@ -75,7 +81,8 @@ func (e *EnvironmentModule) GetNearestLootbox(agentId uuid.UUID) uuid.UUID {
 	return nearestLootbox
 }
 
-func (e *EnvironmentModule) GetNearestLootboxFromSubset(agentId uuid.UUID, subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+// returns: uuid of the nearest lootbox chosen from a subset of lootboxes
+func (e *EnvironmentModule) GetNearestLootboxFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
 	nearest := uuid.Nil
 	nDist := math.MaxFloat64
 
@@ -90,12 +97,13 @@ func (e *EnvironmentModule) GetNearestLootboxFromSubset(agentId uuid.UUID, subse
 	return nearest
 }
 
-func (e *EnvironmentModule) GetNearestLootboxByColor(agentId uuid.UUID, color utils.Colour) uuid.UUID {
-	nearestLootbox := e.GetNearestLootbox(agentId) // Defaults to nearest lootbox
+// returns: uuid of the nearest lootbox of a given colour. e.g. nearest blue lootbox
+func (e *EnvironmentModule) GetNearestLootboxByColour(colour utils.Colour) uuid.UUID {
+
+	nearestLootbox := e.GetNearestLootbox() // Defaults to nearest lootbox
 	minDist := math.MaxFloat64
-	for _, lootbox := range e.GetLootBoxesByColor(color) {
+	for _, lootbox := range e.GetLootBoxesByColour(colour) {
 		if e.IsLootboxNearAwdi(lootbox.GetID()) {
-			// fmt.Printf("[GetNearestLootboxByColor] Lootbox %v is near awdi\n", lootbox.GetID())
 			continue
 		}
 		dist := e.GetDistanceToLootbox(lootbox.GetID())
@@ -111,17 +119,15 @@ func (e *EnvironmentModule) GetNearestLootboxByColor(agentId uuid.UUID, color ut
 	return nearestLootbox
 }
 
-
-func (e *EnvironmentModule) GetNearestLootboxByColorFromSubset(agentId uuid.UUID, color utils.Colour, subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
-	// TODO: could be nil
-	nearestLootbox := e.GetNearestLootboxFromSubset(agentId, subset) // Defaults to nearest lootbox
+// returns: uuid of the nearest lootbox of a given colour, from a subset of the total lootboxes.
+func (e *EnvironmentModule) GetNearestLootboxByColourFromSubset(color utils.Colour, subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
+	nearestLootbox := e.GetNearestLootboxFromSubset(subset) // Defaults to nearest lootbox
 	minDist := math.MaxFloat64
-	for id := range e.GetLootBoxesByColor(color) {
+	for id := range e.GetLootBoxesByColour(color) {
 		if _, ok := subset[id]; !ok {
 			continue
 		} 
 		if e.IsLootboxNearAwdi(id) {
-			// fmt.Printf("[GetNearestLootboxByColor] Lootbox %v is near awdi\n", lootbox.GetID())
 			continue
 		}
 		dist := e.GetDistanceToLootbox(id)
@@ -134,20 +140,19 @@ func (e *EnvironmentModule) GetNearestLootboxByColorFromSubset(agentId uuid.UUID
 	return nearestLootbox
 }
 
+// returns: the distance from the agents bike to a given lootbox id
 func (e *EnvironmentModule) GetDistanceToLootbox(lootboxId uuid.UUID) float64 {
-	bikePos, agntPos := e.GetBikeById(e.BikeId).GetPosition(), e.GetLootBoxById(lootboxId).GetPosition()
+	bikePos, lootboxPos := e.GetBikeById(e.BikeId).GetPosition(), e.GetLootBoxById(lootboxId).GetPosition()
 
-	return e.GetDistance(bikePos, agntPos)
+	return e.GetDistance(bikePos, lootboxPos)
 }
 
-// Gets lootbox with the highest gain.
-// We define gain as the distance to the lootbox divided by the total resources in the lootbox.
+// returns: uuid of the lootbox with the highest 'gain', where gain is the resources divided by the distance.
 func (e *EnvironmentModule) GetHighestGainLootbox() uuid.UUID {
 	bestGain := float64(0)
 	bestLoot := uuid.Nil
 	for _, lootboxId := range e.GetLootBoxes() {
 		if e.IsLootboxNearAwdi(lootboxId.GetID()) {
-			// fmt.Printf("[GetHighestGainLootbox] Lootbox %v is near awdi\n", lootboxId.GetID())
 			continue
 		}
 		gain := lootboxId.GetTotalResources() / e.GetDistanceToLootbox(lootboxId.GetID())
@@ -164,6 +169,7 @@ func (e *EnvironmentModule) GetHighestGainLootbox() uuid.UUID {
 	return bestLoot
 }
 
+// returns: the uuid of the nearest lootbox that is 'away' from the awdi
 func (e *EnvironmentModule) GetNearestLootboxAwayFromAwdi() uuid.UUID {
 	// Find positions.
 	bikePos := e.GetBikeById(e.BikeId).GetPosition()
@@ -190,30 +196,34 @@ func (e *EnvironmentModule) GetNearestLootboxAwayFromAwdi() uuid.UUID {
 	return minLoot
 }
 
-///
-/// Bikes
-///
+// ----- Bikes -----
 
+// returns: the awdi object
 func (e *EnvironmentModule) GetAwdi() objects.IAwdi {
 	return e.GameState.GetAwdi()
 }
 
+// returns: the megabike map
 func (e *EnvironmentModule) GetBikes() map[uuid.UUID]objects.IMegaBike {
 	return e.GameState.GetMegaBikes()
 }
 
+// returns: the megabike object given a bike id
 func (e *EnvironmentModule) GetBikeById(bikeId uuid.UUID) objects.IMegaBike {
 	return e.GetBikes()[bikeId]
 }
 
+// returns: your own bike object
 func (e *EnvironmentModule) GetBike() objects.IMegaBike {
 	return e.GetBikeById(e.BikeId)
 }
 
+// returns: the orientation of the bike
 func (e *EnvironmentModule) GetBikeOrientation() float64 {
 	return e.GetBikeById(e.BikeId).GetOrientation()
 }
 
+// returns: the biker in the whole game with the maximum trust (not called anywhere)
 func (e *EnvironmentModule) GetBikerWithMaxTrust(ap *AgentParameters) IDTrustPair {
 	fellowBikers := e.GetBikerAgents()
 	maxTrustAgentId := uuid.Nil
@@ -229,6 +239,7 @@ func (e *EnvironmentModule) GetBikerWithMaxTrust(ap *AgentParameters) IDTrustPai
 	return IDTrustPair{ID: maxTrustAgentId, Trust: maxTrust}
 }
 
+// returns: the biker in the whole game with the minimum trust (n
 func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPair {
 	fellowBikers := e.GetBikerAgents()
 	minTrustAgentId := uuid.Nil
@@ -257,10 +268,10 @@ func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPai
 		}
 	}
 	panic("No agents found to kick off.")
-	// return IDTrustPair{ID: uuid.Nil, Trust: math.NaN()}
 
 }
 
+// returns: uuid of the bike with the maximum trust
 func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UUID {
 	maxAverage := float64(0)
 	maxBikeId := uuid.Nil
@@ -276,7 +287,7 @@ func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UU
 			totalTrust += ap.TrustNetwork[agentId]
 		}
 
-		// Calculate average trust for this bike, Assume we don't swtich to a bike with 0 agents
+		// Calculate average trust for this bike, Assume we don't switch to a bike with 0 agents
 		if agentCount > 0 {
 			averageTrust := totalTrust / agentCount
 			if averageTrust > maxAverage {
@@ -303,26 +314,26 @@ func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UU
 
 }
 
+// returns: bool reflecting whether a given lootbox is / isn't 'near' to the awdi
 func (e *EnvironmentModule) IsLootboxNearAwdi(lootboxId uuid.UUID) bool {
 	lootboxPos, awdiPos := e.GetLootBoxById(lootboxId).GetPosition(), e.GetAwdi().GetPosition()
 
 	return e.GetDistance(lootboxPos, awdiPos) <= AwdiRange
 }
 
+// returns: distance from the bike to awdi
 func (e *EnvironmentModule) GetDistanceToAwdi() float64 {
 	bikePos, awdiPos := e.GetBikeById(e.BikeId).GetPosition(), e.GetAwdi().GetPosition()
-
-	// fmt.Printf("[GetDistanceToAwdi] Pos of bike: %f\n", bikePos)
-	// fmt.Printf("[GetDistanceToAwdi] Pos of Awdi: %f\n", awdiPos)
 
 	return e.GetDistance(bikePos, awdiPos)
 }
 
+// returns: bool reflecting whether the awdi is 'near'
 func (e *EnvironmentModule) IsAwdiNear() bool {
-	// fmt.Printf("[IsAwdiNear] Distance to awdi: %f\n", e.GetDistanceToAwdi())
 	return e.GetDistanceToAwdi() <= AwdiRange
 }
 
+// returns: a map of uuid->biker objects, containing only agents are who are on a bike.
 func (e *EnvironmentModule) GetBikerAgents() map[uuid.UUID]objects.IBaseBiker {
 	bikes := e.GetBikes()
 	bikerAgents := make(map[uuid.UUID]objects.IBaseBiker)
@@ -334,14 +345,17 @@ func (e *EnvironmentModule) GetBikerAgents() map[uuid.UUID]objects.IBaseBiker {
 	return bikerAgents
 }
 
-///
-/// Utils
-///
+// ----- Utils -----
 
+// returns: the distance between two objects in the gameworld
 func (e *EnvironmentModule) GetDistance(pos1, pos2 utils.Coordinates) float64 {
 
 	return math.Sqrt(math.Pow(pos1.X-pos2.X, 2) + math.Pow(pos1.Y-pos2.Y, 2))
 }
+
+
+
+// getter
 
 func GetEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeId uuid.UUID) *EnvironmentModule {
 	return &EnvironmentModule{
