@@ -214,44 +214,44 @@ func (e *EnvironmentModule) GetBikeOrientation() float64 {
 	return e.GetBikeById(e.BikeId).GetOrientation()
 }
 
-func (e *EnvironmentModule) GetBikerWithMaxSocialCapital(ap *AgentParameters) IDTrustPair {
+func (e *EnvironmentModule) GetBikerWithMaxTrust(ap *AgentParameters) IDTrustPair {
 	fellowBikers := e.GetBikerAgents()
-	maxSCAgentId := uuid.Nil
-	maxSC := -2.0
+	maxTrustAgentId := uuid.Nil
+	maxTrust := -2.0
 	for _, fellowBiker := range fellowBikers {
-		if sc, ok := ap.TrustNetwork[e.AgentId]; ok {
-			if sc >= maxSC {
-				maxSCAgentId = fellowBiker.GetID()
-				maxSC = sc
+		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
+			if trust >= maxTrust {
+				maxTrustAgentId = fellowBiker.GetID()
+				maxTrust = trust
 			}
 		}
 	}
-	return IDTrustPair{ID: maxSCAgentId, Trust: maxSC}
+	return IDTrustPair{ID: maxTrustAgentId, Trust: maxTrust}
 }
 
-func (e *EnvironmentModule) GetBikerWithMinSocialCapital(ap *AgentParameters) IDTrustPair {
+func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPair {
 	fellowBikers := e.GetBikerAgents()
-	minSCAgentId := uuid.Nil
-	minSC := math.MaxFloat64
+	minTrustAgentId := uuid.Nil
+	minTrust := math.MaxFloat64
 	for _, fellowBiker := range fellowBikers {
-		if sc, ok := ap.TrustNetwork[e.AgentId]; ok {
-			if sc < minSC {
-				minSCAgentId = fellowBiker.GetID()
-				minSC = sc
+		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
+			if trust < minTrust {
+				minTrustAgentId = fellowBiker.GetID()
+				minTrust = trust
 			}
 		}
 	}
 
-	if minSCAgentId != uuid.Nil && minSCAgentId != e.AgentId {
+	if minTrustAgentId != uuid.Nil && minTrustAgentId != e.AgentId {
 		// If minSC is nil or !us, then return the culprit.
-		return IDTrustPair{ID: minSCAgentId, Trust: minSC}
+		return IDTrustPair{ID: minTrustAgentId, Trust: minTrust}
 	}
 	// Otherwise, return a random agent.
 	if len(fellowBikers) > 1 {
 		i, targetI := 0, rand.Intn(len(fellowBikers))
 		for id := range fellowBikers {
 			if i == targetI {
-				return IDTrustPair{ID: id, Trust: minSC}
+				return IDTrustPair{ID: id, Trust: minTrust}
 			}
 			i++
 		}
@@ -261,26 +261,26 @@ func (e *EnvironmentModule) GetBikerWithMinSocialCapital(ap *AgentParameters) ID
 
 }
 
-func (e *EnvironmentModule) GetBikeWithMaximumSocialCapital(ap *AgentParameters) uuid.UUID {
+func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UUID {
 	maxAverage := float64(0)
 	maxBikeId := uuid.Nil
 
 	bikes := e.GetBikes()
 	for bikeId, bike := range bikes {
-		totalSocialCapital := float64(0)
+		totalTrust := float64(0)
 		agentCount := float64(len(bike.GetAgents()))
 
-		// Sum up the social capital of all agents on this bike
+		// Sum up the trust of all agents on this bike
 		for _, agent := range bike.GetAgents() {
 			agentId := agent.GetID()
-			totalSocialCapital += ap.TrustNetwork[agentId]
+			totalTrust += ap.TrustNetwork[agentId]
 		}
 
-		// Calculate average social capital for this bike, Assume we don't swtich to a bike with 0 agents
+		// Calculate average trust for this bike, Assume we don't swtich to a bike with 0 agents
 		if agentCount > 0 {
-			averageSocialCapital := totalSocialCapital / agentCount
-			if averageSocialCapital > maxAverage {
-				maxAverage = averageSocialCapital
+			averageTrust := totalTrust / agentCount
+			if averageTrust > maxAverage {
+				maxAverage = averageTrust
 				maxBikeId = bikeId
 			}
 		}

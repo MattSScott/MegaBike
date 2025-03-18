@@ -32,10 +32,10 @@ func (a *AgentSOSA) GetFellowBikers() []objects.IBaseBiker {
 // returns: slice of agents to kick out (currently just does one)
 func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
 	// Only called when the agent is a representative agent.
-	// We kick out the agent with the lowest social capital on the bike.
-	// GetBikerWithMinSocialCapital returns only one agent, if more agents with min SC, it randomly chooses one.
+	// We kick out the agent with the lowest trust on the bike.
+	// GetBikerWithMinTrust returns only one agent, if more agents with min Trust, it randomly chooses one.
 	kickOut_agents := make([]uuid.UUID, 0)
-	agentIDStruct := a.Modules.Environment.GetBikerWithMinSocialCapital(a.Modules.AgentParameters)
+	agentIDStruct := a.Modules.Environment.GetBikerWithMinTrust(a.Modules.AgentParameters)
 	agentId := agentIDStruct.ID
 	if agentId != uuid.Nil {
 		kickOut_agents = append(kickOut_agents, agentId)
@@ -86,6 +86,7 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 	if governance == utils.PerfectMonarchy || governance == utils.PerfectAristocracy {
 		// Distribute the allocation based on each agent's share of the total social capital
 		result := make(voting.IdVoteMap)
+		
 		for agentID, sc := range socialCapital {
 			result[agentID] = sc / totalSocialCapital
 			if math.IsNaN(result[agentID]) {
@@ -202,10 +203,10 @@ func (a *AgentSOSA) ChangeBike() uuid.UUID {
 // returns: int reflecting what the agent has decided to do this iteration (pedal the bike (0), or try to change bikes (1))
 func (a *AgentSOSA) DecideAction() objects.BikerAction {
 
-	avgSocialCapital := a.Modules.AgentParameters.GetAverageTrust()
+	avgTrust := a.Modules.AgentParameters.GetAverageTrust()
 
-	if avgSocialCapital > modules.StayOnBikeThreshold {
-		// Pedal if members of the bike have high social capital.
+	if avgTrust > modules.StayOnBikeThreshold {
+		// Pedal if members of the bike have high trust
 		return objects.Pedal
 	} else {
 		// Otherwise, change bikes.

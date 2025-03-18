@@ -26,7 +26,7 @@ func (dm *DecisionModule) MakeBikeChangeDecision(inputs DecisionInputs) (bool, u
 	bikeID := uuid.Nil
 	if inputs.AgentParameters.GetAverageTrust() < StayOnBikeThreshold {
 		shouldChangeBike = true
-		bikeID = inputs.Environment.GetBikeWithMaximumSocialCapital(inputs.AgentParameters)
+		bikeID = inputs.Environment.GetBikeWithMaximumTrust(inputs.AgentParameters)
 	}
 	return shouldChangeBike, bikeID
 }
