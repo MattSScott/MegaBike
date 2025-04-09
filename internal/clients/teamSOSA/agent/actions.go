@@ -149,8 +149,6 @@ func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 		// return
 	}
 
-	a.Modules.VotedDirection = direction
-
 	if a.Modules.Environment.IsAwdiNear() {
 		// fmt.Printf("[DecideForce] Agent %s is near Awdi\n", a.GetID())
 		// Move in opposite direction to Awdi in full force
