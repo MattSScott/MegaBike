@@ -7,6 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	SocialEventWeight_AgentSentMsg = 0.1
+	SocialEventValue_AgentSentMsg = 0.05
+)
+
 func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 	return obj.ForcesMessage{
 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),

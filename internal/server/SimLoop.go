@@ -333,7 +333,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 func (s *Server) SetDestinationBikes() {
 	for _, agent := range s.GetAgentMap() {
 		if !agent.GetBikeStatus() {
-			targetBike := agent.ChangeBike()
+			targetBike := agent.DecideChangeBike()
 			if targetBike == uuid.Nil { // agent didn't specify bike
 				continue
 			}

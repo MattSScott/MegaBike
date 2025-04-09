@@ -7,8 +7,8 @@ import (
 )
 
 type AgentParameters struct {
-	Trustworthiness float64               // intrinsic value for P(conform to action) (feel like this is not used)
-	TrustNetwork    map[uuid.UUID]float64 // mapping of uuid -> trust score. trust score ranges from [-2, 2]
+	PreferenceForEquality float64               // hardwired value between [0, 1] reflecting the agents personality, where a higher value signifies greater preference for equal and fair distribution.
+	TrustNetwork    map[uuid.UUID]float64 		// mapping of uuid -> trust score. trust score ranges from [-2, 2]
 }
 
 // returns: float representing the sum of the trust in your network
@@ -60,18 +60,7 @@ func (ap *AgentParameters) GetMaximumTrust() IDTrustPair {
 	return IDTrustPair{ID: maxAgentId, Trust: maxTrust}
 }
 
-// returns: float that is 1 if input > 1, and 0 if input < 0
-func clamp(value float64) float64 {
-	if value > 1.0 {
-		return 1.0
-	}
-	if value < 0.0 {
-		return 0.0
-	}
-	return value
-}
-
-// updates the trust associated with an agent by the eventValue and eventWeight
+// updates: an agents' trust value, using the eventValue and eventWeight
 func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, eventWeight float64) {
 	if _, ok := ap.TrustNetwork[agentID]; !ok {
 		// if agentID is not in our trust network, assign them our current average trust
@@ -84,40 +73,22 @@ func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, event
 	ap.TrustNetwork[agentID] = clamp(ap.TrustNetwork[agentID])
 }
 
+// returns: float that is 1 if input > 1, and 0 if input < 0
+func clamp(value float64) float64 {
+	if value > 1.0 {
+		return 1.0
+	}
+	if value < 0.0 {
+		return 0.0
+	}
+	return value
+}
+
 
 func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
-		Trustworthiness: rand.Float64(),
+		PreferenceForEquality: rand.Float64(),
 		TrustNetwork:    make(map[uuid.UUID]float64),
 	}
 }
 
-
-// ----- DEPRECATED -----
-
-// func (sc *SocialCapital) UpdateSocialCapital() {
-// 	// fmt.Printf("[UpdateSocialCapital] Social Capital Before: %v\n", sc.SocialCapital)
-
-// 	for id := range sc.SocialNetwork { // Assumes all maps have the same keys.
-// 		// Add to Forgiveness Counters.
-// 		if _, ok := sc.forgivenessCounter[id]; !ok {
-// 			sc.forgivenessCounter[id] = 0.0
-// 		}
-
-// 		// Update Forgiveness Counter.
-// 		newSocialCapital := ReputationWeight*sc.Reputation[id] + InstitutionWeight*sc.Institution[id] + NetworkWeight*sc.SocialNetwork[id]
-
-// 		if sc.SocialCapital[id] < newSocialCapital {
-// 			sc.forgivenessCounter[id] = 0
-// 		}
-
-// 		if sc.SocialCapital[id] > newSocialCapital && sc.forgivenessCounter[id] <= 3 {
-// 			// Forgive if forgiveness counter is less than 3 and new social capital is less.
-// 			sc.forgivenessCounter[id]++
-// 			sc.SocialCapital[id] = newSocialCapital + forgivenessFactor*(sc.SocialCapital[id]-newSocialCapital)
-// 		} else {
-// 			sc.SocialCapital[id] = newSocialCapital
-// 		}
-// 	}
-// 	// fmt.Printf("[UpdateSocialCapital] Social Capital After: %v\n", sc.SocialCapital)
-// }

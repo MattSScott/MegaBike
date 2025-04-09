@@ -20,7 +20,7 @@ type IBaseBiker interface {
 
 	DecideAction() BikerAction                                   // returns: int reflecting what the agent has decided to do this iteration (pedal the bike (0), or try to change bikes (1))
 	DecideJoining(pendinAgents []uuid.UUID) map[uuid.UUID]bool   // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
-	ChangeBike() uuid.UUID                                       // returns: uuid of the target bike if they want to change, otherwise just return current bike id (?)
+	DecideChangeBike() uuid.UUID                                       // returns: uuid of the target bike if they want to change, otherwise just return current bike id (?)
 	ProposeDirection() uuid.UUID                                 // returns: lootbox uuid to aim towards (the direction)
 	ProposeDirectionFromSubset(map[uuid.UUID]ILootBox) uuid.UUID // returns: lootbox uuid to aim towards (the direction) from a subset of lootboxes
 	ProposeNewRadius(float64) float64                            // returns: TODO
@@ -63,7 +63,6 @@ type IBaseBiker interface {
 	GetEnergyLevel() float64        // returns: energy level of the agent
 	GetPoints() int                 // returns: the points the agent currently has
 	GetBikeStatus() bool            // returns: whether the biker is on a bike or not
-	GetTrustworthiness() float64    // returns: the trustworthiness of an agent
 	GetFellowBikers() []IBaseBiker  // returns: slice containing the bikers on our bike.
 
 	// Setters
@@ -135,7 +134,7 @@ func (bb *BaseBiker) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool
 }
 
 // decide which bike to go to. the base agent chooses a random bike
-func (bb *BaseBiker) ChangeBike() uuid.UUID {
+func (bb *BaseBiker) DecideChangeBike() uuid.UUID {
 	megaBikes := bb.gameState.GetMegaBikes()
 	i, targetI := 0, rand.Intn(len(megaBikes))
 	// Go doesn't have a sensible way to do this...
@@ -443,10 +442,6 @@ func (bb *BaseBiker) GetPoints() int {
 
 func (bb *BaseBiker) GetBikeStatus() bool {
 	return bb.onBike
-}
-
-func (bb *BaseBiker) GetTrustworthiness() float64 {
-	return -1
 }
 
 // Returns the other agents on your bike :)

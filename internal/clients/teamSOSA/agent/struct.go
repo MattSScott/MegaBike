@@ -10,14 +10,13 @@ import (
 type AgentModules struct {
 	Environment     *modules.EnvironmentModule
 	AgentParameters *modules.AgentParameters
-	Decision        *modules.DecisionModule
 	Utils           *modules.UtilsModule
 	VotedDirection  uuid.UUID
 }
 
 type IAgentSOSA interface {
 	objects.IBaseBiker
-	GetTrustworthiness() float64
+	GetPreferenceForEquality() float64
 }
 
 // core agentSosa struct
@@ -26,8 +25,8 @@ type AgentSOSA struct {
 	Modules            AgentModules
 }
 
-func (sosa *AgentSOSA) GetTrustworthiness() float64 {
-	return sosa.Modules.AgentParameters.Trustworthiness
+func (sosa *AgentSOSA) GetPreferenceForEquality() float64 {
+	return sosa.Modules.AgentParameters.PreferenceForEquality
 }
 
 
@@ -38,7 +37,6 @@ func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
 		Modules: AgentModules{
 			Environment:     modules.GetEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
 			AgentParameters: modules.NewAgentParameters(),
-			Decision:        modules.NewDecisionModule(),
 			Utils:           modules.NewUtilsModule(),
 			VotedDirection:  uuid.Nil,
 		},

@@ -319,7 +319,7 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 
 // ----- Currently unused -----
 
-// returns: uuid of chosen lootbox from a set of votes and weights (currently unused)
+// returns: uuid of chosen lootbox from a set of votes and weights
 func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID {
 	// this allows to get a slice of the interface from that of the specific type
 	// this way we can substitute agent.FInalDirectionVote with another function that returns
