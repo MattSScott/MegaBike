@@ -19,7 +19,7 @@ func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 
 	// decide differently based on each governance...
 	switch governance {
-	case utils.PerfectAristocracy:
+	case utils.Some:
 		selectedAgents := make([]objects.IBaseBiker, 0, len(reps))
 		suggestedDirections := make([]uuid.UUID, 0, len(reps))
 		countsPerDirection := make(map[uuid.UUID]int)
@@ -34,7 +34,7 @@ func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 
 		// create a slice of their suggested directions
 		for _, ag := range selectedAgents {
-			suggestedDirections = append(suggestedDirections, ag.DecideDirectionBenevolently())
+			suggestedDirections = append(suggestedDirections, ag.DecideDirectionBenevolently()) // could be malovently too, needs changing.
 		}
 
 		// aggregate these to find the most voted direction
@@ -48,46 +48,11 @@ func (s *Server) RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID {
 
 		return direction
 
-	case utils.DegenerateAristocracy:
-		selectedAgents := make([]objects.IBaseBiker, 0, len(reps))
-		suggestedDirections := make([]uuid.UUID, 0, len(reps))
-		countsPerDirection := make(map[uuid.UUID]int)
-		maxCounts := 0
-		
-		// create a slice of representative agents
-		for _, id := range reps {
-			if agent, exists := agents[id]; exists {
-				selectedAgents = append(selectedAgents, agent)
-			}
-		}
-
-		// create a slice of their suggested directions
-		for _, ag := range selectedAgents {
-			suggestedDirections = append(suggestedDirections, ag.DecideDirectionMalevolently())
-		}
-
-		// aggregate these to find the majority voted direction
-		for _, lootbox := range suggestedDirections {
-			countsPerDirection[lootbox] += 1
-			if countsPerDirection[lootbox] > maxCounts {
-				maxCounts = countsPerDirection[lootbox]
-				direction = lootbox
-			}
-		}
-
-		return direction
-		
-	case utils.PerfectMonarchy:
+	case utils.One:
 		monarch := agents[reps[0]]
 		direction = monarch.DecideDirectionBenevolently()
+		//direction = monarch.DecideDirectionMalevolently()
 		return direction
-
-	case utils.DegenerateMonarchy:
-		monarchID := reps[0]
-		monarch := agents[monarchID]
-		direction = monarch.DecideDirectionMalevolently()
-		return direction
-
 	default:
 		panic("trying to run representative action in a non-representative governance")
 	}
@@ -102,7 +67,7 @@ func (s *Server) RepresentativeSelection(agentsOnBike []objects.IBaseBiker, gove
 
 	if len(agentsOnBike) != 0 {
 		switch governance {
-		case utils.PerfectAristocracy, utils.DegenerateAristocracy:
+		case utils.Some:
 			reps := make([]uuid.UUID, 0)
 			var chosenAgentIndices []int
 			if len(agentsOnBike) > 3 {
@@ -114,7 +79,7 @@ func (s *Server) RepresentativeSelection(agentsOnBike []objects.IBaseBiker, gove
 				reps = append(reps, agentsOnBike[v].GetID())
 			}
 			return reps
-		case utils.PerfectMonarchy, utils.DegenerateMonarchy:
+		case utils.One:
 			reps := make([]uuid.UUID, 0)
 			chosenAgentIndex := rand.Intn(len(agentsOnBike))
 			reps = append(reps, agentsOnBike[chosenAgentIndex].GetID())
@@ -163,30 +128,29 @@ func (s *Server) RunDemocraticAction(bike objects.IMegaBike) uuid.UUID {
 	}
 
 
-	// different behaviours depending on the kind of democracy
-	if governance == utils.PerfectDemocracy {
-		// look for consensus
-		directions := []uuid.UUID{}
-		for _, direction := range proposedDirections {
-			directions = append(directions, direction)
-		}
+	// legacy: different behaviours depending on the kind of democracy
+	// if governance == utils.PerfectDemocracy {
+	// 	// look for consensus
+	// 	directions := []uuid.UUID{}
+	// 	for _, direction := range proposedDirections {
+	// 		directions = append(directions, direction)
+	// 	}
 
-		consensusReached := true
-		for i := 1; i < len(directions); i++ {
-			if directions[i] != directions[0] {
-				consensusReached = false
-				break
-			}
-		}
+	// 	consensusReached := true
+	// 	for i := 1; i < len(directions); i++ {
+	// 		if directions[i] != directions[0] {
+	// 			consensusReached = false
+	// 			break
+	// 		}
+	// 	}
 		
-		if consensusReached {
-			return directions[0] // could be any element of the slice they are all the same
-		} else {
-			return uuid.Nil // assuming this means 'don't move'
-		}
+	// 	if consensusReached {
+	// 		return directions[0] // could be any element of the slice they are all the same
+	// 	} else {
+	// 		return uuid.Nil // assuming this means 'don't move'
+	// 	}
 
-
-	} else if governance == utils.DegenerateDemocracy {
+	if governance == utils.Many {
 		// look for majority
 
 		directions := []uuid.UUID{}
@@ -240,7 +204,7 @@ func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToR
 	gov := bike.GetGovernance()
 
 	// first attempt to replace them
-	if (((gov == utils.DegenerateAristocracy || gov == utils.PerfectAristocracy) && len(bike.GetAgents()) >= 3) || ((gov ==utils.PerfectMonarchy || gov == utils.DegenerateMonarchy) && len(bike.GetAgents()) >= 1)) {
+	if (((gov == utils.Some) && len(bike.GetAgents()) >= 3) || (gov==utils.One && len(bike.GetAgents()) >= 1)) {
 	
 		reps := bike.GetRepresentatives()
 		agentsOnBike := bike.GetAgents()

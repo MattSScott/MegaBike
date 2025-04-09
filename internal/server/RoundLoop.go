@@ -119,7 +119,7 @@ func (s *Server) RunDirectionDecisionProcess() {
 		governance := bike.GetGovernance()
 
 		switch governance {
-		case utils.PerfectDemocracy, utils.DegenerateDemocracy:
+		case utils.Many:
 			direction = s.RunDemocraticAction(bike)
 
 			// agents incur an energetic penalty for participating in a vote
@@ -127,7 +127,7 @@ func (s *Server) RunDirectionDecisionProcess() {
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
 			}
 
-		case utils.PerfectAristocracy, utils.DegenerateAristocracy, utils.PerfectMonarchy, utils.DegenerateMonarchy:
+		case utils.Some, utils.One:
 			direction = s.RunRepresentativeAction(bike)
 			// not voting here so no negative energy for now
 		}
@@ -188,7 +188,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 					var winningAllocation voting.IdVoteMap
 
 					switch gov {
-					case utils.PerfectDemocracy, utils.DegenerateDemocracy:
+					case utils.Many:
 
 						allAllocations := make(map[uuid.UUID]voting.IdVoteMap)
 
@@ -208,13 +208,8 @@ func (s *Server) LootboxCheckAndDistributions() {
 							weights[agent.GetID()] = 1.0
 						}
 						winningAllocation = voting.CumulativeDist(Iallocations, weights)
-
-					case utils.DegenerateMonarchy, utils.PerfectMonarchy:
-						reps := megabike.GetRepresentatives()
-						monarch := s.GetAgentMap()[reps[0]]
-						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
 						
-					case utils.DegenerateAristocracy, utils.PerfectAristocracy:
+					case utils.Some:
 						//EXPERIMENTAL 
 						reps := megabike.GetRepresentatives()
 						agentMap := s.GetAgentMap()
@@ -238,6 +233,11 @@ func (s *Server) LootboxCheckAndDistributions() {
 						}
 
 						winningAllocation = voting.CumulativeDist(Iallocations, weights)
+
+					case utils.One:
+						reps := megabike.GetRepresentatives()
+						monarch := s.GetAgentMap()[reps[0]]
+						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
 					}
 					
 

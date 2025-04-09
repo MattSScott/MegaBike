@@ -154,12 +154,12 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 			kickedAgents := make([]uuid.UUID, 0)
 
 			switch bike.GetGovernance() {
-			case utils.PerfectDemocracy, utils.DegenerateDemocracy:
+			case utils.Many:
 				// agents vote for they want to kick out
 				// behaviour of this function changes based on which type of dem. it is
 				kickedAgents = bike.KickOutAgent()
 
-			case utils.PerfectAristocracy, utils.DegenerateAristocracy:
+			case utils.Some:
 
 				reps := bike.GetRepresentatives()
 				agents := s.GetAgentMap()
@@ -197,7 +197,7 @@ func (s *Server) HandleKickoutProcess() []uuid.UUID {
 				}
 
 
-			case utils.PerfectMonarchy, utils.DegenerateMonarchy:
+			case utils.One:
 				reps := bike.GetRepresentatives()
 				monarch := s.GetAgentMap()[reps[0]]
 				kickedAgents = monarch.DecideKickOut()
@@ -256,7 +256,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 
 			switch gov {
 
-			case utils.PerfectDemocracy, utils.DegenerateDemocracy:
+			case utils.Many:
 
 				// make map of weights of 1 for all agents on bike
 				weights := make(map[uuid.UUID]float64)
@@ -276,9 +276,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 				acceptedRanked = voting.GetAcceptanceRanking(responses, weights, gov)
 
 
-			case utils.PerfectAristocracy, utils.DegenerateAristocracy:
-				// EXPERIMENTAL METHOD
-
+			case utils.Some:
 				// make map of weights of 1 for aristocrats and 0 for non aristocrats.
 				weights := make(map[uuid.UUID]float64)
 				for _, agent := range agents {
@@ -300,7 +298,7 @@ func (s *Server) ProcessJoiningRequests(inLimbo []uuid.UUID) {
 				// get a slice of uuids, ranked by num of yes's.
 				acceptedRanked = voting.GetAcceptanceRanking(responses, weights, gov)
 				
-			case utils.PerfectMonarchy, utils.DegenerateMonarchy:
+			case utils.One:
 
 				monarch := s.GetAgentMap()[bike.GetRepresentatives()[0]]
 				
@@ -349,7 +347,7 @@ func (s *Server) SetDestinationBikes() {
 func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
 	governanceSystem := bike.GetGovernance()
 	// if governance system is some form of monarchy or aristocracy, need representatives.
-	if governanceSystem == utils.PerfectMonarchy || governanceSystem == utils.DegenerateMonarchy || governanceSystem == utils.PerfectAristocracy || governanceSystem == utils.DegenerateAristocracy {
+	if governanceSystem == utils.One || governanceSystem == utils.Some {
 		// run selection process
 		agentsOnBike := bike.GetAgents()
 		reps := s.RepresentativeSelection(agentsOnBike, governanceSystem)

@@ -86,24 +86,8 @@ type PhysicalState struct {
 type Governance int
 
 const (
-	PerfectMonarchy Governance = iota
-	DegenerateMonarchy
-	PerfectAristocracy
-	DegenerateAristocracy
-	PerfectDemocracy
-	DegenerateDemocracy
+	One Governance = iota
+	Some
+	Many
 	Invalid
 )
-
-// ----- Deprecated -----
-
-// below type seems to never be used?? so commented out
-
-// type Action int
-
-// const (
-// 	Kickout Action = iota
-// 	Joining
-// 	Direction
-// 	Allocation
-// )

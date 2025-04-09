@@ -99,7 +99,7 @@ func (s *Server) spawnMegaBike(governance utils.Governance) {
 func (s *Server) replenishMegaBikes() {
 	neededBikes := globals.MegaBikeCount - len(s.megaBikes)
 	for i := 0; i < neededBikes; i++ {
-		s.spawnMegaBike(utils.PerfectDemocracy) // needs changing but currently not called anywhere anyway
+		s.spawnMegaBike(utils.One) // needs changing but currently not called anywhere anyway
 		fmt.Println("replenishing megabike!!!")
 	}
 }

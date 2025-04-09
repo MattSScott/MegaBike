@@ -210,7 +210,8 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 		totalSocialCapital += sc
 	}
 
-	if governance == utils.PerfectMonarchy || governance == utils.PerfectAristocracy {
+	// needs changing, but for now act purely based on the agents preference for equality
+	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 {
 		// Distribute the allocation based on each agent's share of the total social capital
 		result := make(voting.IdVoteMap)
 		
@@ -223,8 +224,8 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 		}
 
 		return result
-	} else if governance == utils.DegenerateMonarchy  || governance == utils.DegenerateAristocracy {
-		// same as perfect monarchy, but cut every elses share by 50% and give yourself the rest.
+	} else {
+		// same as above, but cut every elses share by 50% and give yourself the rest.
 		ownID := a.GetID()
 		shareDistributed := float64(0)
 		
@@ -245,8 +246,6 @@ func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) 
 		result[ownID] = monarchShare
 
 		return result
-	} else {
-		panic("deciding rep allocation gone wrong")
 	}
 }
 

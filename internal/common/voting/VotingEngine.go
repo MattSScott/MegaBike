@@ -41,10 +41,10 @@ func GetAcceptanceRanking(decisionsByVoter map[uuid.UUID]map[uuid.UUID]bool, wei
 	var quorum float64
 
 	// if perfect dem need consensus, in degen need majority. for aristocracy no minimum
-	if governance == utils.PerfectDemocracy {
-		quorum = float64(len(decisionsByVoter))-1
-	} else if governance == utils.DegenerateDemocracy{
+	if governance == utils.Many {
 		quorum = float64(len(decisionsByVoter)) / 2.0
+	// } else if governance == utils.DegenerateDemocracy{
+	// 	quorum = float64(len(decisionsByVoter)) / 2.0
 	} else{
 		quorum = 0.0
 	}
@@ -178,67 +178,3 @@ func WinnerFromDist(voters map[uuid.UUID]IVoter, voteWeight map[uuid.UUID]float6
 	}
 	return winner
 }
-
-// ----- Deprecated -----
-
-// func WinnerFromGovernance(voters []GovernanceVote) (utils.Governance, error) {
-// 	// check if length of votes is greater than one
-// 	if len(voters) == 0 {
-// 		return utils.Invalid, errors.New("no votes provided")
-// 	}
-
-// 	// Summing up the votes for each governance type
-// 	for _, vote := range voters {
-// 		sum := 0.0
-// 		for _, votes := range vote {
-// 			sum += votes
-// 		}
-// 		if sum > 1.0 {
-// 			return utils.Invalid, errors.New("distribution doesn't sum to 1")
-// 		}
-// 	}
-
-// 	var voteTotals = make(map[utils.Governance]float64)
-// 	var winner utils.Governance
-// 	var highestVotes float64
-
-// 	// Summing up the votes for each governance type
-// 	for _, vote := range voters {
-// 		for governance, votes := range vote {
-// 			voteTotals[governance] += votes
-// 		}
-// 	}
-// 	// Finding the governance type with the highest votes
-// 	for governance, votes := range voteTotals {
-// 		if votes > highestVotes {
-// 			highestVotes = votes
-// 			winner = governance
-// 		}
-// 	}
-
-// 	return winner, nil
-// }
-
-
-// // Need to check if the input param is expecting a vote that is just one governance type
-// func TallyFoundingVotes(voters map[uuid.UUID]utils.Governance) (map[utils.Governance]int, error) {
-// 	// check if length of votes is greater than one
-// 	if len(voters) == 0 {
-// 		return nil, errors.New("no votes provided")
-// 	}
-
-// 	// Summing up the votes for each governance type
-// 	aggregateFoundingTotals := make(map[utils.Governance]int)
-
-// 	// Get the governance type for each agent
-// 	for _, vote := range voters {
-// 		// Add to the tally for each governance type
-// 		if val, ok := aggregateFoundingTotals[vote]; ok {
-// 			aggregateFoundingTotals[vote] = val + 1
-// 		} else {
-// 			aggregateFoundingTotals[vote] = 1
-// 		}
-// 	}
-
-// 	return aggregateFoundingTotals, nil
-// }

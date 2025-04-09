@@ -162,20 +162,13 @@ func (mb *MegaBike) KickOutAgent() []uuid.UUID {
 
 	agentsToKickOut := make([]uuid.UUID, 0)
 
-	if mb.governance == utils.PerfectDemocracy {
+	if mb.governance == utils.Many {
 		// Find all agents where there is consensus, i.e. agents that have everyone voting for them but themselves
 		for agentID, votes := range voteCount {
 			if votes > (len(mb.agents))-1 {
 				agentsToKickOut = append(agentsToKickOut, agentID)
 			}
 		} 
-	} else if mb.governance == utils.DegenerateDemocracy {
-		// Find all agents where there is a majority, i.e. votes > half the number of agents
-		for agentID, votes := range voteCount {
-			if votes > len(mb.agents)/2 {
-				agentsToKickOut = append(agentsToKickOut, agentID)
-			}
-		}
 	} else {
 		panic("non-democratic bike performing an agent kickout")
 	}

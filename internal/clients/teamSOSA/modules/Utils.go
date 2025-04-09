@@ -69,14 +69,3 @@ func (um *UtilsModule) GetForcesToTargetWithDirectionOffset(force, degree float6
 		Turning: turningDecision,
 	}
 }
-
-
-// ----- Deprecated -----
-
-// // Called by Events to obtain Event Value for update Institution
-// // Assume what they broadcast is the truth
-// func (um *UtilsModule) RuleAdherenceValue(agentID uuid.UUID, expectedAction, actualAction utils.Forces) float64 {
-// 	actualVec := GetForceVector(actualAction)
-// 	expectVec := GetForceVector(expectedAction)
-// 	return actualVec.CosineSimilarity(*expectVec) * actualAction.Pedal
-// }
