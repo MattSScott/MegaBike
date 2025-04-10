@@ -45,7 +45,7 @@ type IBaseBiker interface {
 	HandleLootboxMessage(msg LootboxMessage)
 	HandleGovernanceMessage(msg GovernanceMessage)
 	HandleForcesMessage(msg ForcesMessage)
-	HandleVoteGovernanceMessage(msg VoteGoveranceMessage)
+	HandleVoteGovernanceMessage(msg VoteGovernanceMessage)
 	HandleVoteLootboxDirectionMessage(msg VoteLootboxDirectionMessage)
 	HandleVoteRulerMessage(msg VoteRulerMessage)
 	HandleVoteKickoutMessage(msg VoteKickoutMessage)
@@ -332,7 +332,7 @@ func (bb *BaseBiker) HandleForcesMessage(msg ForcesMessage) {
 	// agentForces := msg.AgentForces
 }
 
-func (bb *BaseBiker) HandleVoteGovernanceMessage(msg VoteGoveranceMessage) {
+func (bb *BaseBiker) HandleVoteGovernanceMessage(msg VoteGovernanceMessage) {
 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 
 	// sender := msg.BaseMessage.GetSender()
@@ -377,12 +377,12 @@ func (bb *BaseBiker) GetAllMessages([]IBaseBiker) []messaging.IMessage[IBaseBike
 		joiningMsg := bb.CreateJoiningMessage()
 		governceMsg := bb.CreateGoverenceMessage()
 		forcesMsg := bb.CreateForcesMessage()
-		voteGoveranceMessage := bb.CreateVoteGovernanceMessage()
+		voteGovernanceMessage := bb.CreateVoteGovernanceMessage()
 		voteLootboxDirectionMessage := bb.CreateVoteLootboxDirectionMessage()
 		voteRulerMessage := bb.CreateVoteRulerMessage()
 		voteKickoutMessage := bb.CreateVotekickoutMessage()
 		voteAllocationMessage := bb.CreateVoteAllocationMessage()
-		return []messaging.IMessage[IBaseBiker]{reputationMsg, kickoutMsg, lootboxMsg, joiningMsg, governceMsg, forcesMsg, voteGoveranceMessage, voteLootboxDirectionMessage, voteRulerMessage, voteKickoutMessage, voteAllocationMessage}
+		return []messaging.IMessage[IBaseBiker]{reputationMsg, kickoutMsg, lootboxMsg, joiningMsg, governceMsg, forcesMsg, voteGovernanceMessage, voteLootboxDirectionMessage, voteRulerMessage, voteKickoutMessage, voteAllocationMessage}
 	}
 	return []messaging.IMessage[IBaseBiker]{}
 }
@@ -555,10 +555,10 @@ func (bb *BaseBiker) CreateForcesMessage() ForcesMessage {
 	}
 }
 
-func (bb *BaseBiker) CreateVoteGovernanceMessage() VoteGoveranceMessage {
+func (bb *BaseBiker) CreateVoteGovernanceMessage() VoteGovernanceMessage {
 	// Currently this returns a default/meaningless message
 	// For team's agent, add your own logic to communicate with other agents
-	return VoteGoveranceMessage{
+	return VoteGovernanceMessage{
 		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
 		VoteMap:     make(voting.IdVoteMap),
 	}

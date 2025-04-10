@@ -51,7 +51,7 @@ type ForcesMessage struct {
 }
 
 // "I voted for this governance in this iteration"
-type VoteGoveranceMessage struct {
+type VoteGovernanceMessage struct {
 	messaging.BaseMessage[IBaseBiker]
 	VoteMap voting.IdVoteMap // the vote map that you voted for (if you are telling the truth)
 }
@@ -104,7 +104,7 @@ func (msg ForcesMessage) InvokeMessageHandler(agent IBaseBiker) {
 	agent.HandleForcesMessage(msg)
 }
 
-func (msg VoteGoveranceMessage) InvokeMessageHandler(agent IBaseBiker) {
+func (msg VoteGovernanceMessage) InvokeMessageHandler(agent IBaseBiker) {
 	agent.HandleVoteGovernanceMessage(msg)
 }
 

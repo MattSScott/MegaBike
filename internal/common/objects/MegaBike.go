@@ -56,7 +56,7 @@ func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *Me
 	}
 }
 
-// ----- Physics -----
+// ----- Overriding some PhysicsObject stuff -----
 
 // updates: the total force of the Megabike based on the biker's force
 func (mb *MegaBike) UpdateForce() {
@@ -225,8 +225,6 @@ func (mb *MegaBike) SetRepresentatives(reps []uuid.UUID) {
 
 
 // ----- Rule Stuff -----
-
-// do i need this?
 
 func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
 	output := []*Rule{}
