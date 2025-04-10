@@ -20,6 +20,8 @@ type Awdi struct {
 	gameState IGameState
 }
 
+// ----- Constructors -----
+
 // GetAwdi is a constructor for Awdi that initializes it with a new UUID and default position.
 func GetAwdi() *Awdi {
 	return &Awdi{
@@ -33,28 +35,17 @@ func GetIAwdi() IAwdi {
 	}
 }
 
-func (a *Awdi) InjectGameState(gameState IGameState) {
-	a.gameState = gameState
-}
+// ----- Awdi Functions -----
 
 // updates: the force of the awdi, which is dependent on whether it has a target bike or not.
 func (awdi *Awdi) UpdateForce() {
 	// Compute the target Megabike, which will update awdi.target
 	awdi.ComputeTarget()
 
-	if awdi.target == nil { // no target, awdi will not apply a force and eventually come to a stop
-		awdi.force = 0.0
+	if awdi.target == nil {
+		awdi.force = 0.0 // no target, awdi will not apply a force and eventually come to a stop
 	} else {
 		awdi.force = utils.AwdiMaxForce // Otherwise apply max force to get to target MegaBike
-	}
-}
-
-// updates: the awdis orientation if it has a target bike
-func (awdi *Awdi) UpdateOrientation() {
-	// If no target, awdi will not change orientation
-	// Otherwise, new orientation is calculated based on positioning of target
-	if awdi.target != nil {
-		awdi.orientation = phy.ComputeOrientation(awdi.coordinates, awdi.target.GetPosition())
 	}
 }
 
@@ -97,6 +88,15 @@ func (awdi *Awdi) ComputeTarget() {
 	}
 }
 
+// updates: the awdis orientation if it has a target bike
+func (awdi *Awdi) UpdateOrientation() {
+	// If no target, awdi will not change orientation
+	// Otherwise, new orientation is calculated based on positioning of target
+	if awdi.target != nil {
+		awdi.orientation = phy.ComputeOrientation(awdi.coordinates, awdi.target.GetPosition())
+	}
+}
+
 // returns: the ID of the target megabike
 func (awdi *Awdi) GetTargetID() uuid.UUID {
 	if awdi.target != nil {
@@ -104,4 +104,9 @@ func (awdi *Awdi) GetTargetID() uuid.UUID {
 	} else {
 		return uuid.UUID{}
 	}
+}
+
+// used to give the awdi access to the game state
+func (awdi *Awdi) InjectGameState(gameState IGameState) {
+	awdi.gameState = gameState
 }

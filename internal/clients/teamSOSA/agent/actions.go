@@ -104,7 +104,7 @@ func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 
 // ----- Decisions (Round level) -----
 
-// returns: lootbox uuid to aim towards (the direction) from the choice of a subset of lootboxes
+// returns: int reflecting what action the agent has decided to do this iteration, pedal the bike (0) or try to change bikes (1)
 func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
 	agentColour, agentEnergy := a.GetColour(), a.GetEnergyLevel()
 	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColourFromSubset(agentColour, subset)
