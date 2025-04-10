@@ -8,7 +8,7 @@ const GridHeight float64 = 250.0
 const GridWidth float64 = 250.0
 const CollisionThreshold float64 = 7.0
 const Epsilon float64 = 0.01 // tolerance for FP rounding and checking if == 1.0
-const BikersOnBike = 10
+const BikersOnBike = 8
 const ReplenishEnergyEveryIteration = true
 const ResetPointsEveryIteration = true
 const RespawnEveryIteration = false
@@ -30,7 +30,7 @@ const DragCoefficient float64 = 0.5 // Drag coefficient can be optimised in expe
 // ----- Resources - Points and Energy -----
 const PointsFromSameColouredLootBox = 500.0
 const MovingDepletion float64 = 0.01 // proportionality of energy loss
-const LimboEnergyPenalty float64 = 0.05 // amount of energy lost per round when off a bike
+const LimboEnergyPenalty float64 = 0.01 // amount of energy lost per round when off a bike
 const DeliberativeDemocracyPenalty float64 = 0.01 // amount of energy lost per vote in a deliberative democracy
 
 

@@ -7,7 +7,6 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
-	// "slices"
 
 	"github.com/google/uuid"
 )
@@ -20,11 +19,10 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	s.runActionDeliberation(objects.KickAgent)
 	s.RunDirectionDecisionProcess()
 
-	// ----- 2. Move objects in the world ----- 
+	// ----- 2. Move objects in the world -----
 
-	// Move the mega bikes
+	// Move the mega]bikes
 	for _, bike := range s.megaBikes {
-		// update mass dependent on number of agents on bike
 		bike.UpdateMass()
 		s.runActionDeliberation(objects.Lootbox)
 		s.MovePhysicsObject(bike)
@@ -32,7 +30,6 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 
 	// Move the awdi
 	s.MovePhysicsObject(s.awdi)
-
 
 	// ----- 3. Distributing energy from any collected lootboxes -----
 
@@ -50,15 +47,11 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	// kill agents that run out of energy
 	s.unaliveAgents()
 
-
-
 	// ----- 5. Recording events, cleanup and replenishing -----
 
 	// round dump code
 	roundDump := s.GenerateRoundDump()
 	iterationDump.AddRoundToIteration(roundDump)
-
-
 
 	// handle the case where reps die
 	for _, bike := range s.GetMegaBikes() {
@@ -73,7 +66,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 					s.HandleDepartingRepresentative(bike, deadRepIdx)
 				}
 			}
-			
+
 		}
 	}
 
@@ -107,20 +100,19 @@ func (s *Server) runActionDeliberation(action objects.Action) {
 func (s *Server) RunDirectionDecisionProcess() {
 
 	for _, bike := range s.GetMegaBikes() {
-
 		agents := bike.GetAgents()
+
 		if len(agents) == 0 {
 			continue
 		}
 
 		// get the direction for this round (either democratically or what's decided by the representatives)
-
 		var direction uuid.UUID
 		governance := bike.GetGovernance()
 
 		switch governance {
 		case utils.Many:
-			direction = s.RunDemocraticAction(bike)
+			direction = s.RunDemocraticDirectionDecision(bike)
 
 			// agents incur an energetic penalty for participating in a vote
 			for _, agent := range agents {
@@ -128,13 +120,12 @@ func (s *Server) RunDirectionDecisionProcess() {
 			}
 
 		case utils.Some, utils.One:
-			direction = s.RunRepresentativeAction(bike)
-			// not voting here so no negative energy for now
+			direction = s.RunRepresentativeDirectionDecision(bike)
 		}
 
+		// let agents decide the force they are going to pedal with
 		for _, agent := range agents {
 			agent.DecideForce(direction)
-			// deplete energy
 			energyLost := agent.GetForces().Pedal * utils.MovingDepletion
 			agent.UpdateEnergyLevel(-energyLost)
 		}
@@ -162,12 +153,12 @@ func (s *Server) MovePhysicsObject(po objects.IPhysicsObject) {
 // if a bike has looted a box, run the distribution process according to the governance type
 func (s *Server) LootboxCheckAndDistributions() {
 
-	// checks how many bikes have looted one lootbox to split it between them
+	// 1. create a map of lootboxID -> number of bikes that have looted it
 	looted := make(map[uuid.UUID]int)
 	for _, megabike := range s.GetMegaBikes() {
 		for lootid, lootbox := range s.GetLootBoxes() {
-			if megabike.CheckForCollision(lootbox) { // && len(megabike.GetAgents()) != 0
-				megabike.UpdateCurrentPool(lootbox.GetTotalResources())
+			if megabike.CheckForCollision(lootbox) {
+				megabike.UpdateCurrentPool(lootbox.GetTotalResources()) // NOTE: seems wrong. can't quite figure out what the current pool is supposed to be for?
 				if value, ok := looted[lootid]; ok {
 					looted[lootid] = value + 1
 				} else {
@@ -177,19 +168,20 @@ func (s *Server) LootboxCheckAndDistributions() {
 		}
 	}
 
+	// 2. For each bike: go over all lootboxes. For those they have looted, get the agents to decide an allocation, then update each agents energy by allocating them their share of their bikes share of the total loot.
 	for bikeid, megabike := range s.GetMegaBikes() {
 		for lootid, lootbox := range s.GetLootBoxes() {
 			if megabike.CheckForCollision(lootbox) {
 				agents := megabike.GetAgents()
-				totAgents := len(agents)
 
-				if totAgents > 0 {
+				if len(agents) > 0 {
 					gov := s.GetMegaBikes()[bikeid].GetGovernance()
 					var winningAllocation voting.IdVoteMap
 
 					switch gov {
 					case utils.Many:
 
+						// map of agentID -> map of fellow bikers and their distribution
 						allAllocations := make(map[uuid.UUID]voting.IdVoteMap)
 
 						for _, agent := range agents {
@@ -202,21 +194,23 @@ func (s *Server) LootboxCheckAndDistributions() {
 						for i, v := range allAllocations {
 							Iallocations[i] = v
 						}
+
 						// make weights of 1 for all agents
 						weights := make(map[uuid.UUID]float64)
 						for _, agent := range agents {
 							weights[agent.GetID()] = 1.0
 						}
+
 						winningAllocation = voting.CumulativeDist(Iallocations, weights)
-						
+
 					case utils.Some:
-						//EXPERIMENTAL 
+
 						reps := megabike.GetRepresentatives()
 						agentMap := s.GetAgentMap()
-						
+
 						aristocratAllocations := make(map[uuid.UUID]voting.IdVoteMap)
 						for _, repID := range reps {
-							// the agents return their ideal lootbox split by assigning a number between 0 and 1 to
+							// the reps return their ideal lootbox split by assigning a number between 0 and 1 to
 							// each biker on their bike (including themselves) ensuring they sum to 1
 							aristocratAllocations[repID] = agentMap[repID].DecideRepresentativeAllocation(gov)
 						}
@@ -239,12 +233,11 @@ func (s *Server) LootboxCheckAndDistributions() {
 						monarch := s.GetAgentMap()[reps[0]]
 						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
 					}
-					
 
-					bikeShare := float64(looted[lootid]) // how many other bikes have looted this box
+					numBikesSharingLootbox := float64(looted[lootid])
 
 					for agentID, allocation := range winningAllocation {
-						lootShare := allocation * (lootbox.GetTotalResources() / bikeShare)
+						lootShare := allocation * (lootbox.GetTotalResources() / numBikesSharingLootbox)
 						agent, ok := s.GetAgentMap()[agentID]
 						if !ok {
 							continue
@@ -281,7 +274,7 @@ func (s *Server) punishBikelessAgents() {
 
 // check for deadly collisions with the awdi
 func (s *Server) AwdiCollisionCheck() {
-	// Check collision for awdi with any megaBike
+
 	for _, megabike := range s.GetMegaBikes() {
 		if s.awdi.CheckForCollision(megabike) {
 			// Collision detected

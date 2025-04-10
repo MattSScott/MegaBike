@@ -6,21 +6,17 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 
+	"fmt"
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
 	"github.com/google/uuid"
-	"fmt"
 )
 
 type AgentInitFunction func(baseBiker *objects.BaseBiker) objects.IBaseBiker
 
+// notice: replace teamSOSA.GetBiker with nil to run basebiker experiments
 var AgentInitFunctions = []AgentInitFunction{
 	teamSOSA.GetBiker, // Team SOSA
 }
-
-// To run basebiker experiments, uncomment this and comment out the above.
-// var AgentInitFunctions = []AgentInitFunction{
-// 	nil,
-// }
 
 // returns: a slice of agent generator-count pairs, i.e. a slice in which each element is a 2-tuple of the form (agent generator function, number to spawn in)
 func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objects.IBaseBiker] {
@@ -39,7 +35,7 @@ func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objec
 	return agentGenerators
 }
 
-
+// helper function to spawn in bikes
 func (s *Server) BikerAgentGenerator(initFunc func(baseBiker *objects.BaseBiker) objects.IBaseBiker) func() objects.IBaseBiker {
 	return func() objects.IBaseBiker {
 		baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), s)
@@ -50,6 +46,8 @@ func (s *Server) BikerAgentGenerator(initFunc func(baseBiker *objects.BaseBiker)
 		}
 	}
 }
+
+// ----- Lootboxes -----
 
 func (s *Server) spawnLootBox() {
 	lootBox := objects.GetLootBox()
@@ -63,10 +61,12 @@ func (s *Server) replenishLootBoxes() {
 	}
 }
 
+// ----- Megabikes -----
+
 func (s *Server) spawnInitialMegaBikesAndRiders() {
 	for i := 0; i < globals.MegaBikeCount; i++ {
 		// increment i each time to spawn a megabike of each governance type
-		governance := utils.Governance(i) 
+		governance := utils.Governance(i)
 		s.spawnMegaBike(governance)
 		fmt.Println("Spawning Megabike with Governance", governance)
 	}
@@ -97,9 +97,10 @@ func (s *Server) spawnMegaBike(governance utils.Governance) {
 }
 
 func (s *Server) replenishMegaBikes() {
+	// currently not being called as awdi doesnt currently remove the megabike.
+	// if it does, this function needs changing to spawn new megabikes in with the correct governance
 	neededBikes := globals.MegaBikeCount - len(s.megaBikes)
 	for i := 0; i < neededBikes; i++ {
-		s.spawnMegaBike(utils.One) // needs changing but currently not called anywhere anyway
-		fmt.Println("replenishing megabike!!!")
+		s.spawnMegaBike(utils.One)
 	}
 }

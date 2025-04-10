@@ -30,7 +30,6 @@ type SimplfiedBikeDump struct {
 type SimplfiedAgentDump struct {
 	OnBike          bool              `json:"on_bike"`
 	AgentDirection  utils.Coordinates `json:"agentDirection"`
-	// Trustworthiness float64           `json:"trustworthiness"`
 }
 
 func NewSimplifiedGameStateDump() *SimplifiedGameStateDump {
@@ -78,7 +77,6 @@ func (s *Server) GenerateAgentDump(agent objects.IBaseBiker) SimplfiedAgentDump 
 	return SimplfiedAgentDump{
 		OnBike:          agent.GetBikeStatus(),
 		AgentDirection:  agent.GetForces().Force2Vec(),
-		// Trustworthiness: agent.GetTrustworthiness(),
 	}
 }
 

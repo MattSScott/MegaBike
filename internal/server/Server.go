@@ -7,6 +7,7 @@ import (
 	"SOMAS2023/internal/common/voting"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
@@ -17,37 +18,32 @@ type IBaseBikerServer interface {
 	baseserver.IServer[objects.IBaseBiker]
 	objects.IGameState
 
-	Initialize(iterations int)                                                                                   // returns the awdi interface
-	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                                                    // returns a map from bike id to the id of all agents trying to joing that bike
+	Initialize(iterations int)                                                                                   // spawns everything in
+	GetJoiningRequests([]uuid.UUID) map[uuid.UUID][]uuid.UUID                                                    // returns: a map of megaBikeIDs-> slice of ids of all Bikers that are trying to join it
 	GetRandomBikeId() uuid.UUID                                                                                  // gets the id of any random bike in the map
-	RepresentativeSelection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID                // runs the representative election
-	HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int)                                   // replaces a representative when they die /
-	RunRepresentativeAction(bike objects.IMegaBike) uuid.UUID                                                    // gets the direction from the dictator
-	RunDemocraticAction(bike objects.IMegaBike) uuid.UUID                                                        // gets the direction in voting-based governances
-	GetLeavingDecisions() []uuid.UUID                                                                            // gets the list of agents that want to leave their bike
-	HandleKickoutProcess() []uuid.UUID                                                                           // handles the kickout process
-	ProcessJoiningRequests(inLimbo []uuid.UUID)                                                                  // processes the joining requests
-	RunDirectionDecisionProcess()                                                                                // runs the action (direction choice + pedalling) process for each bike
-	AwdiCollisionCheck()                                                                                         // checks for collisions between awdi and bikes
-	AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike)                                             // adds an agent to a bike (which also has some side effects on some server data structures)                                                                     // runs the founding institutions process
-	GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID // gets the winning direction according to the selected voting process
-	LootboxCheckAndDistributions()                                                                               // checks for collision between bike and lootbox and runs the distribution process
-	ResetGameState()                                                                                             // resets game state (at the beginning of a new round)
-	GetDeadAgents() map[uuid.UUID]objects.IBaseBiker                                                             // returns the map of dead agents
-	// NewGameStateDump(iteration int) GameStateDump                                        					 // creates a new game state dump
-	// FoundingInstitutions()
+	RepresentativeSelection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID                // returns: slice of uuids of initially selected representatives
+	HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int)                                   // handles: when a representative leaves / dies / exits a bike. replace rep if possible, otherwise we just remove them
+	RunRepresentativeDirectionDecision(bike objects.IMegaBike) uuid.UUID                                         // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the representatives
+	RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUID                                             // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the agents
+	GetLeavingDecisions() []uuid.UUID                                                                            // returns: slice of all agents that want to leave their bike in current iteration
+	HandleKickoutProcess() []uuid.UUID                                                                           // returns: a slice of uuids of all agents that are kicked from their bike in the current iteration.
+	ProcessJoiningRequests(inLimbo []uuid.UUID)                                                                  // collect join requests and process them, adding agents to bikes if they are accepted.
+	RunDirectionDecisionProcess()                                                                                // run the process on deciding this round's direction for each megabike
+	AwdiCollisionCheck()                                                                                         // check for deadly collisions with the awdi
+	AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike)                                             // ensures that adding agents to a bike is atomic (ie no agent is added to a bike while still resulting as on another bike)                                                                // runs the founding institutions process
+	LootboxCheckAndDistributions()                                                                               // if a bike has looted a box, run the distribution process according to the governance type
+	ResetGameState()                                                                                             // respawn agents, reset and replenish game objects conditionally (each iteration)
+	GetDeadAgents() map[uuid.UUID]objects.IBaseBiker                                                             // returns: map of dead agent uuid -> agent object
+	GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID // returns: uuid of chosen lootbox from a set of votes and weights
 }
 
 type Server struct {
 	baseserver.BaseServer[objects.IBaseBiker]
-	lootBoxes map[uuid.UUID]objects.ILootBox
-	megaBikes map[uuid.UUID]objects.IMegaBike
-	// megaBikeRiders is a mapping from Agent ID -> ID of the bike that they are riding
-	// helps with efficiently managing ridership status
-	megaBikeRiders map[uuid.UUID]uuid.UUID // maps riders to their bike
-	awdi           objects.IAwdi
-	deadAgents     map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
-	// foundingChoices map[uuid.UUID]utils.Governance
+	lootBoxes       map[uuid.UUID]objects.ILootBox
+	megaBikes       map[uuid.UUID]objects.IMegaBike
+	megaBikeRiders  map[uuid.UUID]uuid.UUID // a mapping from Agent ID -> ID of the bike that they are riding
+	awdi            objects.IAwdi
+	deadAgents      map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
 	globalRuleCache *objects.GlobalRuleCache
 }
 
@@ -103,19 +99,24 @@ func (s *Server) Start() {
 	s.outputSimulationResult(*gameState)
 }
 
-// when an agent dies it needs to be removed from its bike, the megabikeriders map and the agents map + it's added to the dead agents map
+// called when an agent dies. it needs to be added to the dead agents map, then removed from the main agents map, its bike, and the megabikeriders map
 func (s *Server) RemoveAgent(agent objects.IBaseBiker) {
 
 	id := agent.GetID()
-	// add agent to dead agent map
+
+	// 1. add agent to dead agent map
 	s.deadAgents[id] = agent
-	// remove agent from agent map
+
+	// 2. remove agent from main agent map
 	s.BaseServer.RemoveAgent(agent)
 	if bikeId, ok := s.megaBikeRiders[id]; ok {
+		// 3. remove agent from bike
 		s.megaBikes[bikeId].RemoveAgent(id)
+		// 4. remove agent from megabikeriders map
 		delete(s.megaBikeRiders, id)
 	}
 
+	// let all agents in the game run their own process for how to handle the death of this agent
 	for _, agent := range s.GetAgentMap() {
 		agent.HandleAgentUnalive(agent.GetID())
 	}
@@ -129,9 +130,9 @@ func (s *Server) AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike
 		agent.ToggleOnBike()
 	}
 
-	// set agent on desired bike
-	if len(bike.GetAgents()) == 8 {
-		return
+	// if bike is full, panic (shouldn't happen)
+	if len(bike.GetAgents()) == utils.BikersOnBike {
+		panic("trying to add agent to full bike")
 	}
 
 	bike.AddAgent(agent)
@@ -142,7 +143,7 @@ func (s *Server) AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike
 	}
 }
 
-// remove an agent from its bike
+// remove an agent from its bike (e.g. when kicked off or voluntarily leaving)
 func (s *Server) RemoveAgentFromBike(agent objects.IBaseBiker) {
 	bike := s.megaBikes[agent.GetBike()]
 	bike.RemoveAgent(agent.GetID())
@@ -158,30 +159,76 @@ func (s *Server) RemoveAgentFromBike(agent objects.IBaseBiker) {
 	delete(s.megaBikeRiders, agent.GetID())
 }
 
-// returns: map of dead agents, uuid->agent
+// returns: map of dead agent uuid -> agent object
 func (s *Server) GetDeadAgents() map[uuid.UUID]objects.IBaseBiker {
 	return s.deadAgents
 }
 
-func (s *Server) PopulateGlobalRuleCache() {
-	// generate 100 rules split across N actions
-	nActions := int(objects.MAX_ACTIONS)
-	rulesPerAction := int(*globals.GlobalRuleCount / nActions)
+// returns: map of uuid->megabike
+func (s *Server) GetMegaBikes() map[uuid.UUID]objects.IMegaBike {
+	return s.megaBikes
+}
 
-	for i := 0; i < nActions; i++ {
-		for j := 0; j < rulesPerAction; j++ {
-			s.AddToGlobalRuleCache(objects.GenerateNullPassingRuleForAction(objects.Action(i)))
+// returns: map of uuid->lootbox
+func (s *Server) GetLootBoxes() map[uuid.UUID]objects.ILootBox {
+	return s.lootBoxes
+}
+
+// returns: awdi object
+func (s *Server) GetAwdi() objects.IAwdi {
+	return s.awdi
+}
+
+// returns: id of a random bike
+func (s *Server) GetRandomBikeId() uuid.UUID {
+	i, targetI := 0, rand.Intn(len(s.GetMegaBikes()))
+	// Go doesn't have a sensible way to do this...
+	for id := range s.GetMegaBikes() {
+		if i == targetI {
+			return id
+		}
+		i++
+	}
+	panic("no bikes")
+}
+
+// agents get a chance to send their messages if they desire
+func (s *Server) RunMessagingSession() {
+
+	// note:  had to override to address the fact that agents only have access to the game dump
+	// version of agents, so if the recipients are set to be those it will panic as they
+	// can't call the handler functions
+
+	// create an array of agent objects
+	agentArray := s.GenerateAgentArrayFromMap()
+
+	for _, agent := range s.GetAgentMap() {
+
+		// retrieve all the messages this agent wants to send
+		allMessages := agent.GetAllMessages(agentArray)
+
+		// for each message ...
+		for _, msg := range allMessages {
+			recipients := msg.GetRecipients()
+
+			// make recipient list with actual agents (i.e. alive agents that are in the game)
+			usableRecipients := make([]objects.IBaseBiker, len(recipients))
+			for i, recipient := range recipients {
+				usableRecipients[i] = s.GetAgentMap()[recipient.GetID()]
+			}
+
+			// iterate over these recipients of the message and invoke their message handler.
+			for _, recip := range usableRecipients {
+				if agent.GetID() == recip.GetID() {
+					continue
+				}
+				msg.InvokeMessageHandler(recip)
+			}
 		}
 	}
 }
 
-func (s *Server) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
-	return s.globalRuleCache.ViewGlobalRuleSet()
-}
-
-func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
-	s.globalRuleCache.AddRuleToCache(rule)
-}
+// ----- Game State Dump Stuff -----
 
 func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
 	result := make(map[uuid.UUID]int)
@@ -221,42 +268,27 @@ func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 	fmt.Println(gameDumpFile)
 }
 
-// agents get a chance to send their messages if they desire
-func (s *Server) RunMessagingSession() {
+// ----- Rule Stuff (possibly to remove) -----
 
-	// note:  had to override to address the fact that agents only have access to the game dump
-	// version of agents, so if the recipients are set to be those it will panic as they
-	// can't call the handler functions
+func (s *Server) PopulateGlobalRuleCache() {
+	// generate 100 rules split across N actions
+	nActions := int(objects.MAX_ACTIONS)
+	rulesPerAction := int(*globals.GlobalRuleCount / nActions)
 
-	// create an array of agent objects
-	agentArray := s.GenerateAgentArrayFromMap()
-
-	for _, agent := range s.GetAgentMap() {
-
-		// retrieve all the messages this agent wants to send
-		allMessages := agent.GetAllMessages(agentArray)
-
-		// for each message ...
-		for _, msg := range allMessages {
-			recipients := msg.GetRecipients()
-
-			// make recipient list with actual agents (i.e. alive agents that are in the game)
-			usableRecipients := make([]objects.IBaseBiker, len(recipients))
-			for i, recipient := range recipients {
-				usableRecipients[i] = s.GetAgentMap()[recipient.GetID()]
-			}
-
-			// iterate over these recipients of the message and invoke their message handler.
-			for _, recip := range usableRecipients {
-				if agent.GetID() == recip.GetID() {
-					continue
-				}
-				msg.InvokeMessageHandler(recip)
-			}
+	for i := 0; i < nActions; i++ {
+		for j := 0; j < rulesPerAction; j++ {
+			s.AddToGlobalRuleCache(objects.GenerateNullPassingRuleForAction(objects.Action(i)))
 		}
 	}
 }
 
+func (s *Server) ViewGlobalRuleCache() map[uuid.UUID]*objects.Rule {
+	return s.globalRuleCache.ViewGlobalRuleSet()
+}
+
+func (s *Server) AddToGlobalRuleCache(rule *objects.Rule) {
+	s.globalRuleCache.AddRuleToCache(rule)
+}
 
 // ----- EXPERIMENTAL -----
 

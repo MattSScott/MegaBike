@@ -115,7 +115,16 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 	return optimalLootbox
 }
 
-// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. only called when the agent is perfect monarch / aristocrat
+// returns: uuid of lootbox to aim towards (i.e. the direction). only called by a representative. calls either the benevolent or malevolent version based on agent personality and trust network
+func (a *AgentSOSA) DecideDirection() uuid.UUID {
+	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 || a.Modules.AgentParameters.GetAverageTrust() > 0.5 {
+		return a.DecideDirectionBenevolently()
+	} else {
+		return a.DecideDirectionMalevolently()
+	}
+}
+
+// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. 
 func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
 	// Move in opposite direction to Awdi in full force
 	if a.Modules.Environment.IsAwdiNear() {
@@ -126,7 +135,7 @@ func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
 	return a.Modules.Environment.GetHighestGainLootbox()
 }
 
-// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way, only called when agent is degen monarch / aristocrat
+// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way.
 func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
 
 	// Move in opposite direction to Awdi in full force - a representative still doesn't want to get obliterated

@@ -31,6 +31,7 @@ type IBaseBiker interface {
 
 	// Decision Making (extra representative functions)
 
+	DecideDirection() uuid.UUID	
 	DecideDirectionMalevolently() uuid.UUID                                      // returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. only called when the agent is perfect monarch / aristocrat
 	DecideDirectionBenevolently() uuid.UUID                                      // returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way, only called when agent is degen monarch / aristocrat
 	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
@@ -273,6 +274,12 @@ func (bb *BaseBiker) DecideForce(direction uuid.UUID) {
 }
 
 func (bb *BaseBiker) HandleAgentUnalive(id uuid.UUID) {}
+
+
+func (bb *BaseBiker) DecideDirection() uuid.UUID {
+	nearest := bb.nearestLoot()
+	return nearest
+}
 
 // doesnt matter what this is as overwritten anyway
 func (bb *BaseBiker) DecideDirectionMalevolently() uuid.UUID {
