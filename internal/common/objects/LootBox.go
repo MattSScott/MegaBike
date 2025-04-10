@@ -13,15 +13,15 @@ type ILootBox interface {
 type LootBox struct {
 	*PhysicsObject
 	colour    utils.Colour
-	totalLoot float64				// between 2 and 4
+	totalLoot float64				
 }
 
 // GetLootBox is a constructor for LootBox that initializes it with a new UUID and default position.
 func GetLootBox() *LootBox {
 	return &LootBox{
 		PhysicsObject: GetPhysicsObject(0),
-		colour:        utils.GenerateRandomColour(),    // Initialize to randomized colour
-		totalLoot:     utils.GenerateRandomFloat(2, 4), // Initialize to randomized totalLoot
+		colour:        utils.GenerateRandomColour(),    
+		totalLoot:     utils.GenerateRandomFloat(2, 4), 
 	}
 }
 
