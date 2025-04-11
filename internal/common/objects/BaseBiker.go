@@ -32,10 +32,7 @@ type IBaseBiker interface {
 	// Decision Making (extra representative functions)
 
 	DecideDirection() uuid.UUID
-	DecideDirectionMalevolently() uuid.UUID                                      // returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. only called when the agent is perfect monarch / aristocrat
-	DecideDirectionBenevolently() uuid.UUID                                      // returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way, only called when agent is degen monarch / aristocrat
 	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
-	DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap // returns: map containing bikerID -> distribution (i.e. share of resources) (only called by reps)
 
 	// Message Handlers
 
@@ -260,29 +257,8 @@ func (bb *BaseBiker) DecideDirection() uuid.UUID {
 	return nearest
 }
 
-func (bb *BaseBiker) DecideDirectionMalevolently() uuid.UUID {
-	nearest := bb.nearestLoot()
-	return nearest
-}
-
-func (bb *BaseBiker) DecideDirectionBenevolently() uuid.UUID {
-	nearest := bb.nearestLoot()
-	return nearest
-}
-
 func (bb *BaseBiker) DecideKickOut() []uuid.UUID {
 	return (make([]uuid.UUID, 0))
-}
-
-func (bb *BaseBiker) DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap {
-	bikeID := bb.GetBike()
-	fellowBikers := bb.gameState.GetMegaBikes()[bikeID].GetAgents()
-	distribution := make(voting.IdVoteMap)
-	equalDist := 1.0 / float64(len(fellowBikers))
-	for _, agent := range fellowBikers {
-		distribution[agent.GetID()] = equalDist
-	}
-	return distribution
 }
 
 func (bb *BaseBiker) HandleKickoutMessage(msg KickoutAgentMessage) {

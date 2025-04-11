@@ -223,54 +223,6 @@ func (e *EnvironmentModule) GetBikeOrientation() float64 {
 	return e.GetBikeById(e.BikeId).GetOrientation()
 }
 
-// returns: the biker in the whole game with the maximum trust (not called anywhere)
-func (e *EnvironmentModule) GetBikerWithMaxTrust(ap *AgentParameters) IDTrustPair {
-	fellowBikers := e.GetBikerAgents()
-	maxTrustAgentId := uuid.Nil
-	maxTrust := -2.0
-	for _, fellowBiker := range fellowBikers {
-		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
-			if trust >= maxTrust {
-				maxTrustAgentId = fellowBiker.GetID()
-				maxTrust = trust
-			}
-		}
-	}
-	return IDTrustPair{ID: maxTrustAgentId, Trust: maxTrust}
-}
-
-// returns: the biker in the whole game with the minimum trust (n
-func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPair {
-	fellowBikers := e.GetBikerAgents()
-	minTrustAgentId := uuid.Nil
-	minTrust := math.MaxFloat64
-	for _, fellowBiker := range fellowBikers {
-		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
-			if trust < minTrust {
-				minTrustAgentId = fellowBiker.GetID()
-				minTrust = trust
-			}
-		}
-	}
-
-	if minTrustAgentId != uuid.Nil && minTrustAgentId != e.AgentId {
-		// If minSC is nil or !us, then return the culprit.
-		return IDTrustPair{ID: minTrustAgentId, Trust: minTrust}
-	}
-	// Otherwise, return a random agent.
-	if len(fellowBikers) > 1 {
-		i, targetI := 0, rand.Intn(len(fellowBikers))
-		for id := range fellowBikers {
-			if i == targetI {
-				return IDTrustPair{ID: id, Trust: minTrust}
-			}
-			i++
-		}
-	}
-	panic("No agents found to kick off.")
-
-}
-
 // returns: uuid of the bike with the maximum trust
 func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UUID {
 	maxAverage := float64(0)
@@ -364,3 +316,56 @@ func GetEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeI
 		BikeId:    bikeId,
 	}
 }
+
+
+// nonsense that has been removed for now
+
+// // returns: the biker on your bike with the minimum trust 
+// func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPair {
+// 	fellowBikers := e.GetBikerAgents()
+// 	minTrustAgentId := uuid.Nil
+// 	minTrust := math.MaxFloat64
+// 	for _, fellowBiker := range fellowBikers {
+// 		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
+// 			if trust < minTrust {
+// 				minTrustAgentId = fellowBiker.GetID()
+// 				minTrust = trust
+// 			}
+// 		}
+// 	}
+
+// 	if minTrustAgentId != uuid.Nil && minTrustAgentId != e.AgentId {
+// 		// If minSC is nil or !us, then return the culprit.
+// 		return IDTrustPair{ID: minTrustAgentId, Trust: minTrust}
+// 	}
+// 	// Otherwise, return a random agent.
+// 	if len(fellowBikers) > 1 {
+// 		i, targetI := 0, rand.Intn(len(fellowBikers))
+// 		for id := range fellowBikers {
+// 			if i == targetI {
+// 				return IDTrustPair{ID: id, Trust: minTrust}
+// 			}
+// 			i++
+// 		}
+// 	}
+// 	panic("No agents found to kick off.")
+
+// }
+
+// below is also buggy and unchanged. clear issues on e.agentid line and getbikeragents line...
+
+// // // returns: the biker in the whole game with the maximum trust (not called anywhere)
+// func (e *EnvironmentModule) GetBikerWithMaxTrust(ap *AgentParameters) IDTrustPair {
+// 	fellowBikers := e.GetBikerAgents()
+// 	maxTrustAgentId := uuid.Nil
+// 	maxTrust := -2.0
+// 	for _, fellowBiker := range fellowBikers {
+// 		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
+// 			if trust >= maxTrust {
+// 				maxTrustAgentId = fellowBiker.GetID()
+// 				maxTrust = trust
+// 			}
+// 		}
+// 	}
+// 	return IDTrustPair{ID: maxTrustAgentId, Trust: maxTrust}
+// }

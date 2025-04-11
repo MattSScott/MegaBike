@@ -11,26 +11,6 @@ type AgentParameters struct {
 	TrustNetwork    map[uuid.UUID]float64 		// mapping of uuid -> trust score. trust score ranges from [-2, 2]
 }
 
-// returns: float representing the sum of the trust in your network
-func (ap *AgentParameters) GetSumOfTrust() float64 {
-	var sum = 0.0
-	for _, value := range ap.TrustNetwork {
-		sum += value
-	}
-	return sum
-}
-
-// returns: float representing average trust in your network
-func (ap *AgentParameters) GetAverageTrust() float64 {
-	// Prevent divide
-	if len(ap.TrustNetwork) == 0 {
-		return 0.5
-	}
-
-	sum := ap.GetSumOfTrust()
-
-	return sum / float64(len(ap.TrustNetwork))
-}
 
 // returns: uuid of agent with minimum trust in your network, along with their trust score
 func (ap *AgentParameters) GetMinimumTrust() IDTrustPair {
@@ -59,6 +39,28 @@ func (ap *AgentParameters) GetMaximumTrust() IDTrustPair {
 	}
 	return IDTrustPair{ID: maxAgentId, Trust: maxTrust}
 }
+
+// returns: float representing the sum of the trust in your *whole* network
+func (ap *AgentParameters) GetSumOfTrust() float64 {
+	var sum = 0.0
+	for _, value := range ap.TrustNetwork {
+		sum += value
+	}
+	return sum
+}
+
+// returns: float representing average trust in your *whole* network
+func (ap *AgentParameters) GetAverageTrust() float64 {
+	// Prevent divide
+	if len(ap.TrustNetwork) == 0 {
+		return 0.5
+	}
+
+	sum := ap.GetSumOfTrust()
+
+	return sum / float64(len(ap.TrustNetwork))
+}
+
 
 // updates: an agents' trust value, using the eventValue and eventWeight
 func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, eventWeight float64) {
@@ -91,4 +93,3 @@ func NewAgentParameters() *AgentParameters {
 		TrustNetwork:    make(map[uuid.UUID]float64),
 	}
 }
-

@@ -7,7 +7,6 @@ import (
 	"SOMAS2023/internal/common/voting"
 	"math"
 	"math/rand"
-	"runtime"
 
 	"github.com/google/uuid"
 )
@@ -31,15 +30,13 @@ func (a *AgentSOSA) DecideAction() objects.BikerAction {
 // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
 func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	VoteMap := make(map[uuid.UUID]int)
-	kickoutThreshold := modules.KickThreshold
-	AgentSOSAID := a.GetID()
 
 	// check all bikers on the bike but ignore ourselves
 	for _, agent := range a.GetFellowBikers() {
-		if agent.GetID() != AgentSOSAID {
+		if agent.GetID() != a.GetID() {
 			_, exists := a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
 
-			if a.Modules.AgentParameters.TrustNetwork[agent.GetID()] < kickoutThreshold && exists {
+			if a.Modules.AgentParameters.TrustNetwork[agent.GetID()] < modules.KickThreshold && exists {
 				VoteMap[agent.GetID()] = 1
 			} else {
 				VoteMap[agent.GetID()] = 0
@@ -53,22 +50,18 @@ func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 
 // returns: slice of agents to kick out (currently just does one)
 func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
-	// Only called when the agent is a representative agent.
-	// We kick out the agent with the lowest trust on the bike.
-	// GetBikerWithMinTrust returns only one agent, if more agents with min Trust, it randomly chooses one.
 	kickOut_agents := make([]uuid.UUID, 0)
-	agentIDStruct := a.Modules.Environment.GetBikerWithMinTrust(a.Modules.AgentParameters)
-	agentId := agentIDStruct.ID
-	if agentId != uuid.Nil {
-		kickOut_agents = append(kickOut_agents, agentId)
+	minTrustBiker := a.GetBikerWithMinTrust()
+	if minTrustBiker.ID != uuid.Nil {
+		kickOut_agents = append(kickOut_agents, minTrustBiker.ID)
 	}
 	return kickOut_agents
 }
 
 // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
 func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool {
-	// Accept all agents we don't know about or are higher in social capital.
-	// If we know about them and they have a lower social capital, reject them.
+
+	// Accept all agents we don't know about or are higher in trust than a threshold.
 
 	decision := make(map[uuid.UUID]bool)
 	for _, agent := range pendingAgents {
@@ -90,7 +83,8 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 	shouldChangeBike := false
 	targetBikeID := uuid.Nil
-	if a.Modules.AgentParameters.GetAverageTrust() < modules.StayOnBikeThreshold {
+	// if the average trust on our bike is less than threshold, change bike (note: previusly getaveragetrust calculated average of whole network, even agents not on bike. made no sense.)
+	if a.GetAverageTrustOnBike() < modules.StayOnBikeThreshold {
 		shouldChangeBike = true
 		targetBikeID = a.Modules.Environment.GetBikeWithMaximumTrust(a.Modules.AgentParameters)
 	}
@@ -98,7 +92,7 @@ func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 	if shouldChangeBike {
 		return targetBikeID
 	} else {
-		return a.Modules.Environment.BikeId
+		return a.Modules.Environment.BikeId // maybe change to a.getbike
 	}
 }
 
@@ -115,37 +109,21 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 	return optimalLootbox
 }
 
-// returns: uuid of lootbox to aim towards (i.e. the direction). only called by a representative. calls either the benevolent or malevolent version based on agent personality and trust network
+// returns: uuid of lootbox to aim towards (i.e. the direction). only called by a representative. 
 func (a *AgentSOSA) DecideDirection() uuid.UUID {
+
+	// first check if awdi is near. if so, then move away regardless of personality or trust. dont want to get obliterated.
+	if a.Modules.Environment.IsAwdiNear() {
+		return a.Modules.Environment.GetNearestLootboxAwayFromAwdi()
+	}
+
 	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 || a.Modules.AgentParameters.GetAverageTrust() > 0.5 {
-		return a.DecideDirectionBenevolently()
+		// if selfless or high trust, get highest gain lootbox
+		return a.Modules.Environment.GetHighestGainLootbox()
 	} else {
-		return a.DecideDirectionMalevolently()
+		// Otherwise, move towards the nearest lootbox of your own colour
+		return a.Modules.Environment.GetNearestLootboxByColour(a.GetColour())
 	}
-}
-
-// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfless way. 
-func (a *AgentSOSA) DecideDirectionBenevolently() uuid.UUID {
-	// Move in opposite direction to Awdi in full force
-	if a.Modules.Environment.IsAwdiNear() {
-		// fmt.Printf("[DictateDirection] Agent %s is near Awdi\n", a.GetID())
-		return a.Modules.Environment.GetNearestLootboxAwayFromAwdi()
-	}
-	// Otherwise, move towards the lootbox with the highest gain
-	return a.Modules.Environment.GetHighestGainLootbox()
-}
-
-// returns: uuid of lootbox to aim towards (i.e. the direction). decided in a selfish way.
-func (a *AgentSOSA) DecideDirectionMalevolently() uuid.UUID {
-
-	// Move in opposite direction to Awdi in full force - a representative still doesn't want to get obliterated
-	if a.Modules.Environment.IsAwdiNear() {
-		// fmt.Printf("[DictateDirection] Agent %s is near Awdi\n", a.GetID())
-		return a.Modules.Environment.GetNearestLootboxAwayFromAwdi()
-	}
-
-	// Otherwise, move towards the nearest lootbox of your own colour
-	return a.Modules.Environment.GetNearestLootboxByColour(a.GetColour())
 }
 
 // decides the force the biker is going to pedal with (untouched)
@@ -181,6 +159,7 @@ func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 
 // returns: map containing bikerID -> distribution (i.e. share of resources) 
 func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
+
 	allocation := make(map[uuid.UUID]float64)
 	allocation[a.GetID()] = 1.0
 
@@ -206,59 +185,26 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 		allocation[id] = val / normConst
 	}
 
-	return allocation
-}
-
-// returns: map containing bikerID -> distribution (i.e. share of resources) (only called by reps)
-func (a *AgentSOSA) DecideRepresentativeAllocation(governance utils.Governance) voting.IdVoteMap {
-
-	socialCapital := a.DecideAllocation()
-	// Calculate the total social capital
-	totalSocialCapital := 0.0
-	for _, sc := range socialCapital {
-		totalSocialCapital += sc
-	}
-
-	// needs changing, but for now act purely based on the agents preference for equality
-	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 {
-		// Distribute the allocation based on each agent's share of the total social capital
-		result := make(voting.IdVoteMap)
-		
-		for agentID, sc := range socialCapital {
-			result[agentID] = sc / totalSocialCapital
-			if math.IsNaN(result[agentID]) {
-				runtime.Breakpoint()
-				panic("fuck")
-			}
-		}
-
-		return result
+	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 || a.GetAverageTrustOnBike() > 0.5 {
+		// if a fair agent or high trust, simply allocate according to trust in each agent as done above
+		return allocation
 	} else {
-		// same as above, but cut every elses share by 50% and give yourself the rest.
-		ownID := a.GetID()
-		shareDistributed := float64(0)
+		// if these conditions do not hold, then do same as above, but cut every elses share by 50% and give yourself the rest.
+		totalShareDistributed := float64(0)
 		
-		result := make(voting.IdVoteMap)
-		for agentID, sc := range socialCapital {
-			if agentID != ownID {
-				agentShare:= sc*0.5 / totalSocialCapital
-				result[agentID] = agentShare
-				shareDistributed += agentShare
-				if math.IsNaN(result[agentID]) {
-					runtime.Breakpoint()
-					panic("fuck")
-				}
+		for agentID, share := range allocation {
+			if agentID != a.GetID() {
+				share = share * 0.5
+				totalShareDistributed += share
 			}
 		}
 
-		monarchShare := 1 - shareDistributed
-		result[ownID] = monarchShare
+		monarchShare := 1 - totalShareDistributed
+		allocation[a.GetID()] = monarchShare
 
-		return result
+		return allocation
 	}
 }
-
-
 
 // ----- Helper Functions -----
 
@@ -278,6 +224,48 @@ func (a *AgentSOSA) GetFellowBikers() []objects.IBaseBiker {
 
 	return fellowBikers
 }
+
+// returns: the biker on your bike with the minimum trust 
+func (a *AgentSOSA) GetBikerWithMinTrust() modules.IDTrustPair {
+	fellowBikers := a.GetFellowBikers()
+	minTrustAgentId := uuid.Nil
+	minTrust := math.MaxFloat64
+	for _, fellowBiker := range fellowBikers {
+		if fellowBiker.GetID() != a.GetID() {
+			if trust, ok := a.Modules.AgentParameters.TrustNetwork[fellowBiker.GetID()]; ok {
+				if trust < minTrust {
+					minTrustAgentId = fellowBiker.GetID()
+					minTrust = trust
+				}
+			}
+		}
+	}
+
+	return modules.IDTrustPair{ID: minTrustAgentId, Trust: minTrust}
+
+}
+
+// returns: float representing the sum of the trust of agents on your bike.
+func (a *AgentSOSA) GetSumOfTrustOnBike() float64 {
+	var sum = 0.0
+	for _, teammate := range a.GetFellowBikers() {
+		sum += a.Modules.AgentParameters.TrustNetwork[teammate.GetID()]
+	}
+	return sum
+}
+
+// returns: float representing average trust of your bike
+func (a *AgentSOSA) GetAverageTrustOnBike() float64 {
+	// Prevent divide
+	if len(a.GetFellowBikers()) == 0 {
+		return 0.5
+	}
+
+	sum := a.GetSumOfTrustOnBike()
+
+	return sum / float64(len(a.GetFellowBikers()))
+}
+
 
 // sets the bike the agent is on (or wants to be on)
 func (a *AgentSOSA) SetBike(bikeId uuid.UUID) {

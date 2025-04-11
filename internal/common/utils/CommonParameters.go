@@ -55,7 +55,6 @@ const VoteAction voteMethods = PLURALITY
 
 // ----- Agent Names -----
 
-// names for the agents
 var (
 	names = []string{
 		"Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hannah",
@@ -68,7 +67,3 @@ var (
 	nameMap  = make(map[uuid.UUID]string)
 	nameIndex = 0
 )
-
-
-// ----- Deprecated -----
-// const LeadershipDemocracyPenalty float64 = 0.025  // amount of energy lost per vote in a leadership democracy

@@ -212,7 +212,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 						for _, repID := range reps {
 							// the reps return their ideal lootbox split by assigning a number between 0 and 1 to
 							// each biker on their bike (including themselves) ensuring they sum to 1
-							aristocratAllocations[repID] = agentMap[repID].DecideRepresentativeAllocation(gov)
+							aristocratAllocations[repID] = agentMap[repID].DecideAllocation()
 						}
 
 						Iallocations := make(map[uuid.UUID]voting.IVoter)
@@ -231,7 +231,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 					case utils.One:
 						reps := megabike.GetRepresentatives()
 						monarch := s.GetAgentMap()[reps[0]]
-						winningAllocation = monarch.DecideRepresentativeAllocation(gov)
+						winningAllocation = monarch.DecideAllocation()
 					}
 
 					numBikesSharingLootbox := float64(looted[lootid])
