@@ -193,7 +193,9 @@ func (s *Server) GetRandomBikeId() uuid.UUID {
 }
 
 // agents get a chance to send their messages if they desire
-func (s *Server) RunMessagingSession() {
+func (s *Server) RunAgentMessagingSession(isIteration bool) {
+
+	// note - may be able to slim this down by cutting the usable recipients thing. left in however as may be important
 
 	// note:  had to override to address the fact that agents only have access to the game dump
 	// version of agents, so if the recipients are set to be those it will panic as they
@@ -205,13 +207,16 @@ func (s *Server) RunMessagingSession() {
 	for _, agent := range s.GetAgentMap() {
 
 		// retrieve all the messages this agent wants to send
-		allMessages := agent.GetAllMessages(agentArray)
+
+		allMessages := agent.GetAllRoundMessages(agentArray)
+		if isIteration {
+			allMessages = agent.GetAllIterationMessages(agentArray)
+		} 
 
 		// for each message ...
 		for _, msg := range allMessages {
 			recipients := msg.GetRecipients()
 
-			// make recipient list with actual agents (i.e. alive agents that are in the game)
 			usableRecipients := make([]objects.IBaseBiker, len(recipients))
 			for i, recipient := range recipients {
 				usableRecipients[i] = s.GetAgentMap()[recipient.GetID()]

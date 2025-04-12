@@ -21,7 +21,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 
 	// ----- 2. Move objects in the world -----
 
-	// Move the mega]bikes
+	// Move the megabikes
 	for _, bike := range s.megaBikes {
 		bike.UpdateMass()
 		s.runActionDeliberation(objects.Lootbox)
@@ -82,7 +82,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	}
 
 	// Allow agents to gossip
-	s.RunMessagingSession()
+	s.RunAgentMessagingSession(false)
 
 }
 

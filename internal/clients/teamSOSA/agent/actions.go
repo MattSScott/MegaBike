@@ -266,7 +266,6 @@ func (a *AgentSOSA) GetAverageTrustOnBike() float64 {
 	return sum / float64(len(a.GetFellowBikers()))
 }
 
-
 // sets the bike the agent is on (or wants to be on)
 func (a *AgentSOSA) SetBike(bikeId uuid.UUID) {
 	a.Modules.Environment.BikeId = bikeId

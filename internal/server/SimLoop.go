@@ -14,7 +14,7 @@ import (
 func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int, reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
 
 	// ----- 0. Gossip Phase -----
-	s.RunMessagingSession()
+	s.RunAgentMessagingSession(true)
 
 	// ----- 1. Self-Selection Phase -----
 	if iteration != 0 {

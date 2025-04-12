@@ -9,69 +9,23 @@ import (
 	"github.com/google/uuid"
 )
 
-// "I have the following reputation of Agent X"
-type ReputationOfAgentMessage struct {
+// "I proposed this lootbox direction in this round"
+type ProposedLootboxMessage struct {
 	messaging.BaseMessage[IBaseBiker]
-	AgentId    uuid.UUID // agent who's reputation you are talking about
-	Reputation float64   // your agent's reputation expected from 0-1
+	Lootbox uuid.UUID // the lootbox ID you proposed this round
 }
 
-// "I want to kick off this agent"
-type KickoutAgentMessage struct {
+// "I want to go to this lootbox next round"
+type NextLootboxMessage struct {
 	messaging.BaseMessage[IBaseBiker]
-	AgentId uuid.UUID // agent who you do/do not want to kick off
-	Kickout bool      // true if you want to kick off, otherwise false
+	Lootbox uuid.UUID // the lootbox that agent wants next round
 }
 
-// "I want to move to this bike"
-type JoiningAgentMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	AgentId uuid.UUID // agent who wants to join this bike. DOESN’T MOVE YOU ONTO THAT BIKE, IS DECLARING INTENTION
-	BikeId  uuid.UUID // the bike this agent wants to join
-}
-
-// "I want to go to this lootbox next iteration"
-type LootboxMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	LootboxId uuid.UUID // the lootbox that agent wants
-}
-
-// "I would like to operate under this governance system" NOTE: NOT VOTING TO CHANGE GOVERNMENT
-type GovernanceMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	BikeId       uuid.UUID // the bike this agent wants to join
-	GovernanceId int       // the governce type that this agent wants
-}
-
-// "I applied the following force in this iteration" or "I know Agent X applied the following force in this iteration"
+// "I applied this force in this round"
 type ForcesMessage struct {
 	messaging.BaseMessage[IBaseBiker]
 	AgentId     uuid.UUID    // the agent whose forces are shared
 	AgentForces utils.Forces // the forces
-}
-
-// "I voted for this governance in this iteration"
-type VoteGovernanceMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	VoteMap voting.IdVoteMap // the vote map that you voted for (if you are telling the truth)
-}
-
-// "I voted for this lootbox direction in this iteration"
-type VoteLootboxDirectionMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	VoteMap voting.IdVoteMap // the vote map that you voted for (if you are telling the truth)
-}
-
-// "I voted for this ruler in this iteration"
-type VoteRulerMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	VoteMap voting.IdVoteMap // the vote map that you voted for (if you are telling the truth)
-}
-
-// "I voted for kicking out this biker in this iteration"
-type VoteKickoutMessage struct {
-	messaging.BaseMessage[IBaseBiker]
-	VoteMap map[uuid.UUID]int // the vote map that you voted for (if you are telling the truth)
 }
 
 // "I voted for this resource allocation in this iteration"
@@ -80,44 +34,37 @@ type VoteAllocationMessage struct {
 	VoteMap voting.IdVoteMap // the vote map that you voted for (if you are telling the truth)
 }
 
-func (msg ReputationOfAgentMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleReputationMessage(msg)
+// "I want to kick out this agent"
+type KickoutAgentMessage struct {
+	messaging.BaseMessage[IBaseBiker]
+	AgentId uuid.UUID // agent who you do/do not want to kick off
+	Kickout bool      // true if you want to kick off, otherwise false
+}
+
+// "I want to move to this bike"
+type ChangeBikeMessage struct {
+	messaging.BaseMessage[IBaseBiker]
+	BikeId  uuid.UUID // the bike this agent wants to join
+}
+
+func (msg ProposedLootboxMessage) InvokeMessageHandler(agent IBaseBiker) {
+	agent.HandleProposedLootboxMessage(msg)
+}
+
+func (msg NextLootboxMessage) InvokeMessageHandler(agent IBaseBiker) {
+	agent.HandleNextLootboxMessage(msg)
 }
 
 func (msg KickoutAgentMessage) InvokeMessageHandler(agent IBaseBiker) {
 	agent.HandleKickoutMessage(msg)
 }
 
-func (msg JoiningAgentMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleJoiningMessage(msg)
-}
-
-func (msg LootboxMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleLootboxMessage(msg)
-}
-
-func (msg GovernanceMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleGovernanceMessage(msg)
+func (msg ChangeBikeMessage) InvokeMessageHandler(agent IBaseBiker) {
+	agent.HandleChangeBikeMessage(msg)
 }
 
 func (msg ForcesMessage) InvokeMessageHandler(agent IBaseBiker) {
 	agent.HandleForcesMessage(msg)
-}
-
-func (msg VoteGovernanceMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleVoteGovernanceMessage(msg)
-}
-
-func (msg VoteLootboxDirectionMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleVoteLootboxDirectionMessage(msg)
-}
-
-func (msg VoteRulerMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleVoteRulerMessage(msg)
-}
-
-func (msg VoteKickoutMessage) InvokeMessageHandler(agent IBaseBiker) {
-	agent.HandleVoteKickoutMessage(msg)
 }
 
 func (msg VoteAllocationMessage) InvokeMessageHandler(agent IBaseBiker) {

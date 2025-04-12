@@ -68,34 +68,20 @@ func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	// fmt.Printf("Agent Social Network After: %v\n", a.Modules.SocialCapital.SocialNetwork)
 }
 
-func (a *AgentSOSA) HandleJoiningMessage(msg obj.JoiningAgentMessage) {
-	// fmt.Printf("[HandleJoiningMessage] Received message from Agent %v\n", msg.AgentId)
 
-	agentId := msg.AgentId
-	if agentId == uuid.Nil {
-		return
-	}
+// -- LEGACY - dont know why it was added as seesm exact same as inherited basebikers one.
 
-	a.Modules.AgentParameters.UpdateTrustValue(agentId, SocialEventValue_AgentSentMsg, SocialEventWeight_AgentSentMsg)
-	// a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventValue_Accepted, InstitutionEventWeight_Accepted)
-}
-
-// returns: slice of messages the agent is going to send
-func (a *AgentSOSA) GetAllMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
-	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
-	wantToSendMsg := true
-	if wantToSendMsg {
-		reputationMsg := a.CreateReputationMessage()
-		kickoutMsg := a.CreatekickoutMessage()
-		lootboxMsg := a.CreateLootboxMessage()
-		joiningMsg := a.CreateJoiningMessage()
-		governceMsg := a.CreateGoverenceMessage()
-		forcesMsg := a.CreateForcesMessage()
-		voteGoveranceMessage := a.CreateVoteGovernanceMessage()
-		voteLootboxDirectionMessage := a.CreateVoteLootboxDirectionMessage()
-		voteRulerMessage := a.CreateVoteRulerMessage()
-		voteKickoutMessage := a.CreateVotekickoutMessage()
-		return []messaging.IMessage[obj.IBaseBiker]{reputationMsg, kickoutMsg, lootboxMsg, joiningMsg, governceMsg, forcesMsg, voteGoveranceMessage, voteLootboxDirectionMessage, voteRulerMessage, voteKickoutMessage}
-	}
-	return []messaging.IMessage[obj.IBaseBiker]{}
-}
+// // returns: slice of messages the agent is going to send
+// func (a *AgentSOSA) GetAllMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
+// 	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
+// 	wantToSendMsg := true
+// 	if wantToSendMsg {
+// 		kickoutMsg := a.CreatekickoutMessage()
+// 		nextLootboxMsg := a.CreateNextLootboxMessage()
+// 		changeBikeMessage := a.CreateChangeBikeMessage()
+// 		forcesMsg := a.CreateForcesMessage()
+// 		proposedLootboxMsg := a.CreateProposedLootboxMessage()
+// 		return []messaging.IMessage[obj.IBaseBiker]{kickoutMsg, nextLootboxMsg, changeBikeMessage, forcesMsg, proposedLootboxMsg}
+// 	}
+// 	return []messaging.IMessage[obj.IBaseBiker]{}
+// }
