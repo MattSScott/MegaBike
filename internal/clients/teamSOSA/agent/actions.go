@@ -99,7 +99,7 @@ func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 
 // ----- Decisions (Round level) -----
 
-// returns: int reflecting what action the agent has decided to do this iteration, pedal the bike (0) or try to change bikes (1)
+// returns: lootbox uuid to aim towards (the direction) from a subset of lootboxes
 func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
 	agentColour, agentEnergy := a.GetColour(), a.GetEnergyLevel()
 	optimalLootbox := a.Modules.Environment.GetNearestLootboxByColourFromSubset(agentColour, subset)
@@ -110,7 +110,7 @@ func (a *AgentSOSA) ProposeDirectionFromSubset(subset map[uuid.UUID]objects.ILoo
 	return optimalLootbox
 }
 
-// returns: uuid of lootbox to aim towards (i.e. the direction). only called by a representative. 
+// returns: uuid of lootbox to aim towards (i.e. the direction).
 func (a *AgentSOSA) DecideDirection() uuid.UUID {
 
 	// first check if awdi is near. if so, then move away regardless of personality or trust. dont want to get obliterated.

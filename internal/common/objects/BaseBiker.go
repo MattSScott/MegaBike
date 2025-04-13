@@ -37,9 +37,7 @@ type IBaseBiker interface {
 	// Messaaging (round)
 
 	HandleProposedLootboxMessage(msg ProposedLootboxMessage)
-	HandleNextLootboxMessage(msg NextLootboxMessage)
 	HandleForcesMessage(msg ForcesMessage)
-	HandleVoteAllocationMessage(msg VoteAllocationMessage)
 	GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
 	HandleKickoutMessage(msg KickoutAgentMessage)
@@ -58,6 +56,8 @@ type IBaseBiker interface {
 	GetPoints() int                 // returns: the points the agent currently has
 	GetBikeStatus() bool            // returns: whether the biker is on a bike or not
 	GetFellowBikers() []IBaseBiker  // returns: slice containing the bikers on our bike.
+	GetRoundDirection() uuid.UUID
+	GetRoundForces() utils.Forces
 
 	// Setters
 
@@ -67,6 +67,8 @@ type IBaseBiker interface {
 	UpdateEnergyLevel(energyLevel float64) // increases: the energy level of the agent by the allocated lootbox share or decreases by expended energy
 	ToggleOnBike()                         // toggles: whether a user is on bike or not. called when removing or adding a biker on a bike
 	ResetPoints()                          // resets: agents points to 0
+	SetRoundDirection(direction uuid.UUID)
+	SetRoundForces(forces utils.Forces)
 }
 
 type BaseBiker struct {
@@ -78,6 +80,8 @@ type BaseBiker struct {
 	forces                           utils.Forces
 	megaBikeId                       uuid.UUID  // if they are not on a bike it will be 0
 	gameState                        IGameState // updated by the server at every round
+	roundDecisions					 roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
+
 }
 
 func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) *BaseBiker {
@@ -265,29 +269,16 @@ func (bb *BaseBiker) HandleProposedLootboxMessage(msg ProposedLootboxMessage) {
 
 }
 
-func (bb *BaseBiker) HandleNextLootboxMessage(msg NextLootboxMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
-
-	// sender := msg.BaseMessage.GetSender()
-	// lootboxId := msg.LootboxId
-}
-
 func (bb *BaseBiker) HandleForcesMessage(msg ForcesMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
-}
-
-func (bb *BaseBiker) HandleVoteAllocationMessage(msg VoteAllocationMessage) {
 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 }
 
 func (bb *BaseBiker) GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
 	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
 	proposedLootboxMessage := bb.CreateProposedLootboxMessage()
-	nextLootboxMsg := bb.CreateNextLootboxMessage()
 	forcesMsg := bb.CreateForcesMessage()
-	voteAllocationMessage := bb.CreateVoteAllocationMessage()
 	
-	return []messaging.IMessage[IBaseBiker]{nextLootboxMsg, forcesMsg, proposedLootboxMessage, voteAllocationMessage}
+	return []messaging.IMessage[IBaseBiker]{forcesMsg, proposedLootboxMessage}
 }
 
 func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
@@ -299,21 +290,11 @@ func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
 	}
 }
 
-func (bb *BaseBiker) CreateNextLootboxMessage() NextLootboxMessage {
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
-	// For team's agent, add your own logic to communicate with other agents
-	return NextLootboxMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
-		Lootbox:   uuid.Nil,
-	}
-}
-
 func (bb *BaseBiker) CreateForcesMessage() ForcesMessage {
 	// Currently this returns a default message which sends to all bikers on the biker agent's bike
 	// For team's agent, add your own logic to communicate with other agents
 	return ForcesMessage{
 		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
-		AgentId:     uuid.Nil,
 		AgentForces: utils.Forces{
 			Pedal: 0.0,
 			Brake: 0.0,
@@ -322,15 +303,6 @@ func (bb *BaseBiker) CreateForcesMessage() ForcesMessage {
 				SteeringForce: 0.0,
 			},
 		},
-	}
-}
-
-func (bb *BaseBiker) CreateVoteAllocationMessage() VoteAllocationMessage {
-	// Currently this returns a default/meaningless message
-	// For team's agent, add your own logic to communicate with other agents
-	return VoteAllocationMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
-		VoteMap:     make(voting.IdVoteMap),
 	}
 }
 
@@ -475,3 +447,27 @@ func (bb *BaseBiker) nearestLoot() uuid.UUID {
 func (bb *BaseBiker) GetGameState() IGameState {
 	return bb.gameState
 }
+
+
+// ---- Experimental -----
+type roundDecisions struct {
+	Direction uuid.UUID
+	Forces utils.Forces
+}
+
+func (bb *BaseBiker) SetRoundDirection(direction uuid.UUID) {
+	bb.roundDecisions.Direction = direction
+}
+
+func (bb *BaseBiker) SetRoundForces(forces utils.Forces) {
+	bb.roundDecisions.Forces = forces
+}
+
+func (bb *BaseBiker) GetRoundDirection() uuid.UUID {
+	return bb.roundDecisions.Direction
+}
+
+func (bb *BaseBiker) GetRoundForces() utils.Forces {
+	return bb.roundDecisions.Forces
+}
+

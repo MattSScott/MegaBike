@@ -2,11 +2,9 @@ package agent
 
 import (
 	obj "SOMAS2023/internal/common/objects"
-	"SOMAS2023/internal/common/voting"
 	"slices"
 
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
-	"github.com/google/uuid"
 )
 
 const (
@@ -15,74 +13,66 @@ const (
 	
 )
 
-// ----- Round  -----
+// ----- Round -----
 
+// done
 func (a *AgentSOSA) HandleProposedLootboxMessage(msg obj.ProposedLootboxMessage) {
+	sender := msg.GetSender()
+
+	// if they proposed the same lootbox as us during this round, give them a boost in trust
+	if msg.Lootbox == a.GetRoundDirection() {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), positiveMessage)
+	}
 	
 }
 
-func (a *AgentSOSA) HandleNextLootboxMessage(msg obj.NextLootboxMessage) {
-	
-}
-
+// done
 func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
+	// simple for now. if they are pedalling less than 20%, lower trust. if greater than 80%, increase trust
+	sender := msg.GetSender()
+	if msg.AgentForces.Pedal < 0.2 {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), negativeMessage)
+	} else if msg.AgentForces.Pedal > 0.8 {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), positiveMessage)
+	}
+
 	
 }
 
-func (a *AgentSOSA) HandleVoteAllocationMessage(msg obj.VoteAllocationMessage) {
-	
-}
-
+// done
 func (a *AgentSOSA) GetAllRoundMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
-	// TODO: add logic to decide when to send these messages
-
-	proposedLootboxMessage := a.CreateProposedLootboxMessage()
-	nextLootboxMsg := a.CreateNextLootboxMessage()
-	forcesMsg := a.CreateForcesMessage()
-	voteAllocationMessage := a.CreateVoteAllocationMessage()
 	
-	return []messaging.IMessage[obj.IBaseBiker]{nextLootboxMsg, forcesMsg, proposedLootboxMessage, voteAllocationMessage}
+	// if we are on a bike, tell our teammates what lootbox / forces we aimed for this round. otherwise dont message people.
+	if a.GetBikeStatus() {
+		proposedLootboxMessage := a.CreateProposedLootboxMessage()
+		forcesMsg := a.CreateForcesMessage()
+
+		return []messaging.IMessage[obj.IBaseBiker]{forcesMsg, proposedLootboxMessage}
+	} else{
+		return []messaging.IMessage[obj.IBaseBiker]{}
+	}
 }
 
+// done
 func (a *AgentSOSA) CreateProposedLootboxMessage() obj.ProposedLootboxMessage {
-	// Currently this returns a default/meaningless message
-	// For team's agent, add your own logic to communicate with other agents
+	// tell our fellow bikers what direction we chose this round
 	return obj.ProposedLootboxMessage{
 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
-		Lootbox:     uuid.Nil,
+		Lootbox:     a.GetRoundDirection(), 
 	}
 }
 
-func (a *AgentSOSA) CreateNextLootboxMessage() obj.NextLootboxMessage {
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
-	// For team's agent, add your own logic to communicate with other agents
-	return obj.NextLootboxMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
-		Lootbox:   uuid.Nil,
-	}
-}
-
+// done
 func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
-	// For team's agent, add your own logic to communicate with other agents
+	// tell our fellow bikers what forces we chose this round
 	return obj.ForcesMessage{
 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
-		AgentId:     uuid.Nil,
-		AgentForces: a.GetForces(),
-	}
-}
-
-func (a *AgentSOSA) CreateVoteAllocationMessage() obj.VoteAllocationMessage {
-	// Currently this returns a default/meaningless message
-	// For team's agent, add your own logic to communicate with other agents
-	return obj.VoteAllocationMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
-		VoteMap:     make(voting.IdVoteMap),
+		AgentForces: a.GetRoundForces(),
 	}
 }
 
 
-// Iteration
+// ----- Iteration -----
 
 // Done
 func (a *AgentSOSA) HandleKickOutMessage(msg obj.KickoutAgentMessage) {
@@ -233,18 +223,3 @@ func (a *AgentSOSA) CreateChangeBikeMessage() obj.ChangeBikeMessage {
 	// 	// a.Modules.SocialCapital.UpdateInstitution(agentId, InstitutionEventWeight_Adhereance, eventValue)
 	// 	// fmt.Printf("Agent Social Network After: %v\n", a.Modules.SocialCapital.SocialNetwork)
 	// }
-
-	// func (a *AgentSOSA) CreateKickOffMessage() obj.KickoutAgentMessage {
-// 	minTrustAgentStruct := a.Modules.AgentParameters.GetMinimumTrust()
-// 	minTrustagentId := minTrustAgentStruct.ID
-// 	kickOff := false
-// 	if minTrustagentId != a.GetID() {
-// 		kickOff = true
-// 	}
-
-// 	return obj.KickoutAgentMessage{
-// 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
-// 		AgentId:     minTrustagentId,
-// 		Kickout:     kickOff,
-// 	}
-// }

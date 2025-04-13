@@ -126,6 +126,7 @@ func (s *Server) RunDirectionDecisionProcess() {
 		// let agents decide the force they are going to pedal with
 		for _, agent := range agents {
 			agent.DecideForce(direction)
+			agent.SetRoundForces(agent.GetForces())
 			energyLost := agent.GetForces().Pedal * utils.MovingDepletion
 			agent.UpdateEnergyLevel(-energyLost)
 		}

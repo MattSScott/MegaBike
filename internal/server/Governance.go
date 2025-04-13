@@ -60,7 +60,9 @@ func (s *Server) RunRepresentativeDirectionDecision(bike objects.IMegaBike) uuid
 
 		// create a slice of their suggested directions
 		for _, repID := range reps {
-			suggestedDirections = append(suggestedDirections, agents[repID].DecideDirection())
+			decidedDirection := agents[repID].DecideDirection()
+			suggestedDirections = append(suggestedDirections, decidedDirection)
+			agents[repID].SetRoundDirection(decidedDirection)
 		}
 
 		maxCounts := 0
@@ -79,6 +81,7 @@ func (s *Server) RunRepresentativeDirectionDecision(bike objects.IMegaBike) uuid
 	case utils.One:
 		monarch := agents[reps[0]]
 		direction = monarch.DecideDirection()
+		monarch.SetRoundDirection(direction)
 		return direction
 	default:
 		panic("trying to run representative action in a non-representative governance")
@@ -97,6 +100,7 @@ func (s *Server) RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUI
 	for _, agent := range agents {
 		if agent.GetBikeStatus() {
 			proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
+			agent.SetRoundDirection(proposedDirection)
 
 			if proposedDirection == uuid.Nil {
 				continue
