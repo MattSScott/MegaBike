@@ -2,15 +2,10 @@ package agent
 
 import (
 	obj "SOMAS2023/internal/common/objects"
+	"SOMAS2023/internal/clients/teamSOSA/modules"
 	"slices"
 
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
-)
-
-const (
-	positiveMessage = 0.05
-	negativeMessage = -0.05
-	
 )
 
 // ----- Round -----
@@ -21,7 +16,7 @@ func (a *AgentSOSA) HandleProposedLootboxMessage(msg obj.ProposedLootboxMessage)
 
 	// if they proposed the same lootbox as us during this round, give them a boost in trust
 	if msg.Lootbox == a.GetRoundDirection() {
-		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), positiveMessage)
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
 	}
 	
 }
@@ -31,9 +26,9 @@ func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	// simple for now. if they are pedalling less than 20%, lower trust. if greater than 80%, increase trust
 	sender := msg.GetSender()
 	if msg.AgentForces.Pedal < 0.2 {
-		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), negativeMessage)
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
 	} else if msg.AgentForces.Pedal > 0.8 {
-		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), positiveMessage)
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
 	}
 
 	
@@ -84,9 +79,9 @@ func (a *AgentSOSA) HandleKickOutMessage(msg obj.KickoutAgentMessage) {
 	// if they want to kick out the agent who we trust least, i.e. same opinion, increase their trust score. 
 	
 	if agentId == a.GetID() {
-		a.Modules.AgentParameters.UpdateTrustValue(senderID, negativeMessage)
+		a.Modules.AgentParameters.UpdateTrustValue(senderID, modules.NegativeMessage)
 	} else if agentId == a.GetTeammateWithMinTrust().ID {
-		a.Modules.AgentParameters.UpdateTrustValue(senderID, positiveMessage)
+		a.Modules.AgentParameters.UpdateTrustValue(senderID, modules.PositiveMessage)
 	} 
 }
 
@@ -98,9 +93,9 @@ func (a *AgentSOSA) HandleChangeBikeMessage(msg obj.ChangeBikeMessage) {
 	if slices.Contains(a.GetFellowBikers(), sender) {
 		// if we think poorly of the bike, trust them more for leaving. otherwise trust them less
 		if a.GetAverageTrustOnBike() < 0.5 {
-			a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), positiveMessage)
+			a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
 		} else {
-			a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), negativeMessage)
+			a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
 		}
 	}
 }

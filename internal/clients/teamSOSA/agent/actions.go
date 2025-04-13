@@ -145,8 +145,8 @@ func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 		a.SetForces(force)
 		return
 	}
-	// Use the average social capital to decide whether to pedal in the voted direciton or not
-	probabilityOfConformity := a.Modules.AgentParameters.GetAverageTrust()
+	// Use the average social capital to decide whether to pedal in the voted direction or not
+	probabilityOfConformity := a.GetAverageTrustOnBike()
 	randomNumber := rand.Float64()
 	agentPosition := a.GetLocation()
 	lootboxID := direction
