@@ -322,7 +322,7 @@ func GetEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeI
 
 // // returns: the biker on your bike with the minimum trust 
 // func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPair {
-// 	fellowBikers := e.GetBikerAgents()
+// 	fellowBikers := e.GetBikerAgents() // MATT- THIS LINE GETS ALL AGENTS ON BIKES. SO THE FUNCTION FINDS THE BIKER IN WHOLE GAME WITH LOWEST TRUST. BUT IT WAS USED IN DECIDEKICKOUT, SO IT COULD SUGGEST A BIKER NOT ON YOUR BIKE WHICH IS STUPID. 
 // 	minTrustAgentId := uuid.Nil
 // 	minTrust := math.MaxFloat64
 // 	for _, fellowBiker := range fellowBikers {

@@ -34,16 +34,17 @@ type IBaseBiker interface {
 	DecideDirection() uuid.UUID
 	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
 
-	// Message Handlers
+	// Messaaging (round)
+
+	HandleProposedLootboxMessage(msg ProposedLootboxMessage)
+	HandleNextLootboxMessage(msg NextLootboxMessage)
+	HandleForcesMessage(msg ForcesMessage)
+	HandleVoteAllocationMessage(msg VoteAllocationMessage)
+	GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
 	HandleKickoutMessage(msg KickoutAgentMessage)
 	HandleChangeBikeMessage(msg ChangeBikeMessage)
-	HandleNextLootboxMessage(msg NextLootboxMessage)
-	HandleForcesMessage(msg ForcesMessage)
-	HandleProposedLootboxMessage(msg ProposedLootboxMessage)
-	HandleVoteAllocationMessage(msg VoteAllocationMessage)
 	GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
-	GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
 	// ----- 2. Core Functions (do not need to override these, can inherit basebiker's) -----
 
@@ -257,24 +258,44 @@ func (bb *BaseBiker) DecideKickOut() []uuid.UUID {
 	return (make([]uuid.UUID, 0))
 }
 
-// Messaging
+// Messaging - Round
 
-func (bb *BaseBiker) CreatekickoutMessage() KickoutAgentMessage {
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
-	// For team's agent, add your own logic to communicate with other agents
-	return KickoutAgentMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
-		AgentId:     uuid.Nil,
-		Kickout:     false,
-	}
+func (bb *BaseBiker) HandleProposedLootboxMessage(msg ProposedLootboxMessage) {
+	// Team's agent should implement logic for handling other biker messages that were sent to them.
+
 }
 
-func (bb *BaseBiker) CreateChangeBikeMessage() ChangeBikeMessage {
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
+func (bb *BaseBiker) HandleNextLootboxMessage(msg NextLootboxMessage) {
+	// Team's agent should implement logic for handling other biker messages that were sent to them.
+
+	// sender := msg.BaseMessage.GetSender()
+	// lootboxId := msg.LootboxId
+}
+
+func (bb *BaseBiker) HandleForcesMessage(msg ForcesMessage) {
+	// Team's agent should implement logic for handling other biker messages that were sent to them.
+}
+
+func (bb *BaseBiker) HandleVoteAllocationMessage(msg VoteAllocationMessage) {
+	// Team's agent should implement logic for handling other biker messages that were sent to them.
+}
+
+func (bb *BaseBiker) GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
+	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
+	proposedLootboxMessage := bb.CreateProposedLootboxMessage()
+	nextLootboxMsg := bb.CreateNextLootboxMessage()
+	forcesMsg := bb.CreateForcesMessage()
+	voteAllocationMessage := bb.CreateVoteAllocationMessage()
+	
+	return []messaging.IMessage[IBaseBiker]{nextLootboxMsg, forcesMsg, proposedLootboxMessage, voteAllocationMessage}
+}
+
+func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
+	// Currently this returns a default/meaningless message
 	// For team's agent, add your own logic to communicate with other agents
-	return ChangeBikeMessage{
+	return ProposedLootboxMessage{
 		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
-		BikeId:      uuid.Nil,
+		Lootbox:     uuid.Nil,
 	}
 }
 
@@ -304,15 +325,6 @@ func (bb *BaseBiker) CreateForcesMessage() ForcesMessage {
 	}
 }
 
-func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
-	// Currently this returns a default/meaningless message
-	// For team's agent, add your own logic to communicate with other agents
-	return ProposedLootboxMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
-		Lootbox:     uuid.Nil,
-	}
-}
-
 func (bb *BaseBiker) CreateVoteAllocationMessage() VoteAllocationMessage {
 	// Currently this returns a default/meaningless message
 	// For team's agent, add your own logic to communicate with other agents
@@ -322,10 +334,11 @@ func (bb *BaseBiker) CreateVoteAllocationMessage() VoteAllocationMessage {
 	}
 }
 
+// Messaging - Iteration 
+
 func (bb *BaseBiker) HandleKickoutMessage(msg KickoutAgentMessage) {
 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 
-	// sender := msg.BaseMessage.GetSender()
 	// agentId := msg.AgentId
 	// kickout := msg.Kickout
 }
@@ -333,37 +346,6 @@ func (bb *BaseBiker) HandleKickoutMessage(msg KickoutAgentMessage) {
 func (bb *BaseBiker) HandleChangeBikeMessage(msg ChangeBikeMessage) {
 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 
-	// sender := msg.BaseMessage.GetSender()
-	// bikeId := msg.BikeId
-}
-
-func (bb *BaseBiker) HandleNextLootboxMessage(msg NextLootboxMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
-
-	// sender := msg.BaseMessage.GetSender()
-	// lootboxId := msg.LootboxId
-}
-
-func (bb *BaseBiker) HandleForcesMessage(msg ForcesMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
-
-	// sender := msg.BaseMessage.GetSender()
-	// agentId := msg.AgentId
-	// agentForces := msg.AgentForces
-}
-
-func (bb *BaseBiker) HandleProposedLootboxMessage(msg ProposedLootboxMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
-
-	// sender := msg.BaseMessage.GetSender()
-	// voteMap := msg.VoteMap
-}
-
-func (bb *BaseBiker) HandleVoteAllocationMessage(msg VoteAllocationMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
-
-	// sender := msg.BaseMessage.GetSender()
-	// voteMap := msg.VoteMap
 }
 
 func (bb *BaseBiker) GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
@@ -374,14 +356,23 @@ func (bb *BaseBiker) GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[
 	return []messaging.IMessage[IBaseBiker]{kickoutMsg, changeBikeMessage}
 }
 
-func (bb *BaseBiker) GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
-	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
-	proposedLootboxMessage := bb.CreateProposedLootboxMessage()
-	nextLootboxMsg := bb.CreateNextLootboxMessage()
-	forcesMsg := bb.CreateForcesMessage()
-	voteAllocationMessage := bb.CreateVoteAllocationMessage()
-	
-	return []messaging.IMessage[IBaseBiker]{nextLootboxMsg, forcesMsg, proposedLootboxMessage, voteAllocationMessage}
+func (bb *BaseBiker) CreatekickoutMessage() KickoutAgentMessage {
+
+	// Currently this returns a default message which sends to all bikers on the biker agent's bike
+	// For team's agent, add your own logic to communicate with other agents
+	return KickoutAgentMessage{
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		AgentId:     uuid.Nil,
+	}
+}
+
+func (bb *BaseBiker) CreateChangeBikeMessage() ChangeBikeMessage {
+	// Currently this returns a default message which sends to all bikers on the biker agent's bike
+	// For team's agent, add your own logic to communicate with other agents
+	return ChangeBikeMessage{
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		BikeId:      uuid.Nil,
+	}
 }
 // ----- 2. Core Functions (do not need to override these, can inherit basebiker's) -----
 

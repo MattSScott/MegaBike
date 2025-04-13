@@ -12,7 +12,7 @@ type AgentParameters struct {
 }
 
 
-// returns: uuid of agent with minimum trust in your network, along with their trust score
+// returns: uuid of agent with minimum trust in your *whole* network, along with their trust score
 func (ap *AgentParameters) GetMinimumTrust() IDTrustPair {
 	minTrust := 2.0
 	minAgentId := uuid.Nil
@@ -26,7 +26,7 @@ func (ap *AgentParameters) GetMinimumTrust() IDTrustPair {
 	return IDTrustPair{ID: minAgentId, Trust: minTrust}
 }
 
-// returns: uuid of agent with maximum trust in your network, along with their trust score
+// returns: uuid of agent with maximum trust in your *whole* network, along with their trust score
 func (ap *AgentParameters) GetMaximumTrust() IDTrustPair {
 	maxTrust := -2.0
 	maxAgentId := uuid.Nil
@@ -61,17 +61,16 @@ func (ap *AgentParameters) GetAverageTrust() float64 {
 	return sum / float64(len(ap.TrustNetwork))
 }
 
-
 // updates: an agents' trust value, using the eventValue and eventWeight
-func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue, eventWeight float64) {
+func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue float64) {
 	if _, ok := ap.TrustNetwork[agentID]; !ok {
 		// if agentID is not in our trust network, assign them our current average trust
 		ap.TrustNetwork[agentID] = ap.GetAverageTrust()
 		return
 	}
 
-	// else, alter their trust value and do some clamping?
-	ap.TrustNetwork[agentID] += eventValue * eventWeight
+	// else, alter their trust value and clamp to ensure it is between 0 and 1
+	ap.TrustNetwork[agentID] += eventValue
 	ap.TrustNetwork[agentID] = clamp(ap.TrustNetwork[agentID])
 }
 

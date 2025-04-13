@@ -48,11 +48,12 @@ func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	return VoteMap
 }
 
-// returns: slice of agents to kick out (currently just does one)
+// returns: slice of agents to kick out 
 func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
+	// currently just kick out lowest agent if below a threshold.
 	kickOut_agents := make([]uuid.UUID, 0)
-	minTrustBiker := a.GetBikerWithMinTrust()
-	if minTrustBiker.ID != uuid.Nil {
+	minTrustBiker := a.GetTeammateWithMinTrust()
+	if minTrustBiker.ID != uuid.Nil && minTrustBiker.Trust < modules.KickThreshold {
 		kickOut_agents = append(kickOut_agents, minTrustBiker.ID)
 	}
 	return kickOut_agents
@@ -226,7 +227,7 @@ func (a *AgentSOSA) GetFellowBikers() []objects.IBaseBiker {
 }
 
 // returns: the biker on your bike with the minimum trust 
-func (a *AgentSOSA) GetBikerWithMinTrust() modules.IDTrustPair {
+func (a *AgentSOSA) GetTeammateWithMinTrust() modules.IDTrustPair {
 	fellowBikers := a.GetFellowBikers()
 	minTrustAgentId := uuid.Nil
 	minTrust := math.MaxFloat64
