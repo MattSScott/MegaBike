@@ -55,8 +55,6 @@ func TestAwdiTargeting(t *testing.T) {
 	iterations := 1
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	// required otherwise agents are not initialized to bikes
-	// s.FoundingInstitutions()
 	i := 0
 	emptyBikeId := uuid.UUID{}
 	slowBikeId := uuid.UUID{}
@@ -86,6 +84,7 @@ func TestAwdiTargeting(t *testing.T) {
 		}
 		i += 1
 	}
+
 	s.GetAwdi().UpdateForce()
 	targetId := s.GetAwdi().GetTargetID()
 	fmt.Printf("Awdi is targeting {%s}\n", targetId)
