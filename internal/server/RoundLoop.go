@@ -185,7 +185,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 						// map of agentID -> map of fellow bikers and their distribution
 						allAllocations := make(map[uuid.UUID]voting.IdVoteMap)
 
-						fmt.Println("number of agents:", len(agents))
+						// fmt.Println("number of agents:", len(agents))
 
 						for _, agent := range agents {
 							// the agents return their ideal lootbox split by assigning a number between 0 and 1 to
@@ -193,7 +193,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 							allAllocations[agent.GetID()] = agent.DecideAllocation()
 						}
 
-						fmt.Println("number of allocations provided", len(allAllocations))
+						// fmt.Println("number of allocations provided", len(allAllocations))
 
 						Iallocations := make(map[uuid.UUID]voting.IVoter)
 						for i, v := range allAllocations {
@@ -220,14 +220,14 @@ func (s *Server) LootboxCheckAndDistributions() {
 							aristocratAllocations[repID] = agentMap[repID].DecideAllocation()
 						}
 
-						fmt.Println("number of allocations provided", len(aristocratAllocations))
+						// fmt.Println("number of allocations provided", len(aristocratAllocations))
 
 						Iallocations := make(map[uuid.UUID]voting.IVoter)
 						for i, v := range aristocratAllocations {
 							Iallocations[i] = v
 						}
 
-						fmt.Println("length of iallocations ", len(Iallocations))
+						// fmt.Println("length of iallocations ", len(Iallocations))
 
 						// make map of weights of 1 for all aristocrats (redundant but fine for now)
 						weights := make(map[uuid.UUID]float64)

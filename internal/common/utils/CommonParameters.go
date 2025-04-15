@@ -23,7 +23,7 @@ const MassBike float64 = 1.0
 const MassBiker float64 = 1.0
 const MassAwdi float64 = 7.0
 const BikerMaxForce float64 = 0.8 // The max force a biker can pedal
-const AwdiMaxForce float64 = 1.0  // The awdi's force is equivalent to that of one biker agent going at maximum speed
+const AwdiMaxForce float64 = 0.7  // The awdi's force is equivalent to that of one biker agent going at maximum speed [NOTE: MAYBE NEEDS CHANGING, WAS 1.0]
 const DragCoefficient float64 = 0.5 // Drag coefficient can be optimised in experimentation
 
 

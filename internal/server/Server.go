@@ -207,7 +207,7 @@ func (s *Server) RunAgentMessagingSession(isIteration bool) {
 
 	for _, agent := range s.GetAgentMap() {
 
-		// retrieve all the messages this agent wants to send
+		// retrieve all the messages this agent wants to send (either round or iteration messages)
 
 		allMessages := agent.GetAllRoundMessages(agentArray)
 		if isIteration {

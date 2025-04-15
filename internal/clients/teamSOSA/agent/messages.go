@@ -97,7 +97,7 @@ func (a *AgentSOSA) HandleChangeBikeMessage(msg obj.ChangeBikeMessage) {
 		} else {
 			a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
 		}
-	}
+	} 
 }
 
 // Done

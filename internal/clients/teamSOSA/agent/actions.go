@@ -307,3 +307,7 @@ func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	}
 	return optimalLootbox
 }
+
+func (a *AgentSOSA) GetTrustOfAgent(agent objects.IBaseBiker) float64 {
+    return a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
+}
