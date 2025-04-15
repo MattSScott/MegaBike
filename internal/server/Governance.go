@@ -36,7 +36,7 @@ func (s *Server) RepresentativeSelection(agentsOnBike []objects.IBaseBiker, gove
 			reps = append(reps, agentsOnBike[chosenAgentIndex].GetID())
 			return reps
 		default:
-			panic("trying to run a representative election on a bike without incorrect governance style")
+			panic("trying to run a representative selection on a bike without incorrect governance style")
 		}
 	} else {
 		return []uuid.UUID{}
@@ -131,15 +131,29 @@ func (s *Server) RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUI
 			counts[lootbox]++
 		}
 
-		// Check if any lootbox UUID is voted for by a majority. If so, then return this lootbox.
-		threshold := len(directions) / 2
-		for lootbox, count := range counts {
-			if count > threshold {
-				return lootbox
-			}
-		}
 
-		return uuid.Nil
+		// Option one: go for most voted lootbox
+        var mostVotedLootbox uuid.UUID
+        highestCount := 0
+        
+        for lootbox, count := range counts {
+            if count > highestCount {
+                highestCount = count
+                mostVotedLootbox = lootbox
+            }
+        }
+        
+        return mostVotedLootbox
+
+		// Legacy:   Check if any lootbox UUID is voted for by a majority. If so, then return this lootbox. Otherwise return nil
+		// threshold := len(directions) / 2
+		// for lootbox, count := range counts {
+		// 	if count > threshold {
+		// 		return lootbox
+		// 	}
+		// }
+
+		// return uuid.Nil
 	} else {
 		panic("tring to run a democratic action in a non-democracy")
 	}
@@ -242,6 +256,10 @@ func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVote
 
 	return voting.WinnerFromDist(IfinalVotes, weights)
 }
+
+
+
+
 
 // ----- Legacy code to keep -----
 

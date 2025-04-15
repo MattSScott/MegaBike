@@ -35,6 +35,7 @@ type IBaseBikerServer interface {
 	ResetGameState()                                                                                             // respawn agents, reset and replenish game objects conditionally (each iteration)
 	GetDeadAgents() map[uuid.UUID]objects.IBaseBiker                                                             // returns: map of dead agent uuid -> agent object
 	GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID // returns: uuid of chosen lootbox from a set of votes and weights
+	PerformRoleAssignment(bike objects.IMegaBike) // assign representatives
 }
 
 type Server struct {

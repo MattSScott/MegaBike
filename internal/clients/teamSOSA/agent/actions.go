@@ -53,7 +53,10 @@ func (a *AgentSOSA) DecideKickOut() []uuid.UUID {
 	// currently just kick out lowest agent if below a threshold.
 	kickOut_agents := make([]uuid.UUID, 0)
 	minTrustBiker := a.GetTeammateWithMinTrust()
-	if minTrustBiker.ID != uuid.Nil && minTrustBiker.Trust < modules.KickThreshold {
+	// if minTrustBiker.ID != uuid.Nil && minTrustBiker.Trust < modules.KickThreshold {
+	// 	kickOut_agents = append(kickOut_agents, minTrustBiker.ID)
+	// }
+	if minTrustBiker.ID != uuid.Nil {
 		kickOut_agents = append(kickOut_agents, minTrustBiker.ID)
 	}
 	return kickOut_agents
@@ -200,8 +203,8 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 			}
 		}
 
-		monarchShare := 1 - totalShareDistributed
-		allocation[a.GetID()] = monarchShare
+		myShare := 1 - totalShareDistributed
+		allocation[a.GetID()] = myShare
 
 		return allocation
 	}

@@ -185,11 +185,15 @@ func (s *Server) LootboxCheckAndDistributions() {
 						// map of agentID -> map of fellow bikers and their distribution
 						allAllocations := make(map[uuid.UUID]voting.IdVoteMap)
 
+						fmt.Println("number of agents:", len(agents))
+
 						for _, agent := range agents {
 							// the agents return their ideal lootbox split by assigning a number between 0 and 1 to
 							// each biker on their bike (including themselves) ensuring they sum to 1
 							allAllocations[agent.GetID()] = agent.DecideAllocation()
 						}
+
+						fmt.Println("number of allocations provided", len(allAllocations))
 
 						Iallocations := make(map[uuid.UUID]voting.IVoter)
 						for i, v := range allAllocations {
@@ -205,7 +209,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 						winningAllocation = voting.CumulativeDist(Iallocations, weights)
 
 					case utils.Some:
-
+						
 						reps := megabike.GetRepresentatives()
 						agentMap := s.GetAgentMap()
 
@@ -216,10 +220,14 @@ func (s *Server) LootboxCheckAndDistributions() {
 							aristocratAllocations[repID] = agentMap[repID].DecideAllocation()
 						}
 
+						fmt.Println("number of allocations provided", len(aristocratAllocations))
+
 						Iallocations := make(map[uuid.UUID]voting.IVoter)
 						for i, v := range aristocratAllocations {
 							Iallocations[i] = v
 						}
+
+						fmt.Println("length of iallocations ", len(Iallocations))
 
 						// make map of weights of 1 for all aristocrats (redundant but fine for now)
 						weights := make(map[uuid.UUID]float64)
@@ -243,6 +251,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 						if !ok {
 							continue
 						}
+
 						// Update agent energy level based on their share of the loot
 						agent.UpdateEnergyLevel(lootShare)
 						// Allocate points if the box is of the right colour

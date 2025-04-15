@@ -25,7 +25,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 		s.RecordAssociations(reassocationMap)
 	}
 
-	// ----- 2. Action phase -----
+	// ----- 2. Role-Assigning phase -----
 	for _, bike := range s.megaBikes {
 		s.UpdateBikeRules(bike)
 		s.PerformRoleAssignment(bike)
