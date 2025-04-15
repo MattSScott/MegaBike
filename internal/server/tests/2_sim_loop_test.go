@@ -1,6 +1,8 @@
 package server_test
 
 import (
+	// "SOMAS2023/internal/common/objects"
+	// "SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/server"
 	"fmt"
 	"testing"
@@ -97,7 +99,7 @@ func TestGetJoiningRequestsWithLimbo(t *testing.T) {
 			agent.SetBike(targetBikes[1])
 			requests[targetBikes[1]][i-1] = agent.GetID()
 		} else if i == 2 {
-			//remove it from bike but add it to limbo (to mimick request made in this turn)
+			//remove it from bike but add it to limbo (to mimic request made in this turn)
 			agent.ToggleOnBike()
 			agent.SetBike(targetBikes[1])
 			limbo[0] = agent.GetID()
@@ -119,51 +121,3 @@ func TestGetJoiningRequestsWithLimbo(t *testing.T) {
 	fmt.Printf("\nJoining request passed \n")
 }
 
-func TestGetRandomBikeID(t *testing.T) {
-	iterations := 3
-	s := server.GenerateServer()
-	s.Initialize(iterations)
-
-	bike := s.GetRandomBikeId()
-	_, exists := s.GetMegaBikes()[bike]
-	if !exists {
-		t.Error("returned bike is not in ")
-	}
-	fmt.Printf("\nGet random ID passed \n")
-}
-
-
-// needs work
-func TestAddAgentToBike(t *testing.T) {
-	iterations := 3
-	s := server.GenerateServer()
-	s.Initialize(iterations)
-
-	// fmt.Printf("there are %v megabikes", len(s.GetMegaBikes()))
-	// for bikeID, bike := range s.GetMegaBikes() {
-	// 	fmt.Printf("\nbike %v has %v agents", bikeID, len(bike.GetAgents()))
-	// }
-
-	// // Case 1: adding an agent to a non-full bike
-
-	// // setup: choose a bike and kill a random agent on said bike, leaving a space for some other agent to join
-	// randomChosenBike := s.GetMegaBikes()[s.GetRandomBikeId()]
-	// agentToRemove := randomChosenBike.GetAgents()[rand.Intn(8)]
-	// s.RemoveAgent(agentToRemove)
-
-
-	// fmt.Println("\n Chosen bike has", len(randomChosenBike.GetAgents()), "agents")
-
-	// var changedAgent uuid.UUID
-	// for agentID, agent := range s.GetAgentMap() {
-	// 	s.AddAgentToBike(agent, s.GetMegaBikes()[bike])
-	// 	changedAgent = agentID
-	// 	break
-	// }
-
-	// // agentToCheck := s.GetAgentMap()[changedAgent]
-	// // if agentToCheck.GetBike() != bike {
-	// // 	t.Error("agent's bike is not as expected")
-	// // }
-	// // fmt.Printf("\nSet biker bike passed \n")
-}

@@ -39,8 +39,9 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestInitialAssignment(t *testing.T) {
+	iterations := 3
 	s := server.GenerateServer()
-	s.Initialize(0)
+	s.Initialize(iterations)
 
 	for _, bike := range s.GetMegaBikes() {
 		if len(bike.GetAgents()) > 8 {
@@ -58,10 +59,3 @@ func TestInitialAssignment(t *testing.T) {
 		}
 	}
 }
-
-// // func TestRunGame(t *testing.T) {
-// // 	iterations := 2
-// // 	s := server.GenerateServer()
-// // 	s.Initialize(iterations)
-// // 	s.Start()
-// // }

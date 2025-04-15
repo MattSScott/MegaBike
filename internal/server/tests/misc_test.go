@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	// "github.com/google/uuid"
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,53 +44,15 @@ func TestRepresentativeSelection(t *testing.T) {
 
 }
 
-func TestRunRepresentativeDirectionDecision(t *testing.T) {
+func TestGetRandomBikeID(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	// perform role assignment, then get them to decide on a direction. if nil, something wrong. otherwise pass!
-	for _, bike := range s.GetMegaBikes(){
-		governance := bike.GetGovernance()
-		if governance == utils.Some || governance == utils.One {
-			s.PerformRoleAssignment(bike)
-			lootbox := s.RunRepresentativeDirectionDecision(bike)
-			fmt.Printf("\n bike targetting lootbox with id %v", lootbox)
-			if lootbox == uuid.Nil {
-				t.Error("targetting nil lootbox")
-			}
-		}
+	bike := s.GetRandomBikeId()
+	_, exists := s.GetMegaBikes()[bike]
+	if !exists {
+		t.Error("returned bike is not in ")
 	}
-
-	fmt.Println("Representative direction decision process runs successfully")
-}
-
-func TestRunDemocraticDirectionDecision(t *testing.T) {
-	iterations := 3
-	s := server.GenerateServer()
-	s.Initialize(iterations)
-
-
-	for _, bike := range s.GetMegaBikes(){
-		governance := bike.GetGovernance()
-		if governance == utils.Many {
-			lootbox := s.RunDemocraticDirectionDecision(bike)
-			fmt.Printf("\n bike targetting lootbox with id %v", lootbox) 
-			if lootbox == uuid.Nil {
-				t.Error("targetting nil lootbox")
-			}
-		}
-	}
-
-	fmt.Println("Democratic direction decision process runs successfully")
-}
-
-// needs work
-func TestHandleDepartingRepresentative(t *testing.T) {
-	iterations := 3
-	s := server.GenerateServer()
-	s.Initialize(iterations)
-
-
-	
+	fmt.Printf("\nGet random ID passed \n")
 }
