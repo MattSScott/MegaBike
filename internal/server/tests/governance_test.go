@@ -1,158 +1,96 @@
 package server_test
 
-// import (
-// 	"SOMAS2023/internal/common/objects"
-// 	"SOMAS2023/internal/common/utils"
-// 	"SOMAS2023/internal/server"
-// 	"fmt"
-// 	"testing"
+import (
+	// "SOMAS2023/internal/common/objects"
+	"SOMAS2023/internal/common/utils"
+	"SOMAS2023/internal/server"
+	"fmt"
+	"testing"
 
-// 	"github.com/google/uuid"
-// )
+	// "github.com/google/uuid"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestRulerElectionDictator(t *testing.T) {
-// 	iterations := 3
-// 	s := server.GenerateServer()
-// 	s.Initialize(iterations)
-// 	// required otherwise agents are not initialized to bikes
-// 	// s.FoundingInstitutions()
+func TestRepresentativeSelection(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
-// 	// pass gamestate
-// 	var ruler uuid.UUID
-// 	for _, bike := range s.GetMegaBikes() {
-// 		agents := bike.GetAgents()
-// 		if len(agents) != 0 {
-// 			ruler = s.RulerElection(agents, utils.Dictatorship)
-// 			bike.SetRuler(ruler)
-// 			if ruler == uuid.Nil {
-// 				t.Error("no ruler elected")
-// 			}
-// 		}
-// 	}
-// 	// the actual logic of get winner from dist will be tested elsewhere
-// 	fmt.Printf("\nRuler election passed \n")
+	// for each bike:
+	// 1. perform representative selection and setting if that bikes governance needs so
+	// 2. check that the bike has the correct number of representatives
+	for _, bike := range s.GetMegaBikes() {
+		agents := bike.GetAgents()
+		governance := bike.GetGovernance()
+		if governance == utils.Some || governance == utils.One {
+			reps := s.RepresentativeSelection(agents, governance)
+			bike.SetRepresentatives(reps)
+		}
 
-// }
+		if governance == utils.Many {
+			// shouldnt be any reps for "many" bikes
+			assert.Equal(t, 0, len(bike.GetRepresentatives()))
+		} else if governance == utils.Some {
+			assert.Equal(t, 3, len(bike.GetRepresentatives()))
+		} else if governance == utils.One {
+			assert.Equal(t, 1, len(bike.GetRepresentatives()))
+		} else{
+			panic("dealing with invalid form of governance")
+		}
+	}
+	
+	fmt.Printf("\nRepresentative Selection Successful \n")
 
-// func TestRulerElectionLeader(t *testing.T) {
-// 	iterations := 3
-// 	s := server.GenerateServer()
-// 	s.Initialize(iterations)
-// 	// required otherwise agents are not initialized to bikes
-// 	// s.FoundingInstitutions()
-// 	// pass gamestate
-// 	var ruler uuid.UUID
-// 	for _, bike := range s.GetMegaBikes() {
-// 		agents := bike.GetAgents()
-// 		if len(agents) != 0 {
-// 			ruler = s.RulerElection(agents, utils.Leadership)
-// 			bike.SetRuler(ruler)
-// 			if ruler == uuid.Nil {
-// 				t.Error("no ruler elected")
-// 			}
-// 		}
-// 	}
-// 	// the actual logic of get winner from dist will be tested elsewhere
-// 	fmt.Printf("\nRuler election leader passed \n")
+}
 
-// }
+func TestRunRepresentativeDirectionDecision(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
-// func TestRunRulerActionDictator(t *testing.T) {
-// 	iterations := 3
-// 	s := server.GenerateServer()
-// 	s.Initialize(iterations)
-// 	// required otherwise agents are not initialized to bikes
+	// perform role assignment, then get them to decide on a direction. if nil, something wrong. otherwise pass!
+	for _, bike := range s.GetMegaBikes(){
+		governance := bike.GetGovernance()
+		if governance == utils.Some || governance == utils.One {
+			s.PerformRoleAssignment(bike)
+			lootbox := s.RunRepresentativeDirectionDecision(bike)
+			fmt.Printf("\n bike targetting lootbox with id %v", lootbox)
+			if lootbox == uuid.Nil {
+				t.Error("targetting nil lootbox")
+			}
+		}
+	}
 
-// 	// s.FoundingInstitutions()
+	fmt.Println("Representative direction decision process runs successfully")
+}
 
-// 	for _, bike := range s.GetMegaBikes() {
-// 		agents := bike.GetAgents()
-// 		if len(agents) != 0 {
-// 			// make them vote for the dictator (assume that function works properly)
-// 			// get the dictator id (or check what it should be given the MVP strategy, this must be deterministic though)
-// 			ruler := s.RulerElection(agents, utils.Dictatorship)
-// 			bike.SetRuler(ruler)
-// 			direction := s.RunRulerAction(bike)
-// 			// set the force of the dictator
-// 			// check that the function works for it
+func TestRunDemocraticDirectionDecision(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
-// 			if bike.GetRuler() != ruler {
-// 				t.Error("error in setting bike's ruler")
-// 			}
 
-// 			// check that the direction is one of the loots (for now)
+	for _, bike := range s.GetMegaBikes(){
+		governance := bike.GetGovernance()
+		if governance == utils.Many {
+			lootbox := s.RunDemocraticDirectionDecision(bike)
+			fmt.Printf("\n bike targetting lootbox with id %v", lootbox) 
+			if lootbox == uuid.Nil {
+				t.Error("targetting nil lootbox")
+			}
+		}
+	}
 
-// 			_, exists := s.GetLootBoxes()[direction]
-// 			if !exists {
-// 				t.Error("dictator returned wrong direction")
-// 			}
-// 		}
-// 	}
-// 	fmt.Printf("\nRuler action passed \n")
+	fmt.Println("Democratic direction decision process runs successfully")
+}
 
-// }
+// needs work
+func TestHandleDepartingRepresentative(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
 
-// func TestRunRulerActionLeader(t *testing.T) {
-// 	iterations := 3
-// 	s := server.GenerateServer()
-// 	s.Initialize(iterations)
-// 	// required otherwise agents are not initialized to bikes
-// 	// s.FoundingInstitutions()
 
-// 	for _, bike := range s.GetMegaBikes() {
-// 		agents := bike.GetAgents()
-// 		if len(agents) != 0 {
-// 			// make them vote for the dictator (assume that function works properly)
-// 			// get the dictator id (or check what it should be given the MVP strategy, this must be deterministic though)
-// 			ruler := s.RulerElection(agents, utils.Leadership)
-// 			bike.SetRuler(ruler)
-// 			direction := s.RunRulerAction(bike)
-// 			// set the force of the dictator
-// 			// check that the function works for it
-
-// 			if bike.GetRuler() != ruler {
-// 				t.Error("error in setting bike's ruler")
-// 			}
-
-// 			// check that the direction is one of the loots (for now)
-
-// 			_, exists := s.GetLootBoxes()[direction]
-// 			if !exists {
-// 				t.Error("leader returned wrong direction")
-// 			}
-// 		}
-// 	}
-// 	fmt.Printf("\nRuler action  leader passed \n")
-// }
-
-// func TestRunDemocraticAction(t *testing.T) {
-// 	iterations := 3
-// 	s := server.GenerateServer()
-// 	s.Initialize(iterations)
-// 	// required otherwise agents are not initialized to bikes
-// 	// s.FoundingInstitutions()
-
-// 	for _, bike := range s.GetMegaBikes() {
-// 		fmt.Println("RULES:", len(bike.GetActiveRulesForAction(objects.Lootbox)))
-// 		agents := bike.GetAgents()
-// 		if len(agents) != 0 {
-// 			// make map of weights of 1 for all agents on bike
-// 			weights := make(map[uuid.UUID]float64)
-// 			for _, agent := range agents {
-// 				weights[agent.GetID()] = 1.0
-// 			}
-
-// 			direction := s.RunDemocraticAction(bike, weights)
-
-// 			if direction == uuid.Nil {
-// 				return
-// 			}
-
-// 			_, exists := s.GetLootBoxes()[direction]
-// 			if !exists {
-// 				t.Error("returned wrong direction")
-// 			}
-// 		}
-// 	}
-// 	fmt.Printf("\nDemocratic action passed \n")
-// }
+	
+}
