@@ -8,7 +8,7 @@ import (
 
 type AgentParameters struct {
 	PreferenceForEquality float64               // hardwired value between [0, 1] reflecting the agents personality, where a higher value signifies greater preference for equal and fair distribution.
-	TrustNetwork    map[uuid.UUID]float64 		// mapping of uuid -> trust score. trust score ranges from [-2, 2]
+	TrustNetwork    map[uuid.UUID]float64 		// mapping of uuid -> trust score. trust score ranges from 0 to 1
 }
 
 
