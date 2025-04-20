@@ -23,7 +23,8 @@ type IBaseBikerServer interface {
 	GetRandomBikeId() uuid.UUID                                                                                  // gets the id of any random bike in the map
 	RepresentativeSelection(agents []objects.IBaseBiker, governance utils.Governance) []uuid.UUID                // returns: slice of uuids of initially selected representatives
 	HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int)                                   // handles: when a representative leaves / dies / exits a bike. replace rep if possible, otherwise we just remove them
-	RunRepresentativeDirectionDecision(bike objects.IMegaBike) uuid.UUID                                         // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the representatives
+	RunOneDirectionDecision(bike objects.IMegaBike) uuid.UUID                                                    // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the "one" rep
+	RunSomeDirectionDecision(bike objects.IMegaBike) uuid.UUID                                                   // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the "some" reps
 	RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUID                                             // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the agents
 	GetLeavingDecisions() []uuid.UUID                                                                            // returns: slice of all agents that want to leave their bike in current iteration
 	HandleKickoutProcess() []uuid.UUID                                                                           // returns: a slice of uuids of all agents that are kicked from their bike in the current iteration.
@@ -35,7 +36,7 @@ type IBaseBikerServer interface {
 	ResetGameState()                                                                                             // respawn agents, reset and replenish game objects conditionally (each iteration)
 	GetDeadAgents() map[uuid.UUID]objects.IBaseBiker                                                             // returns: map of dead agent uuid -> agent object
 	GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID // returns: uuid of chosen lootbox from a set of votes and weights
-	PerformRoleAssignment(bike objects.IMegaBike) // assign representatives
+	PerformRoleAssignment(bike objects.IMegaBike)                                                                // assign representatives
 }
 
 type Server struct {
@@ -212,7 +213,7 @@ func (s *Server) RunAgentMessagingSession(isIteration bool) {
 		allMessages := agent.GetAllRoundMessages(agentArray)
 		if isIteration {
 			allMessages = agent.GetAllIterationMessages(agentArray)
-		} 
+		}
 
 		// for each message ...
 		for _, msg := range allMessages {

@@ -44,48 +44,46 @@ func (s *Server) RepresentativeSelection(agentsOnBike []objects.IBaseBiker, gove
 
 }
 
-// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the representatives
-func (s *Server) RunRepresentativeDirectionDecision(bike objects.IMegaBike) uuid.UUID {
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the "one" rep
+func (s *Server) RunOneDirectionDecision(bike objects.IMegaBike) uuid.UUID {
 	agents := s.GetAgentMap()
-	governance := bike.GetGovernance()
 	reps := bike.GetRepresentatives()
 	var direction uuid.UUID
 
-	// decide differently based on each governance...
-	switch governance {
-	case utils.Some:
+	monarch := agents[reps[0]]
+	direction = monarch.DecideDirection()
+	monarch.SetRoundDirection(direction)
+	return direction
+}
 
-		suggestedDirections := make([]uuid.UUID, 0, len(reps))
-		countsPerDirection := make(map[uuid.UUID]int)
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the "some" reps
+func (s *Server) RunSomeDirectionDecision(bike objects.IMegaBike) uuid.UUID {
+	agents := s.GetAgentMap()
+	reps := bike.GetRepresentatives()
+	var direction uuid.UUID
 
-		// create a slice of their suggested directions
-		for _, repID := range reps {
-			decidedDirection := agents[repID].DecideDirection()
-			suggestedDirections = append(suggestedDirections, decidedDirection)
-			agents[repID].SetRoundDirection(decidedDirection)
-		}
+	suggestedDirections := make([]uuid.UUID, 0, len(reps))
+	countsPerDirection := make(map[uuid.UUID]int)
 
-		maxCounts := 0
-
-		// find the most voted for direction
-		for _, lootbox := range suggestedDirections {
-			countsPerDirection[lootbox] += 1
-			if countsPerDirection[lootbox] > maxCounts {
-				maxCounts = countsPerDirection[lootbox]
-				direction = lootbox
-			}
-		}
-
-		return direction
-
-	case utils.One:
-		monarch := agents[reps[0]]
-		direction = monarch.DecideDirection()
-		monarch.SetRoundDirection(direction)
-		return direction
-	default:
-		panic("trying to run representative action in a non-representative governance")
+	// create a slice of their suggested directions
+	for _, repID := range reps {
+		decidedDirection := agents[repID].DecideDirection()
+		suggestedDirections = append(suggestedDirections, decidedDirection)
+		agents[repID].SetRoundDirection(decidedDirection)
 	}
+
+	maxCounts := 0
+
+	// find the most voted for direction
+	for _, lootbox := range suggestedDirections {
+		countsPerDirection[lootbox] += 1
+		if countsPerDirection[lootbox] > maxCounts {
+			maxCounts = countsPerDirection[lootbox]
+			direction = lootbox
+		}
+	}
+
+	return direction
 }
 
 // returns: uuid of lootbox to aim toward (i.e. direction) for current round from the agents
@@ -131,19 +129,18 @@ func (s *Server) RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUI
 			counts[lootbox]++
 		}
 
-
 		// Option one: go for most voted lootbox
-        var mostVotedLootbox uuid.UUID
-        highestCount := 0
-        
-        for lootbox, count := range counts {
-            if count > highestCount {
-                highestCount = count
-                mostVotedLootbox = lootbox
-            }
-        }
-        
-        return mostVotedLootbox
+		var mostVotedLootbox uuid.UUID
+		highestCount := 0
+
+		for lootbox, count := range counts {
+			if count > highestCount {
+				highestCount = count
+				mostVotedLootbox = lootbox
+			}
+		}
+
+		return mostVotedLootbox
 
 		// Legacy:   Check if any lootbox UUID is voted for by a majority. If so, then return this lootbox. Otherwise return nil
 		// threshold := len(directions) / 2
@@ -256,10 +253,6 @@ func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVote
 
 	return voting.WinnerFromDist(IfinalVotes, weights)
 }
-
-
-
-
 
 // ----- Legacy code to keep -----
 

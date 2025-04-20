@@ -119,8 +119,20 @@ func (s *Server) RunDirectionDecisionProcess() {
 				agent.UpdateEnergyLevel(-utils.DeliberativeDemocracyPenalty)
 			}
 
-		case utils.Some, utils.One:
-			direction = s.RunRepresentativeDirectionDecision(bike)
+		case utils.Some:
+			direction = s.RunSomeDirectionDecision(bike)
+			// reps incur an energetic penalty
+			for _, repID := range bike.GetRepresentatives() {
+				s.GetAgentMap()[repID].UpdateEnergyLevel(-utils.RepDecisionPenalty)
+			}
+
+		case utils.One:
+			direction = s.RunOneDirectionDecision(bike)
+			// reps incur an energetic penalty
+			for _, repID := range bike.GetRepresentatives() {
+				s.GetAgentMap()[repID].UpdateEnergyLevel(-utils.RepDecisionPenalty)
+			}
+
 		}
 
 		// let agents decide the force they are going to pedal with
@@ -209,7 +221,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 						winningAllocation = voting.CumulativeDist(Iallocations, weights)
 
 					case utils.Some:
-						
+
 						reps := megabike.GetRepresentatives()
 						agentMap := s.GetAgentMap()
 

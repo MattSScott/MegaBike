@@ -230,7 +230,7 @@ func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UU
 
 	bikes := e.GetBikes()
 	for bikeId, bike := range bikes {
-		totalTrust := float64(0)
+		totalTrust := 0.0
 		agentCount := float64(len(bike.GetAgents()))
 
 		// Sum up the trust of all agents on this bike

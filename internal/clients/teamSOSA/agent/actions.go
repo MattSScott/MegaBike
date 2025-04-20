@@ -121,7 +121,7 @@ func (a *AgentSOSA) DecideDirection() uuid.UUID {
 		return a.Modules.Environment.GetNearestLootboxAwayFromAwdi()
 	}
 
-	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 || a.Modules.AgentParameters.GetAverageTrust() > 0.5 {
+	if a.Modules.AgentParameters.PlatonicTendency > 0.5 || a.Modules.AgentParameters.GetAverageTrust() > 0.5 {
 		// if selfless or high trust, get highest gain lootbox
 		return a.Modules.Environment.GetHighestGainLootbox()
 	} else {
@@ -189,7 +189,7 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 		allocation[id] = val / normConst
 	}
 
-	if a.Modules.AgentParameters.PreferenceForEquality > 0.5 || a.GetAverageTrustOnBike() > 0.5 {
+	if a.Modules.AgentParameters.PlatonicTendency > 0.5 || a.GetAverageTrustOnBike() > 0.5 {
 		// if a fair agent or high trust, simply allocate according to trust in each agent as done above
 		return allocation
 	} else {
