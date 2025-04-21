@@ -77,6 +77,12 @@ func (s *Server) Start() {
 	// maps each agent to another map, containing how many times they have been on a bike with each agent
 	reassocationMap := make(map[uuid.UUID]map[uuid.UUID]int)
 
+	numAgentsDevelopedCohesion := 0 
+	agentMapCopy := make(map[uuid.UUID]objects.IBaseBiker)
+	for agentID, agent := range s.GetAgentMap() {
+		agentMapCopy[agentID] = agent
+	}
+
 	for i := 0; i < s.GetIterations(); i++ {
 		fmt.Printf("Game Loop %d running... \n \n", i+1)
 		s.RunSimLoop(utils.Rounds, gameState, i, reassocationMap)
@@ -85,7 +91,17 @@ func (s *Server) Start() {
 		if len(s.GetAgentMap()) == 0 {
 			break
 		}
+
+		for agentID, agent := range agentMapCopy {
+			if agent.GetDevelopedCohesion() {
+				numAgentsDevelopedCohesion += 1
+				delete(agentMapCopy, agentID)
+			}
+		}
+
+		fmt.Println("Number of agents who are prioritising agent trust over regime trust", numAgentsDevelopedCohesion)
 	}
+
 
 	adjacencyMatrix := createAdjacencyMatrix(reassocationMap)
 

@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"SOMAS2023/internal/common/utils"
 	"math/rand"
 
 	"github.com/google/uuid"
@@ -9,6 +10,7 @@ import (
 type AgentParameters struct {
 	PlatonicTendency float64               // hardwired value between [0, 1] reflecting the agents personality, where a higher value signifies greater preference for equal and fair distribution.
 	TrustNetwork    map[uuid.UUID]float64 		// mapping of uuid -> trust score. trust score ranges from 0 to 1
+	RegimeTrust 	map[utils.Governance]float64 // mapping of trust in the regimes
 }
 
 
@@ -74,6 +76,24 @@ func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue float6
 	ap.TrustNetwork[agentID] = clamp(ap.TrustNetwork[agentID])
 }
 
+// updates: the agents regime trust values
+func (ap *AgentParameters) UpdateRegimeTrustValues(rankOrder []utils.Governance) {
+	for rank, governance := range rankOrder {
+		if _, ok := ap.RegimeTrust[governance]; !ok {
+			// if governance is not in our trust network,i.e. at the start, assign starting value of 0.5
+			ap.RegimeTrust[governance] = 0.5
+		} else {
+			if rank == 0 {
+				ap.RegimeTrust[governance] += 0.05
+				ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
+			} else if rank == 2 {
+				ap.RegimeTrust[governance] -= 0.05
+				ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
+			}
+		}
+	}
+}
+
 // returns: float that is 1 if input > 1, and 0 if input < 0
 func clamp(value float64) float64 {
 	if value > 1.0 {
@@ -90,5 +110,6 @@ func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
 		PlatonicTendency: rand.Float64(),
 		TrustNetwork:    make(map[uuid.UUID]float64),
+		RegimeTrust: 	make(map[utils.Governance]float64),
 	}
 }

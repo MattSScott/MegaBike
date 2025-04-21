@@ -20,6 +20,7 @@ type IBaseBiker interface {
 
 	DecideAction() BikerAction                                   // returns: int reflecting what action the agent has decided to do this iteration, pedal the bike (0) or try to change bikes (1)
 	DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool   // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
+	DecideJoiningOneAgent(agentId uuid.UUID) bool 					// returns: bool if you think this single agent should be accepted
 	DecideChangeBike() uuid.UUID                                 // returns: uuid of the target bike if they want to change, otherwise just return current bike id
 	ProposeDirection() uuid.UUID                                 // returns: lootbox uuid to aim towards (the direction)
 	ProposeDirectionFromSubset(map[uuid.UUID]ILootBox) uuid.UUID // returns: lootbox uuid to aim towards (the direction) from a subset of lootboxes
@@ -28,13 +29,14 @@ type IBaseBiker interface {
 	VoteForKickout() map[uuid.UUID]int                           // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
 	DecideForce(direction uuid.UUID)                             // decides: the force the biker is going to pedal with
 	HandleAgentUnalive(id uuid.UUID)                             // decides: how to handle a dead agent
+	DecideBikePreferenceOrder() []uuid.UUID						// decides: the order of the agents preferred bikes
 
 	// Decision Making (extra representative functions)
 
 	DecideDirection() uuid.UUID
 	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
 
-	// Messaaging (round)
+	// Messaging (round)
 
 	HandleProposedLootboxMessage(msg ProposedLootboxMessage)
 	HandleForcesMessage(msg ForcesMessage)
@@ -69,6 +71,10 @@ type IBaseBiker interface {
 	ResetPoints()                          // resets: agents points to 0
 	SetRoundDirection(direction uuid.UUID)
 	SetRoundForces(forces utils.Forces)
+
+	// experimental
+	UpdateRegimeTrustValues(rankOrder []utils.Governance) // updates the agents regime trust
+	GetDevelopedCohesion() bool
 }
 
 type BaseBiker struct {
@@ -81,7 +87,7 @@ type BaseBiker struct {
 	megaBikeId                       uuid.UUID  // if they are not on a bike it will be 0
 	gameState                        IGameState // updated by the server at every round
 	roundDecisions					 roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
-
+	developedCohesion				 bool			// has this agent started prioritising trust in agents over regime
 }
 
 func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) *BaseBiker {
@@ -92,6 +98,7 @@ func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameStat
 		energyLevel:  1.0,
 		points:       0,
 		gameState:    gameState,
+		developedCohesion: false,
 	}
 }
 
@@ -118,6 +125,9 @@ func (bb *BaseBiker) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool
 	return decision
 }
 
+func (bb *BaseBiker) DecideJoiningOneAgent(agentId uuid.UUID) bool {
+	return true
+}
 func (bb *BaseBiker) DecideChangeBike() uuid.UUID {
 	megaBikes := bb.gameState.GetMegaBikes()
 	i, targetI := 0, rand.Intn(len(megaBikes))
@@ -471,3 +481,23 @@ func (bb *BaseBiker) GetRoundForces() utils.Forces {
 	return bb.roundDecisions.Forces
 }
 
+func (bb *BaseBiker) DecideBikePreferenceOrder() []uuid.UUID {
+
+
+	return []uuid.UUID{uuid.Nil}
+
+}
+
+func (bb *BaseBiker) UpdateRegimeTrustValues(rankOrder []utils.Governance) {
+
+
+
+}
+
+func (bb *BaseBiker) GetDevelopedCohesion() bool {
+	return bb.developedCohesion
+}
+
+func (bb *BaseBiker) SetDevelopedCohesion(answer bool) {
+	bb.developedCohesion = answer
+}

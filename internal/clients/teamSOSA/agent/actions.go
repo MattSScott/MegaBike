@@ -7,6 +7,7 @@ import (
 	"SOMAS2023/internal/common/voting"
 	"math"
 	"math/rand"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -83,6 +84,19 @@ func (a *AgentSOSA) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool 
 	return decision
 }
 
+func (a *AgentSOSA) DecideJoiningOneAgent(agentId uuid.UUID) bool {
+	// same logic as above, basically if we know them, check their id against a threshold to accept, else reject. if not known accept
+	if _, ok := a.Modules.AgentParameters.TrustNetwork[agentId]; ok {
+		if a.Modules.AgentParameters.TrustNetwork[agentId] > modules.AcceptThreshold {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return true
+	}
+}
+
 // returns: uuid of the target bike if they want to change, otherwise just return current bike id 
 func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 	shouldChangeBike := false
@@ -98,6 +112,45 @@ func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 	} else {
 		return a.Modules.Environment.BikeId // maybe change to a.getbike
 	}
+}
+
+func (a *AgentSOSA) DecideBikePreferenceOrder() []uuid.UUID {
+
+	megabikes := a.GetGameState().GetMegaBikes()
+	bikePreferenceScores := make(map[uuid.UUID]float64)
+
+	for bikeId, bike := range megabikes {
+		// Calculate the average trust first
+		sum := 0.0
+		for _, agent := range bike.GetAgents() {
+			sum += a.GetTrustOfAgent(agent)
+		}
+		bikeAverageTrust := sum / float64(len(bike.GetAgents()))
+
+		// Next get the regimeTrust
+		regimeTrust := a.Modules.AgentParameters.RegimeTrust[bike.GetGovernance()]
+
+		// put this bikes score into the map 
+		bikePreferenceScores[bikeId] = 0.5*bikeAverageTrust + 0.5*float64(regimeTrust)
+
+		if bikeAverageTrust > regimeTrust {
+			a.SetDevelopedCohesion(true)
+		}
+	}
+
+	// Create a slice of bike uuids
+	var bikePreferenceOrder []uuid.UUID
+	for id := range bikePreferenceScores {
+		bikePreferenceOrder = append(bikePreferenceOrder, id)
+	}
+
+	// Sort the bike UUIDs by their score in descending order
+	sort.Slice(bikePreferenceOrder, func(i, j int) bool {
+		return bikePreferenceScores[bikePreferenceOrder[i]] > bikePreferenceScores[bikePreferenceOrder[j]]
+	})
+
+	return bikePreferenceOrder
+
 }
 
 // ----- Decisions (Round level) -----

@@ -13,7 +13,7 @@ import (
 
 // Direction Decision 
 
-func TestRunRepresentativeDirectionDecision(t *testing.T) {
+func TestRunOneDirectionDecision(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
@@ -23,7 +23,7 @@ func TestRunRepresentativeDirectionDecision(t *testing.T) {
 		governance := bike.GetGovernance()
 		if governance == utils.Some || governance == utils.One {
 			s.PerformRoleAssignment(bike)
-			lootbox := s.RunRepresentativeDirectionDecision(bike)
+			lootbox := s.RunOneDirectionDecision(bike)
 			fmt.Printf("\n bike targetting lootbox with id %v", lootbox)
 			if lootbox == uuid.Nil {
 				t.Error("targetting nil lootbox")

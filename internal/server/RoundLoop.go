@@ -7,6 +7,7 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
 )
@@ -54,21 +55,8 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	iterationDump.AddRoundToIteration(roundDump)
 
 	// handle the case where reps die
-	for _, bike := range s.GetMegaBikes() {
-		agents := bike.GetAgents()
 
-		if len(agents) != 0 {
-			reps := bike.GetRepresentatives()
-
-			// iterate over reps, and if theyre dead then replace them.
-			for deadRepIdx, repID := range reps {
-				if _, ok := s.deadAgents[repID]; ok {
-					s.HandleDepartingRepresentative(bike, deadRepIdx)
-				}
-			}
-
-		}
-	}
+	s.HandleDeadRepresentatives()
 
 	// Replenish and reset
 	if utils.ReplenishLootBoxes {
@@ -83,7 +71,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 
 	// Allow agents to gossip
 	s.RunAgentMessagingSession(false)
-
+	
 }
 
 func (s *Server) runActionDeliberation(action objects.Action) {
@@ -171,7 +159,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 	for _, megabike := range s.GetMegaBikes() {
 		for lootid, lootbox := range s.GetLootBoxes() {
 			if megabike.CheckForCollision(lootbox) {
-				megabike.UpdateCurrentPool(lootbox.GetTotalResources()) // NOTE: seems wrong. can't quite figure out what the current pool is supposed to be for?
+				megabike.UpdateCurrentPool(lootbox.GetTotalResources()) 
 				if value, ok := looted[lootid]; ok {
 					looted[lootid] = value + 1
 				} else {
@@ -316,6 +304,48 @@ func (s *Server) unaliveAgents() {
 		if agent.GetEnergyLevel() <= 0 {
 			fmt.Printf("Agent %s ran out of energy \n", utils.TranslateToName(agent.GetID()))
 			s.RemoveAgent(agent)
+		}
+	}
+}
+
+// remove and replace any dead representatives
+func (s *Server) HandleDeadRepresentatives() {
+
+	for _, bike := range s.GetMegaBikes() {
+		agents := bike.GetAgents()
+
+		if bike.GetGovernance() == utils.Many {
+			continue
+		}
+
+		if len(agents) != 0 {
+			reps := bike.GetRepresentatives()
+			var survivingReps []uuid.UUID
+
+			for _, repID := range reps {
+				if _, ok := s.deadAgents[repID]; ok {
+					continue
+				} else {
+					survivingReps = append(survivingReps, repID)
+				}
+			}
+
+			var expectedNumReps int
+			if bike.GetGovernance() == utils.One {
+				expectedNumReps = 1
+			} else if bike.GetGovernance() == utils.Some {
+				expectedNumReps = 3
+			}
+
+			agentsOnBike := bike.GetAgents()
+			for _, agent := range agentsOnBike {
+				if !slices.Contains(survivingReps, agent.GetID()) && len(survivingReps) < expectedNumReps {
+					survivingReps = append(survivingReps, agent.GetID())
+					fmt.Println("Adding agent", utils.TranslateToName(agent.GetID()), "to reps slice")
+				}
+			}
+			bike.SetRepresentatives(survivingReps)
+
 		}
 	}
 }

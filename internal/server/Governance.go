@@ -4,10 +4,12 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
+	// "fmt"
+
+	"math/rand"
+	// "slices"
 
 	"github.com/google/uuid"
-	"math/rand"
-	"slices"
 )
 
 // returns: slice of uuids of initially selected representatives
@@ -62,10 +64,13 @@ func (s *Server) RunSomeDirectionDecision(bike objects.IMegaBike) uuid.UUID {
 	reps := bike.GetRepresentatives()
 	var direction uuid.UUID
 
-	suggestedDirections := make([]uuid.UUID, 0, len(reps))
+	var suggestedDirections []uuid.UUID
 	countsPerDirection := make(map[uuid.UUID]int)
 
 	// create a slice of their suggested directions
+	// fmt.Println("deciding direction...")
+	// fmt.Println("number of agents on some bike is", len(bike.GetAgents()))
+	// fmt.Println("size of reps slice is", len(reps))
 	for _, repID := range reps {
 		decidedDirection := agents[repID].DecideDirection()
 		suggestedDirections = append(suggestedDirections, decidedDirection)
@@ -156,33 +161,66 @@ func (s *Server) RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUI
 	}
 }
 
-// handles: when a representative leaves / dies / exits a bike. replace rep if possible, otherwise we just remove them
+// LEGACY handles: when a representative leaves / dies / exits a bike. replace rep if possible, otherwise we just remove them
 func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int) {
 
-	gov := bike.GetGovernance()
+	// fmt.Println("Dead rep found on bike", bike.GetGovernance(), " which has", len(bike.GetAgents()), "Attempting replacement")
+	// reps := bike.GetRepresentatives()
 
-	// first attempt to replace them
-	if ((gov == utils.Some) && len(bike.GetAgents()) >= 3) || (gov == utils.One && len(bike.GetAgents()) >= 1) {
+	// repString := ""
+	// for _, repID := range reps {
+	// 	repString += utils.TranslateToName(repID) + " "
+	// }
 
-		reps := bike.GetRepresentatives()
-		agentsOnBike := bike.GetAgents()
+	// fmt.Println("Reps before removing dead one:", repString)
+	// reps = slices.Delete(reps, repIdxToReplace, repIdxToReplace+1)
 
-		// randomly choose an agent to be a rep. if agent is already rep, choose another one.
-		replacementRepID := agentsOnBike[rand.Intn(len(agentsOnBike))].GetID()
-		for slices.Contains(reps, replacementRepID) {
-			replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
-		}
+	// repStringAfter := ""
+	// for _, repID := range reps {
+	// 	repStringAfter += utils.TranslateToName(repID) + " "
+	// }
+	// fmt.Println("Reps after removing dead one:", repStringAfter)
 
-		// replace the old rep with a new rep
-		reps[repIdxToReplace] = replacementRepID
-		bike.SetRepresentatives(reps)
-	} else {
-		// otherwise we just remove them from the rep list
-		reps := bike.GetRepresentatives()
-		reps = slices.Delete(reps, repIdxToReplace, repIdxToReplace+1)
-		bike.SetRepresentatives(reps)
+	// if there is at least 1 non-rep agent left (i.e. an eligible replacement), append them to the slice
+	// agentsOnBike := bike.GetAgents()
+	// for _, agent := range agentsOnBike {
+	// 	if !slices.Contains(reps, agent.GetID()) && len(reps) < 3 {
+	// 		reps = append(reps, agent.GetID())
+	// 		fmt.Println("Adding agent", utils.TranslateToName(agent.GetID()), "to reps slice")
+	// 		break // only append one eligible replacement
+	// 	}
+	// }
+	// bike.SetRepresentatives(reps)
+	
+	
 
-	}
+
+
+	// gov := bike.GetGovernance()
+
+	// // first attempt to replace them
+	// if ((gov == utils.Some) && len(bike.GetAgents()) >= 3) || (gov == utils.One && len(bike.GetAgents()) >= 1) {
+
+	// 	reps := bike.GetRepresentatives()
+	// 	agentsOnBike := bike.GetAgents()
+
+	// 	// randomly choose an agent to be a rep. if agent is already rep, choose another one.
+	// 	replacementRepID := agentsOnBike[rand.Intn(len(agentsOnBike))].GetID()
+	// 	for slices.Contains(reps, replacementRepID) {
+	// 		replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
+	// 	}
+
+	// 	// replace the old rep with a new rep
+	// 	reps[repIdxToReplace] = replacementRepID
+	// 	bike.SetRepresentatives(reps)
+
+	// } else {
+	// 	// otherwise we just remove them from the rep list
+	// 	reps := bike.GetRepresentatives()
+	// 	reps = slices.Delete(reps, repIdxToReplace, repIdxToReplace+1)
+	// 	bike.SetRepresentatives(reps)
+
+	// }
 }
 
 // returns: reduced map of uuid->lootbox based on the rules of the given megabike
