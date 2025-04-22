@@ -20,12 +20,22 @@ type ForcesMessage struct {
 	AgentForces utils.Forces // the forces
 }
 
+// "I did or did not conform to the group chosen direction this round"
+type ConformMessage struct {
+	messaging.BaseMessage[IBaseBiker]
+	DidConform bool// whether you conformed or not
+}
+
 func (msg ProposedLootboxMessage) InvokeMessageHandler(agent IBaseBiker) {
 	agent.HandleProposedLootboxMessage(msg)
 }
 
 func (msg ForcesMessage) InvokeMessageHandler(agent IBaseBiker) {
 	agent.HandleForcesMessage(msg)
+}
+
+func (msg ConformMessage) InvokeMessageHandler(agent IBaseBiker) {
+	agent.HandleConformMessage(msg)
 }
 
 // ----- Iteration (plus InvokeHandlers) -----

@@ -30,8 +30,16 @@ func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	} else if msg.AgentForces.Pedal > 0.8 {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
 	}
+}
 
-	
+func (a *AgentSOSA) HandleConformMessage(msg obj.ConformMessage) {
+	sender := msg.GetSender()
+
+	if msg.DidConform {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
+	} else {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
+	}
 }
 
 // done
@@ -41,8 +49,9 @@ func (a *AgentSOSA) GetAllRoundMessages([]obj.IBaseBiker) []messaging.IMessage[o
 	if a.GetBikeStatus() {
 		proposedLootboxMessage := a.CreateProposedLootboxMessage()
 		forcesMsg := a.CreateForcesMessage()
+		conformMsg := a.CreateConformMessage()
 
-		return []messaging.IMessage[obj.IBaseBiker]{forcesMsg, proposedLootboxMessage}
+		return []messaging.IMessage[obj.IBaseBiker]{forcesMsg, proposedLootboxMessage, conformMsg}
 	} else{
 		return []messaging.IMessage[obj.IBaseBiker]{}
 	}
@@ -63,6 +72,14 @@ func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 	return obj.ForcesMessage{
 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
 		AgentForces: a.GetRoundForces(),
+	}
+}
+
+func (a *AgentSOSA) CreateConformMessage() obj.ConformMessage {
+	// tell our fellow bikers whether we conformed this round
+	return obj.ConformMessage{
+		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
+		DidConform: a.GetRoundDidConform(),
 	}
 }
 

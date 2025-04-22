@@ -183,7 +183,7 @@ func (a *AgentSOSA) DecideDirection() uuid.UUID {
 	}
 }
 
-// decides the force the biker is going to pedal with (untouched)
+// decides the force the biker is going to pedal with
 func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 	if direction == uuid.Nil {
 		return
@@ -201,13 +201,16 @@ func (a *AgentSOSA) DecideForce(direction uuid.UUID) {
 		a.SetForces(force)
 		return
 	}
-	// Use the average trust to decide whether to pedal in the chosen direction or not
-	probabilityOfConformity := a.GetAverageTrustOnBike()
+	// Use the platonic tendency to decide whether to pedal in the chosen direction or not
+	probabilityOfConformity := a.Modules.AgentParameters.PlatonicTendency
 	randomNumber := rand.Float64()
 	agentPosition := a.GetLocation()
 	lootboxID := direction
+	a.SetRoundDidConform(true)
 	if randomNumber > probabilityOfConformity {
 		lootboxID = a.Modules.Environment.GetHighestGainLootbox()
+		a.SetRoundDidConform(false)
+		
 	}
 	lootboxPosition := a.Modules.Environment.GetLootboxPos(lootboxID)
 	force := a.Modules.Utils.GetForcesToTargetWithDirectionOffset(utils.BikerMaxForce, -a.Modules.Environment.GetBikeOrientation(), agentPosition, lootboxPosition)

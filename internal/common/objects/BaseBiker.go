@@ -36,10 +36,11 @@ type IBaseBiker interface {
 	DecideDirection() uuid.UUID
 	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
 
-	// Messaging (round)
+	// Messaging 
 
 	HandleProposedLootboxMessage(msg ProposedLootboxMessage)
 	HandleForcesMessage(msg ForcesMessage)
+	HandleConformMessage(msg ConformMessage)
 	GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
 	HandleKickoutMessage(msg KickoutAgentMessage)
@@ -60,6 +61,7 @@ type IBaseBiker interface {
 	GetFellowBikers() []IBaseBiker  // returns: slice containing the bikers on our bike.
 	GetRoundDirection() uuid.UUID
 	GetRoundForces() utils.Forces
+	GetRoundDidConform() bool 
 
 	// Setters
 
@@ -71,6 +73,7 @@ type IBaseBiker interface {
 	ResetPoints()                          // resets: agents points to 0
 	SetRoundDirection(direction uuid.UUID)
 	SetRoundForces(forces utils.Forces)
+	SetRoundDidConform(didConform bool)
 
 	// experimental
 	UpdateRegimeTrustValues(rankOrder []utils.Governance) // updates the agents regime trust
@@ -283,12 +286,17 @@ func (bb *BaseBiker) HandleForcesMessage(msg ForcesMessage) {
 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 }
 
+func (bb *BaseBiker) HandleConformMessage(msg ConformMessage) {
+	// Team's agent should implement logic for handling other biker messages that were sent to them.
+}
+
 func (bb *BaseBiker) GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
 	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
 	proposedLootboxMessage := bb.CreateProposedLootboxMessage()
 	forcesMsg := bb.CreateForcesMessage()
+	conformMsg := bb.CreateConformMessage()
 	
-	return []messaging.IMessage[IBaseBiker]{forcesMsg, proposedLootboxMessage}
+	return []messaging.IMessage[IBaseBiker]{forcesMsg, proposedLootboxMessage,conformMsg}
 }
 
 func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
@@ -313,6 +321,15 @@ func (bb *BaseBiker) CreateForcesMessage() ForcesMessage {
 				SteeringForce: 0.0,
 			},
 		},
+	}
+}
+
+func (bb *BaseBiker) CreateConformMessage() ConformMessage {
+	// Currently this returns a default/meaningless message
+	// For team's agent, add your own logic to communicate with other agents
+	return ConformMessage{
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		DidConform:     false,
 	}
 }
 
@@ -463,6 +480,7 @@ func (bb *BaseBiker) GetGameState() IGameState {
 type roundDecisions struct {
 	Direction uuid.UUID
 	Forces utils.Forces
+	didConform bool
 }
 
 func (bb *BaseBiker) SetRoundDirection(direction uuid.UUID) {
@@ -473,6 +491,10 @@ func (bb *BaseBiker) SetRoundForces(forces utils.Forces) {
 	bb.roundDecisions.Forces = forces
 }
 
+func (bb *BaseBiker) SetRoundDidConform(didConform bool) {
+	bb.roundDecisions.didConform = didConform
+}
+
 func (bb *BaseBiker) GetRoundDirection() uuid.UUID {
 	return bb.roundDecisions.Direction
 }
@@ -480,6 +502,13 @@ func (bb *BaseBiker) GetRoundDirection() uuid.UUID {
 func (bb *BaseBiker) GetRoundForces() utils.Forces {
 	return bb.roundDecisions.Forces
 }
+
+func (bb *BaseBiker) GetRoundDidConform() bool {
+	return bb.roundDecisions.didConform
+}
+
+
+
 
 func (bb *BaseBiker) DecideBikePreferenceOrder() []uuid.UUID {
 
