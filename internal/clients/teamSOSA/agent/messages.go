@@ -4,7 +4,7 @@ import (
 	obj "SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/clients/teamSOSA/modules"
 	"slices"
-
+	"fmt"
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
 )
 
@@ -17,7 +17,10 @@ func (a *AgentSOSA) HandleProposedLootboxMessage(msg obj.ProposedLootboxMessage)
 	// if they proposed the same lootbox as us during this round, give them a boost in trust
 	if msg.Lootbox == a.GetRoundDirection() {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
+		// fmt.Println("boosting agent trust who proposed same lootbox")
 	}
+
+
 	
 }
 
@@ -27,8 +30,10 @@ func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	sender := msg.GetSender()
 	if msg.AgentForces.Pedal < 0.2 {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
+		fmt.Println("reducing agent trust who proposed pedalled low")
 	} else if msg.AgentForces.Pedal > 0.8 {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
+		fmt.Println("promoting agent who proposed pedalled high")
 	}
 }
 
@@ -37,8 +42,10 @@ func (a *AgentSOSA) HandleConformMessage(msg obj.ConformMessage) {
 
 	if msg.DidConform {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
+		// fmt.Println("boosting agent who conformed")
 	} else {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
+		// fmt.Println("demoting agent who did not conform")
 	}
 }
 

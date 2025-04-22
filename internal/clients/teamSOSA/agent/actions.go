@@ -114,43 +114,42 @@ func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 	}
 }
 
-func (a *AgentSOSA) DecideBikePreferenceOrder() []uuid.UUID {
-
+func (a *AgentSOSA) DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool) {
 	megabikes := a.GetGameState().GetMegaBikes()
 	bikePreferenceScores := make(map[uuid.UUID]float64)
+	bikeTrustHigherThanRegime := make(map[uuid.UUID]bool)
 
 	for bikeId, bike := range megabikes {
-		// Calculate the average trust first
+		// Calculate the average trust for this bike
 		sum := 0.0
 		for _, agent := range bike.GetAgents() {
-			sum += a.GetTrustOfAgent(agent)
+			sum += a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
 		}
 		bikeAverageTrust := sum / float64(len(bike.GetAgents()))
 
-		// Next get the regimeTrust
+		// Regime trust
 		regimeTrust := a.Modules.AgentParameters.RegimeTrust[bike.GetGovernance()]
 
-		// put this bikes score into the map 
-		bikePreferenceScores[bikeId] = 0.5*bikeAverageTrust + 0.5*float64(regimeTrust)
+		// Score the bike (weighted average)
+		score := 0.5*bikeAverageTrust + 0.5*regimeTrust
+		bikePreferenceScores[bikeId] = score
 
-		if bikeAverageTrust > regimeTrust {
-			a.SetDevelopedCohesion(true)
-		}
+		// Save the trust comparison flag
+		bikeTrustHigherThanRegime[bikeId] = bikeAverageTrust > regimeTrust
 	}
 
-	// Create a slice of bike uuids
+	// Build slice of bike IDs to sort
 	var bikePreferenceOrder []uuid.UUID
 	for id := range bikePreferenceScores {
 		bikePreferenceOrder = append(bikePreferenceOrder, id)
 	}
 
-	// Sort the bike UUIDs by their score in descending order
+	// Sort by descending preference score
 	sort.Slice(bikePreferenceOrder, func(i, j int) bool {
 		return bikePreferenceScores[bikePreferenceOrder[i]] > bikePreferenceScores[bikePreferenceOrder[j]]
 	})
 
-	return bikePreferenceOrder
-
+	return bikePreferenceOrder, bikeTrustHigherThanRegime
 }
 
 // ----- Decisions (Round level) -----

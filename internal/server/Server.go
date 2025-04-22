@@ -47,6 +47,7 @@ type Server struct {
 	awdi            objects.IAwdi
 	deadAgents      map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
 	globalRuleCache *objects.GlobalRuleCache
+	joiningBasedOnTrust int				// recording how many joining decisions prioritised agent trust over regime trust
 }
 
 func GenerateServer() IBaseBikerServer {
@@ -77,12 +78,6 @@ func (s *Server) Start() {
 	// maps each agent to another map, containing how many times they have been on a bike with each agent
 	reassocationMap := make(map[uuid.UUID]map[uuid.UUID]int)
 
-	numAgentsDevelopedCohesion := 0 
-	agentMapCopy := make(map[uuid.UUID]objects.IBaseBiker)
-	for agentID, agent := range s.GetAgentMap() {
-		agentMapCopy[agentID] = agent
-	}
-
 	for i := 0; i < s.GetIterations(); i++ {
 		fmt.Printf("Game Loop %d running... \n \n", i+1)
 		s.RunSimLoop(utils.Rounds, gameState, i, reassocationMap)
@@ -92,14 +87,8 @@ func (s *Server) Start() {
 			break
 		}
 
-		for agentID, agent := range agentMapCopy {
-			if agent.GetDevelopedCohesion() {
-				numAgentsDevelopedCohesion += 1
-				delete(agentMapCopy, agentID)
-			}
-		}
+		fmt.Println("number of decisions made based on trust so far = ", s.joiningBasedOnTrust)
 
-		fmt.Println("Number of agents who are prioritising agent trust over regime trust", numAgentsDevelopedCohesion)
 	}
 
 

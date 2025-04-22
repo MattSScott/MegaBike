@@ -29,7 +29,7 @@ type IBaseBiker interface {
 	VoteForKickout() map[uuid.UUID]int                           // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
 	DecideForce(direction uuid.UUID)                             // decides: the force the biker is going to pedal with
 	HandleAgentUnalive(id uuid.UUID)                             // decides: how to handle a dead agent
-	DecideBikePreferenceOrder() []uuid.UUID						// decides: the order of the agents preferred bikes
+	DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool)					// decides: the order of the agents preferred bikes
 
 	// Decision Making (extra representative functions)
 
@@ -77,7 +77,6 @@ type IBaseBiker interface {
 
 	// experimental
 	UpdateRegimeTrustValues(rankOrder []utils.Governance) // updates the agents regime trust
-	GetDevelopedCohesion() bool
 }
 
 type BaseBiker struct {
@@ -90,7 +89,6 @@ type BaseBiker struct {
 	megaBikeId                       uuid.UUID  // if they are not on a bike it will be 0
 	gameState                        IGameState // updated by the server at every round
 	roundDecisions					 roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
-	developedCohesion				 bool			// has this agent started prioritising trust in agents over regime
 }
 
 func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) *BaseBiker {
@@ -101,7 +99,6 @@ func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameStat
 		energyLevel:  1.0,
 		points:       0,
 		gameState:    gameState,
-		developedCohesion: false,
 	}
 }
 
@@ -510,10 +507,10 @@ func (bb *BaseBiker) GetRoundDidConform() bool {
 
 
 
-func (bb *BaseBiker) DecideBikePreferenceOrder() []uuid.UUID {
+func (bb *BaseBiker) DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool) {
 
 
-	return []uuid.UUID{uuid.Nil}
+	return []uuid.UUID{uuid.Nil}, make(map[uuid.UUID]bool)
 
 }
 
@@ -523,10 +520,10 @@ func (bb *BaseBiker) UpdateRegimeTrustValues(rankOrder []utils.Governance) {
 
 }
 
-func (bb *BaseBiker) GetDevelopedCohesion() bool {
-	return bb.developedCohesion
-}
+// func (bb *BaseBiker) GetDevelopedCohesion() bool {
+// 	return bb.developedCohesion
+// }
 
-func (bb *BaseBiker) SetDevelopedCohesion(answer bool) {
-	bb.developedCohesion = answer
-}
+// func (bb *BaseBiker) SetDevelopedCohesion(answer bool) {
+// 	bb.developedCohesion = answer
+// }

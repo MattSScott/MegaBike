@@ -2,7 +2,7 @@ package modules
 
 import (
 	"SOMAS2023/internal/common/utils"
-	"math/rand"
+	// "math/rand"
 
 	"github.com/google/uuid"
 )
@@ -84,10 +84,10 @@ func (ap *AgentParameters) UpdateRegimeTrustValues(rankOrder []utils.Governance)
 			ap.RegimeTrust[governance] = 0.5
 		} else {
 			if rank == 0 {
-				ap.RegimeTrust[governance] += 0.05
+				ap.RegimeTrust[governance] += 0.1
 				ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
 			} else if rank == 2 {
-				ap.RegimeTrust[governance] -= 0.05
+				ap.RegimeTrust[governance] -= 0.1
 				ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
 			}
 		}
@@ -108,7 +108,7 @@ func clamp(value float64) float64 {
 
 func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
-		PlatonicTendency: rand.Float64(),
+		PlatonicTendency: 0.1,
 		TrustNetwork:    make(map[uuid.UUID]float64),
 		RegimeTrust: 	make(map[utils.Governance]float64),
 	}

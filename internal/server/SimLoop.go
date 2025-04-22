@@ -1,12 +1,13 @@
 package server
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
+	"math/rand"
 	"slices"
-	"math/rand"	
 	"sort"
 
 	"github.com/google/uuid"
@@ -15,10 +16,10 @@ import (
 // the simulation loop (i.e. an iteration) represents 100 rounds
 func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int, reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
 
-	// record total resources that the bike has got so far
-	initialCurrentPoolPerRegime := make(map[utils.Governance]float64)
+	// record each regimes total collected resources up until this point
+	currentPoolPerRegimeStart := make(map[utils.Governance]float64)
 	for _, bike := range s.GetMegaBikes() {
-		initialCurrentPoolPerRegime[bike.GetGovernance()] = bike.GetCurrentPool()
+		currentPoolPerRegimeStart[bike.GetGovernance()] += bike.GetCurrentPool()
 	}
 
 	// ----- 0. Gossip Phase -----
@@ -84,11 +85,21 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 		bike.ResetKickedOutCount()
 	}
 
-	// experimental
+	// ----- Let agents adjust their regime trust values -----
 
-	resourcesGainedPerRegime := make(map[utils.Governance]float64)
+	// record each regimes total collected resources at the end of the regime
+	currentPoolPerRegimeEnd := make(map[utils.Governance]float64)
 	for _, bike := range s.GetMegaBikes() {
-		resourcesGainedPerRegime[bike.GetGovernance()] = bike.GetCurrentPool() - initialCurrentPoolPerRegime[bike.GetGovernance()]
+		currentPoolPerRegimeEnd[bike.GetGovernance()] += bike.GetCurrentPool()
+	}
+
+	// calculated the amount of resources each regime has collected this iteration
+	// by doing total resources at end of iteration  - total resources at start of iteration
+	resourcesGainedPerRegime := make(map[utils.Governance]float64)
+
+	for regime, end := range currentPoolPerRegimeEnd {
+		start := currentPoolPerRegimeStart[regime]
+		resourcesGainedPerRegime[regime] = end - start
 	}
 
 	var regimeRankThisIteration []utils.Governance
@@ -109,7 +120,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 
 }
 
-// OLD SELF SELECTION PHASE
+// ----- OLD SELF SELECTION PHASE AND ROLE ASSIGNMENT -----
 
 // handles bikers voluntarily leaving the bike / getting kicked out, followed by the requesting to join and acceptance process
 func (s *Server) RunBikeSwitch() {
@@ -400,11 +411,37 @@ func (s *Server) SetDestinationBikes() {
 	}
 }
 
-// NEW SELF SELECTION PHASE - 'queueing' 
+// assign representatives (old)
+func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
+	governanceSystem := bike.GetGovernance()
+	// if governance system is one or some, we need representatives.
+	if governanceSystem == utils.One || governanceSystem == utils.Some {
+		// run selection process
+		agentsOnBike := bike.GetAgents()
+		reps := s.RepresentativeSelection(agentsOnBike, governanceSystem)
+		bike.SetRepresentatives(reps)
+	}
+}
+
+
+
+// ----- NEW SELF SELECTION PHASE QUEUEING SYSTEM -----
+
+// runs the voluntary association process
 func (s *Server) RunVoluntaryReassociation() {
 
 	// Step 1: Take all agents off their bikes if they are on one
+	s.RemoveAllAgentsFromBikes()
 
+	// Step 2: Randomly assign reps
+	queuedAgents := s.RandomlyAssignRepresentatives()
+
+	// Step 3: Go through the queued agents, asking them their top bike, then prompting that bike to make an acceptance decision.
+	s.ProcessAgentQueue(queuedAgents)
+}
+
+// removes all agents from their bikes
+func (s *Server) RemoveAllAgentsFromBikes() {
 	for id, agent := range s.GetAgentMap() {
 		if bikeId, ok := s.megaBikeRiders[id]; ok {
 			// remove agent from bike
@@ -415,9 +452,11 @@ func (s *Server) RunVoluntaryReassociation() {
 			agent.ToggleOnBike()
 		}
 	}
+}
 
-	// Step 2: Randomly assign reps
-	
+// goes through the agents and fills the one/some bikes with as many representatives as possible. returns the agents left in the queue
+func (s *Server) RandomlyAssignRepresentatives() map[uuid.UUID]objects.IBaseBiker {
+
 	agentMap := s.GetAgentMap()
 	
 	// Collect all agent IDs
@@ -431,58 +470,95 @@ func (s *Server) RunVoluntaryReassociation() {
 		ids[i], ids[j] = ids[j], ids[i]
 	})
 
-	// Select the first <=4 as representatives
-	numReps := 4
-	if len(ids) < numReps {
-		numReps = len(ids) // fallback for small agent pools
-	}
 
-	var chosenReps []uuid.UUID
-	for i := 0; i < numReps; i++ {
-		chosenReps = append(chosenReps, ids[i])
-	}
-
-	// First agent id after shuffle is the one rep, next 1-3 are some reps.
+	repPointer := 0
+	
+	// Stratify bikes by regime
+	var oneBikes, someBikes []objects.IMegaBike
 	for _, bike := range s.GetMegaBikes() {
-		if bike.GetGovernance() == utils.Many {
-			continue
-		} else if bike.GetGovernance() == utils.Some {
-			chosenReps := chosenReps[1:numReps]
-			for _, repID := range chosenReps {
-				s.AddAgentToBike(s.GetAgentMap()[repID], bike)
-			}
-			bike.SetRepresentatives(chosenReps)
-		} else if bike.GetGovernance() == utils.One {
-			s.AddAgentToBike(s.GetAgentMap()[chosenReps[0]], bike)
-			bike.SetRepresentatives([]uuid.UUID{chosenReps[0]})
+		switch bike.GetGovernance() {
+		case utils.One:
+			oneBikes = append(oneBikes, bike)
+		case utils.Some:
+			someBikes = append(someBikes, bike)
 		}
 	}
 
-	// make a reduced version of the agentmap containing the rest of the agents
+	// For all "one" bikes, try to assign a representative
+	for _, bike := range oneBikes {
+		if repPointer >= len(ids) {
+			break // No more agents left
+		}
+		repID := ids[repPointer]
+		repPointer++
+	
+		agent := agentMap[repID]
+		s.AddAgentToBike(agent, bike)
+		bike.SetRepresentatives([]uuid.UUID{repID})
+	}
+
+	// For all "some" bikes, assign up to 3 representatives
+	for _, bike := range someBikes {
+		remaining := len(ids) - repPointer
+		if remaining <= 0 {
+			break // No more agents left
+		}
+
+		numReps := 3
+		if remaining < 3 {
+			numReps = remaining // Use whatever is left
+		}
+
+		repIDs := ids[repPointer : repPointer+numReps]
+		repPointer += numReps
+
+		for _, id := range repIDs {
+			s.AddAgentToBike(agentMap[id], bike)
+		}
+		bike.SetRepresentatives(repIDs)
+	}
+
+
+	// make a reduced version of the agentmap containing the rest of the agents that havent been chosen as reps
 	queuedAgents := make(map[uuid.UUID]objects.IBaseBiker)
+
+	// map of agentId->(are they a rep, yes/no)
+	assignedReps := make(map[uuid.UUID]bool)
+	for _, id := range ids[:repPointer] {
+		assignedReps[id] = true
+	}
+
+	// add all the non-rep agents to the queue.
 	for agentID, agent := range agentMap {
-		if slices.Contains(chosenReps, agentID) {
+		if assignedReps[agentID] {
 			continue
 		} else {
 			queuedAgents[agentID] = agent
 		}
 	}
 
-	// Step 3: Go through the queued agents, asking them their top bike, then prompting that bike to make an acceptance decision.
-	for i := 0; i < 3; i++ {
+	return queuedAgents
+}
+
+// takes the queued agents and lets them apply to bikes to be accepted / rejected
+func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker) {
+
+	// start off with i = 0, i.e. they choose the bike at the top of their preference order. 
+	// each time we cycle through the queue, try the next bike down in their preference order (e.g. i=1, i=2, ...) etc
+	for i := 0; i < globals.MegaBikeCount; i++ {
+		// go through the agents in the queue
 		for agentNextInLineId, agentNextInLine := range queuedAgents {
 			var accepted bool
-			bikePreferenceOrder := agentNextInLine.DecideBikePreferenceOrder()
-			topBike := s.GetMegaBikes()[bikePreferenceOrder[i]]
-
-			gov := topBike.GetGovernance()
+			bikePreferenceOrder, bikeTrustHigherThanRegimeTrustMap := agentNextInLine.DecideBikePreferenceOrder()
+			nextHighestBike := s.GetMegaBikes()[bikePreferenceOrder[i]]
+			gov := nextHighestBike.GetGovernance()
 			switch gov {
 			case utils.Many: 
-				if len(topBike.GetAgents()) == 0 {
-					s.AddAgentToBike(agentNextInLine, topBike)
+				if len(nextHighestBike.GetAgents()) == 0 {
+					s.AddAgentToBike(agentNextInLine, nextHighestBike)
 				} else {
 					var decisions []bool
-					for _, agent := range topBike.GetAgents() {
+					for _, agent := range nextHighestBike.GetAgents() {
 						decisions = append(decisions, agent.DecideJoiningOneAgent(agentNextInLineId))
 					}
 					acceptedCount := 0
@@ -500,7 +576,7 @@ func (s *Server) RunVoluntaryReassociation() {
 			case utils.Some:
 
 				var decisions []bool
-				for _, repId := range topBike.GetRepresentatives() {
+				for _, repId := range nextHighestBike.GetRepresentatives() {
 					decisions = append(decisions, s.GetAgentMap()[repId].DecideJoiningOneAgent(agentNextInLineId))
 				}
 				acceptedCount := 0
@@ -516,34 +592,30 @@ func (s *Server) RunVoluntaryReassociation() {
 				}
 			
 			case utils.One:
-				one := s.GetAgentMap()[topBike.GetRepresentatives()[0]]
+				one := s.GetAgentMap()[nextHighestBike.GetRepresentatives()[0]]
 				accepted = one.DecideJoiningOneAgent(agentNextInLineId)
 			}
 
-			// put them on the bike if they're accepted and there is space
-			totalSeatsFilled := len(topBike.GetAgents())
+
+			totalSeatsFilled := len(nextHighestBike.GetAgents())
 			emptySpaces := utils.BikersOnBike - totalSeatsFilled
-		
+			
+			// if we can assign them (i.e. they are accepted and there is space left), add them to the bike and remove them from the queue
 			if accepted && emptySpaces > 0 {
-				s.AddAgentToBike(agentNextInLine, topBike)
+				s.AddAgentToBike(agentNextInLine, nextHighestBike)
 				delete(queuedAgents, agentNextInLineId)
+
+				// if they had bikeavgtrust > regime trust for the bike they are joining, incremement the joiningbasedontrust count
+				if bikeTrustHigherThanRegimeTrustMap[nextHighestBike.GetID()] {
+					s.joiningBasedOnTrust += 1
+				}
 			}
 		}
 	}
-
 }
 
-// assign representatives
-func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
-	governanceSystem := bike.GetGovernance()
-	// if governance system is one or some, we need representatives.
-	if governanceSystem == utils.One || governanceSystem == utils.Some {
-		// run selection process
-		agentsOnBike := bike.GetAgents()
-		reps := s.RepresentativeSelection(agentsOnBike, governanceSystem)
-		bike.SetRepresentatives(reps)
-	}
-}
+
+
 
 // respawn agents, reset and replenish game objects conditionally
 func (s *Server) ResetGameState() {
