@@ -1,6 +1,7 @@
 package utils
 
 import "math"
+import "github.com/google/uuid"
 
 type Colour int
 
@@ -91,3 +92,9 @@ const (
 	Many
 	Invalid
 )
+
+type BikePreferenceData struct {
+	BikeId uuid.UUID
+	Score float64
+	BikeTrustHigherThanRegimeTrust bool
+}

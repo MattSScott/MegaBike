@@ -549,53 +549,17 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 		// go through the agents in the queue
 		for agentNextInLineId, agentNextInLine := range queuedAgents {
 			var accepted bool
-			bikePreferenceOrder, bikeTrustHigherThanRegimeTrustMap := agentNextInLine.DecideBikePreferenceOrder()
-			nextHighestBike := s.GetMegaBikes()[bikePreferenceOrder[i]]
+			bikePreferenceOrder := agentNextInLine.DecideBikePreferenceOrder()
+			nextHighestBike := s.GetMegaBikes()[bikePreferenceOrder[i].BikeId]
 			gov := nextHighestBike.GetGovernance()
 			switch gov {
 			case utils.Many: 
-				if len(nextHighestBike.GetAgents()) == 0 {
-					s.AddAgentToBike(agentNextInLine, nextHighestBike)
-				} else {
-					var decisions []bool
-					for _, agent := range nextHighestBike.GetAgents() {
-						decisions = append(decisions, agent.DecideJoiningOneAgent(agentNextInLineId))
-					}
-					acceptedCount := 0
-					for _, decision := range decisions {
-						if decision {
-							acceptedCount++
-						}
-					}
-					if acceptedCount > len(decisions)/2 {
-						accepted = true
-					} else {
-						accepted = false
-					}
-				}
+				accepted = s.GetManyJoiningDecision(nextHighestBike, agentNextInLine)
 			case utils.Some:
-
-				var decisions []bool
-				for _, repId := range nextHighestBike.GetRepresentatives() {
-					decisions = append(decisions, s.GetAgentMap()[repId].DecideJoiningOneAgent(agentNextInLineId))
-				}
-				acceptedCount := 0
-				for _, decision := range decisions {
-					if decision {
-						acceptedCount++
-					}
-				}
-				if acceptedCount > len(decisions)/2 {
-					accepted = true
-				} else {
-					accepted = false
-				}
-			
+				accepted = s.GetSomeJoiningDecision(nextHighestBike, agentNextInLine)
 			case utils.One:
-				one := s.GetAgentMap()[nextHighestBike.GetRepresentatives()[0]]
-				accepted = one.DecideJoiningOneAgent(agentNextInLineId)
+				accepted = s.GetOneJoiningDecision(nextHighestBike, agentNextInLine)
 			}
-
 
 			totalSeatsFilled := len(nextHighestBike.GetAgents())
 			emptySpaces := utils.BikersOnBike - totalSeatsFilled
@@ -606,7 +570,7 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 				delete(queuedAgents, agentNextInLineId)
 
 				// if they had bikeavgtrust > regime trust for the bike they are joining, incremement the joiningbasedontrust count
-				if bikeTrustHigherThanRegimeTrustMap[nextHighestBike.GetID()] {
+				if bikePreferenceOrder[i].BikeTrustHigherThanRegimeTrust {
 					s.joiningBasedOnTrust += 1
 				}
 			}
@@ -614,8 +578,51 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 	}
 }
 
+func (s *Server) GetManyJoiningDecision(nextHighestBike objects.IMegaBike, agentNextInLine objects.IBaseBiker) bool {
+				if len(nextHighestBike.GetAgents()) == 0 {
+					s.AddAgentToBike(agentNextInLine, nextHighestBike)
+					return true
+				} else {
+					var decisions []bool
+					for _, agent := range nextHighestBike.GetAgents() {
+						decisions = append(decisions, agent.DecideJoiningOneAgent(agentNextInLine.GetID()))
+					}
+					acceptedCount := 0
+					for _, decision := range decisions {
+						if decision {
+							acceptedCount++
+						}
+					}
+					if acceptedCount > len(decisions)/2 {
+						return true
+					} else {
+						return false
+					}
+				}
+}
 
+func (s *Server) GetSomeJoiningDecision(nextHighestBike objects.IMegaBike, agentNextInLine objects.IBaseBiker) bool {
+	var decisions []bool
+	for _, repId := range nextHighestBike.GetRepresentatives() {
+		decisions = append(decisions, s.GetAgentMap()[repId].DecideJoiningOneAgent(agentNextInLine.GetID()))
+	}
+	acceptedCount := 0
+	for _, decision := range decisions {
+		if decision {
+			acceptedCount++
+		}
+	}
+	if acceptedCount > len(decisions)/2 {
+		return true
+	} else {
+		return false
+	}
+}
 
+func (s *Server) GetOneJoiningDecision(nextHighestBike objects.IMegaBike, agentNextInLine objects.IBaseBiker) bool {
+	one := s.GetAgentMap()[nextHighestBike.GetRepresentatives()[0]]
+	return one.DecideJoiningOneAgent(agentNextInLine.GetID())
+}
 
 // respawn agents, reset and replenish game objects conditionally
 func (s *Server) ResetGameState() {

@@ -2,7 +2,7 @@ package modules
 
 import (
 	"SOMAS2023/internal/common/utils"
-	// "math/rand"
+	"math/rand"
 
 	"github.com/google/uuid"
 )
@@ -108,7 +108,7 @@ func clamp(value float64) float64 {
 
 func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
-		PlatonicTendency: 0.1,
+		PlatonicTendency: rand.Float64(),
 		TrustNetwork:    make(map[uuid.UUID]float64),
 		RegimeTrust: 	make(map[utils.Governance]float64),
 	}

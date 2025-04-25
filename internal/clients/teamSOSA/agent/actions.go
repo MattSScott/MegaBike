@@ -114,12 +114,15 @@ func (a *AgentSOSA) DecideChangeBike() uuid.UUID {
 	}
 }
 
-func (a *AgentSOSA) DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool) {
+func (a *AgentSOSA) DecideBikePreferenceOrder() []utils.BikePreferenceData {
 	megabikes := a.GetGameState().GetMegaBikes()
-	bikePreferenceScores := make(map[uuid.UUID]float64)
-	bikeTrustHigherThanRegime := make(map[uuid.UUID]bool)
+	var bikePreferenceOrder []utils.BikePreferenceData
 
 	for bikeId, bike := range megabikes {
+
+		// create a new bikedata object and add the id
+		bikeData := utils.BikePreferenceData{BikeId: bikeId}
+
 		// Calculate the average trust for this bike
 		sum := 0.0
 		for _, agent := range bike.GetAgents() {
@@ -130,26 +133,23 @@ func (a *AgentSOSA) DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool
 		// Regime trust
 		regimeTrust := a.Modules.AgentParameters.RegimeTrust[bike.GetGovernance()]
 
-		// Score the bike (weighted average)
+		// Score the bike (weighted average) and add it to bike data
 		score := 0.5*bikeAverageTrust + 0.5*regimeTrust
-		bikePreferenceScores[bikeId] = score
+		bikeData.Score = score
 
-		// Save the trust comparison flag
-		bikeTrustHigherThanRegime[bikeId] = bikeAverageTrust > regimeTrust
-	}
-
-	// Build slice of bike IDs to sort
-	var bikePreferenceOrder []uuid.UUID
-	for id := range bikePreferenceScores {
-		bikePreferenceOrder = append(bikePreferenceOrder, id)
+		// Save the trust comparison flag to the bike data
+		bikeData.BikeTrustHigherThanRegimeTrust = bikeAverageTrust > regimeTrust
+		
+		// append it to the array
+		bikePreferenceOrder = append(bikePreferenceOrder, bikeData)
 	}
 
 	// Sort by descending preference score
 	sort.Slice(bikePreferenceOrder, func(i, j int) bool {
-		return bikePreferenceScores[bikePreferenceOrder[i]] > bikePreferenceScores[bikePreferenceOrder[j]]
+		return bikePreferenceOrder[i].Score > bikePreferenceOrder[j].Score
 	})
 
-	return bikePreferenceOrder, bikeTrustHigherThanRegime
+	return bikePreferenceOrder
 }
 
 // ----- Decisions (Round level) -----

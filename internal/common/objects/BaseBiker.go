@@ -29,7 +29,7 @@ type IBaseBiker interface {
 	VoteForKickout() map[uuid.UUID]int                           // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
 	DecideForce(direction uuid.UUID)                             // decides: the force the biker is going to pedal with
 	HandleAgentUnalive(id uuid.UUID)                             // decides: how to handle a dead agent
-	DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool)					// decides: the order of the agents preferred bikes
+	DecideBikePreferenceOrder() []utils.BikePreferenceData					// decides: the order of the agents preferred bikes
 
 	// Decision Making (extra representative functions)
 
@@ -505,12 +505,10 @@ func (bb *BaseBiker) GetRoundDidConform() bool {
 }
 
 
+func (bb *BaseBiker) DecideBikePreferenceOrder() []utils.BikePreferenceData {
 
 
-func (bb *BaseBiker) DecideBikePreferenceOrder() ([]uuid.UUID, map[uuid.UUID]bool) {
-
-
-	return []uuid.UUID{uuid.Nil}, make(map[uuid.UUID]bool)
+	return []utils.BikePreferenceData{}
 
 }
 
