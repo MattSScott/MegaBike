@@ -33,7 +33,7 @@ func (a *AgentSOSA) VoteForKickout() map[uuid.UUID]int {
 	VoteMap := make(map[uuid.UUID]int)
 
 	// check all bikers on the bike but ignore ourselves
-	for _, agent := range a.GetFellowBikers() {
+	for _, agent := range a.GetFellowBikersSlice() {
 		if agent.GetID() != a.GetID() {
 			_, exists := a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
 
@@ -267,26 +267,9 @@ func (a *AgentSOSA) DecideAllocation() voting.IdVoteMap {
 
 // ----- Helper Functions -----
 
-// returns: slice containing the bikers on our bike.
-func (a *AgentSOSA) GetFellowBikers() []objects.IBaseBiker {
-	bikes := a.Modules.Environment.GameState.GetMegaBikes()
-	if _, ok := bikes[a.GetBike()]; !ok {
-		return []objects.IBaseBiker{}
-	}
-	bike := bikes[a.GetBike()]
-	fellowBikers := make([]objects.IBaseBiker, 0)
-	for _, biker := range bike.GetAgents() {
-		if biker.GetBikeStatus() {
-			fellowBikers = append(fellowBikers, biker)
-		}
-	}
-
-	return fellowBikers
-}
-
 // returns: the biker on your bike with the minimum trust 
 func (a *AgentSOSA) GetTeammateWithMinTrust() modules.IDTrustPair {
-	fellowBikers := a.GetFellowBikers()
+	fellowBikers := a.GetFellowBikersSlice()
 	minTrustAgentId := uuid.Nil
 	minTrust := math.MaxFloat64
 	for _, fellowBiker := range fellowBikers {
@@ -307,7 +290,7 @@ func (a *AgentSOSA) GetTeammateWithMinTrust() modules.IDTrustPair {
 // returns: float representing the sum of the trust of agents on your bike.
 func (a *AgentSOSA) GetSumOfTrustOnBike() float64 {
 	var sum = 0.0
-	for _, teammate := range a.GetFellowBikers() {
+	for _, teammate := range a.GetFellowBikersSlice() {
 		sum += a.Modules.AgentParameters.TrustNetwork[teammate.GetID()]
 	}
 	return sum
@@ -316,7 +299,7 @@ func (a *AgentSOSA) GetSumOfTrustOnBike() float64 {
 // returns: float representing average trust of your bike
 func (a *AgentSOSA) GetAverageTrustOnBike() float64 {
 	// Prevent divide
-	if len(a.GetFellowBikers()) == 0 {
+	if len(a.GetFellowBikersSlice()) == 0 {
 		return 0.5
 	}
 

@@ -3,7 +3,6 @@ package agent
 import (
 	obj "SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/clients/teamSOSA/modules"
-	"slices"
 	"fmt"
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
 )
@@ -68,7 +67,7 @@ func (a *AgentSOSA) GetAllRoundMessages([]obj.IBaseBiker) []messaging.IMessage[o
 func (a *AgentSOSA) CreateProposedLootboxMessage() obj.ProposedLootboxMessage {
 	// tell our fellow bikers what direction we chose this round
 	return obj.ProposedLootboxMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikersSlice()),
 		Lootbox:     a.GetRoundDirection(), 
 	}
 }
@@ -77,7 +76,7 @@ func (a *AgentSOSA) CreateProposedLootboxMessage() obj.ProposedLootboxMessage {
 func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 	// tell our fellow bikers what forces we chose this round
 	return obj.ForcesMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikersSlice()),
 		AgentForces: a.GetRoundForces(),
 	}
 }
@@ -85,7 +84,7 @@ func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 func (a *AgentSOSA) CreateConformMessage() obj.ConformMessage {
 	// tell our fellow bikers whether we conformed this round
 	return obj.ConformMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikersSlice()),
 		DidConform: a.GetRoundDidConform(),
 	}
 }
@@ -114,7 +113,7 @@ func (a *AgentSOSA) HandleChangeBikeMessage(msg obj.ChangeBikeMessage) {
 	sender := msg.GetSender()
 	
 	// if sender is a teammate...
-	if slices.Contains(a.GetFellowBikers(), sender) {
+	if _, ok := a.GetFellowBikers()[sender.GetID()]; ok {
 		// if we think poorly of the bike, trust them more for leaving. otherwise trust them less
 		if a.GetAverageTrustOnBike() < 0.5 {
 			a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
@@ -169,7 +168,7 @@ func (a *AgentSOSA) CreatekickoutMessage() obj.KickoutAgentMessage {
 	agentId := a.DecideKickOut()[0]
 
 	return obj.KickoutAgentMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikersSlice()),
 		AgentId:     agentId,
 	}
 }
@@ -180,7 +179,7 @@ func (a *AgentSOSA) CreateChangeBikeMessage() obj.ChangeBikeMessage {
 
 	// for now just tell fellow bikers which we want to move and mention a bike we want to go to. decidechangebike may need a bit of investigating.
 	return obj.ChangeBikeMessage{
-		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](a, a.GetFellowBikersSlice()),
 		BikeId: a.DecideChangeBike(),
 	}
 }

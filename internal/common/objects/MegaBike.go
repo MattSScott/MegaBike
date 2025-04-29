@@ -11,7 +11,7 @@ type IMegaBike interface {
 	IPhysicsObject
 	AddAgent(biker IBaseBiker)
 	RemoveAgent(bikerId uuid.UUID)
-	GetAgents() []IBaseBiker
+	GetAgents() map[uuid.UUID]IBaseBiker
 	UpdateMass()
 	KickOutAgent() []uuid.UUID
 	GetGovernance() utils.Governance
@@ -33,7 +33,7 @@ type IMegaBike interface {
 
 type MegaBike struct {
 	*PhysicsObject
-	agents              []IBaseBiker
+	agents              map[uuid.UUID]IBaseBiker
 	kickedOutCount      int
 	governance          utils.Governance
 	representatives     []uuid.UUID
@@ -46,6 +46,7 @@ type MegaBike struct {
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
 func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *MegaBike {
 	return &MegaBike{
+		agents: make(map[uuid.UUID]IBaseBiker),
 		PhysicsObject:       GetPhysicsObject(utils.MassBike),
 		governance:          governance,
 		representatives:     make([]uuid.UUID, 0),
@@ -111,27 +112,16 @@ func (mb *MegaBike) UpdateOrientation() {
 
 // adds an agent to the bike
 func (mb *MegaBike) AddAgent(biker IBaseBiker) {
-	mb.agents = append(mb.agents, biker)
+	mb.agents[biker.GetID()] = biker
 }
 
 // removes: an agent from the bike, given its ID
 func (mb *MegaBike) RemoveAgent(bikerId uuid.UUID) {
-	// Create a new slice to store the updated agents
-	var updatedAgents []IBaseBiker
-
-	// Iterate through the agents and copy them to the updatedAgents slice
-	for _, agent := range mb.agents {
-		if agent.GetID() != bikerId {
-			updatedAgents = append(updatedAgents, agent)
-		}
-	}
-
-	// Replace the mb.agents slice with the updatedAgents slice
-	mb.agents = updatedAgents
+	delete(mb.agents, bikerId)
 }
 
 // returns: a slice containing the agents on the bike
-func (mb *MegaBike) GetAgents() []IBaseBiker {
+func (mb *MegaBike) GetAgents() map[uuid.UUID]IBaseBiker {
 	return mb.agents
 }
 

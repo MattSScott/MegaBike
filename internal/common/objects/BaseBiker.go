@@ -58,7 +58,8 @@ type IBaseBiker interface {
 	GetEnergyLevel() float64        // returns: energy level of the agent
 	GetPoints() int                 // returns: the points the agent currently has
 	GetBikeStatus() bool            // returns: whether the biker is on a bike or not
-	GetFellowBikers() []IBaseBiker  // returns: slice containing the bikers on our bike.
+	GetFellowBikers() map[uuid.UUID]IBaseBiker  // returns: map containing the bikers on our bike.
+	GetFellowBikersSlice() []IBaseBiker 	// returns: slice containing the bikers on our bike
 	GetRoundDirection() uuid.UUID
 	GetRoundForces() utils.Forces
 	GetRoundDidConform() bool 
@@ -300,7 +301,7 @@ func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
 	// Currently this returns a default/meaningless message
 	// For team's agent, add your own logic to communicate with other agents
 	return ProposedLootboxMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
 		Lootbox:     uuid.Nil,
 	}
 }
@@ -309,7 +310,7 @@ func (bb *BaseBiker) CreateForcesMessage() ForcesMessage {
 	// Currently this returns a default message which sends to all bikers on the biker agent's bike
 	// For team's agent, add your own logic to communicate with other agents
 	return ForcesMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
 		AgentForces: utils.Forces{
 			Pedal: 0.0,
 			Brake: 0.0,
@@ -325,7 +326,7 @@ func (bb *BaseBiker) CreateConformMessage() ConformMessage {
 	// Currently this returns a default/meaningless message
 	// For team's agent, add your own logic to communicate with other agents
 	return ConformMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
 		DidConform:     false,
 	}
 }
@@ -357,7 +358,7 @@ func (bb *BaseBiker) CreatekickoutMessage() KickoutAgentMessage {
 	// Currently this returns a default message which sends to all bikers on the biker agent's bike
 	// For team's agent, add your own logic to communicate with other agents
 	return KickoutAgentMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
 		AgentId:     uuid.Nil,
 	}
 }
@@ -366,7 +367,7 @@ func (bb *BaseBiker) CreateChangeBikeMessage() ChangeBikeMessage {
 	// Currently this returns a default message which sends to all bikers on the biker agent's bike
 	// For team's agent, add your own logic to communicate with other agents
 	return ChangeBikeMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikers()),
+		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
 		BikeId:      uuid.Nil,
 	}
 }
@@ -408,14 +409,31 @@ func (bb *BaseBiker) GetBikeStatus() bool {
 	return bb.onBike
 }
 
-func (bb *BaseBiker) GetFellowBikers() []IBaseBiker {
+// for use in adding / removal
+func (bb *BaseBiker) GetFellowBikers() map[uuid.UUID]IBaseBiker {
 	bikes := bb.gameState.GetMegaBikes()
 	if _, ok := bikes[bb.GetBike()]; !ok {
-		return []IBaseBiker{}
+		panic("agents bike not found")
 	}
 	bike := bikes[bb.GetBike()]
 	fellowBikers := bike.GetAgents()
 	return fellowBikers
+}
+
+// for use in messaging
+func (bb *BaseBiker) GetFellowBikersSlice() []IBaseBiker {
+	bikes := bb.gameState.GetMegaBikes()
+	if _, ok := bikes[bb.GetBike()]; !ok {
+		panic("agents bike not found")
+	}
+	bike := bikes[bb.GetBike()]
+	fellowBikers := bike.GetAgents()
+	var fellowBikerSlice []IBaseBiker
+	for _, agent := range fellowBikers {
+		fellowBikerSlice = append(fellowBikerSlice, agent)
+	}
+
+	return fellowBikerSlice
 }
 
 func (bb *BaseBiker) SetBike(bikeId uuid.UUID) {

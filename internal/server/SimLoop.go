@@ -417,7 +417,10 @@ func (s *Server) PerformRoleAssignment(bike objects.IMegaBike) {
 	// if governance system is one or some, we need representatives.
 	if governanceSystem == utils.One || governanceSystem == utils.Some {
 		// run selection process
-		agentsOnBike := bike.GetAgents()
+		var agentsOnBike []objects.IBaseBiker
+		for _, agent := range bike.GetAgents() {
+			agentsOnBike = append(agentsOnBike, agent)
+		}
 		reps := s.RepresentativeSelection(agentsOnBike, governanceSystem)
 		bike.SetRepresentatives(reps)
 	}
@@ -498,24 +501,21 @@ func (s *Server) RandomlyAssignRepresentatives() map[uuid.UUID]objects.IBaseBike
 	}
 
 	// For all "some" bikes, assign up to 3 representatives
+	someBikeLoop:
 	for _, bike := range someBikes {
-		remaining := len(ids) - repPointer
-		if remaining <= 0 {
-			break // No more agents left
-		}
+		var repIDs []uuid.UUID
 
-		numReps := 3
-		if remaining < 3 {
-			numReps = remaining // Use whatever is left
-		}
+		for i := 0; i<3; i++ {
+			// if we have ran out of reps, stop trying to assign
+			if repPointer >= len(ids) {break someBikeLoop}
 
-		repIDs := ids[repPointer : repPointer+numReps]
-		repPointer += numReps
+			newRepID := ids[repPointer]
+			repIDs = append(repIDs, newRepID)
+			repPointer++
 
-		for _, id := range repIDs {
-			s.AddAgentToBike(agentMap[id], bike)
+			s.AddAgentToBike(agentMap[newRepID], bike)
+			bike.SetRepresentatives(repIDs)
 		}
-		bike.SetRepresentatives(repIDs)
 	}
 
 
@@ -530,9 +530,7 @@ func (s *Server) RandomlyAssignRepresentatives() map[uuid.UUID]objects.IBaseBike
 
 	// add all the non-rep agents to the queue.
 	for agentID, agent := range agentMap {
-		if assignedReps[agentID] {
-			continue
-		} else {
+		if _, ok := assignedReps[agentID] ; !ok {
 			queuedAgents[agentID] = agent
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"SOMAS2023/internal/server"
 	"fmt"
 	"testing"
+	"SOMAS2023/internal/common/objects"
 
 	// "github.com/google/uuid"
 	// "github.com/google/uuid"
@@ -21,10 +22,14 @@ func TestRepresentativeSelection(t *testing.T) {
 	// 1. perform representative selection and setting if that bikes governance needs so
 	// 2. check that the bike has the correct number of representatives
 	for _, bike := range s.GetMegaBikes() {
-		agents := bike.GetAgents()
+		var agentsOnBike []objects.IBaseBiker
+		for _, agent := range bike.GetAgents() {
+			agentsOnBike = append(agentsOnBike, agent)
+		}
 		governance := bike.GetGovernance()
 		if governance == utils.Some || governance == utils.One {
-			reps := s.RepresentativeSelection(agents, governance)
+			
+			reps := s.RepresentativeSelection(agentsOnBike, governance)
 			bike.SetRepresentatives(reps)
 		}
 
