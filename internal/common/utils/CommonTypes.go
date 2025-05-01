@@ -1,6 +1,7 @@
 package utils
 
 import "math"
+import "github.com/google/uuid"
 
 type Colour int
 
@@ -86,17 +87,14 @@ type PhysicalState struct {
 type Governance int
 
 const (
-	Democracy Governance = iota
-	Leadership
-	Dictatorship
+	One Governance = iota
+	Some
+	Many
 	Invalid
 )
 
-type Action int
-
-const (
-	Kickout Action = iota
-	Joining
-	Direction
-	Allocation
-)
+type BikePreferenceData struct {
+	BikeId uuid.UUID
+	Score float64
+	BikeTrustHigherThanRegimeTrust bool
+}

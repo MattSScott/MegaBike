@@ -11,18 +11,18 @@ type IMegaBike interface {
 	IPhysicsObject
 	AddAgent(biker IBaseBiker)
 	RemoveAgent(bikerId uuid.UUID)
-	GetAgents() []IBaseBiker
+	GetAgents() map[uuid.UUID]IBaseBiker
 	UpdateMass()
-	KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID
+	KickOutAgent() []uuid.UUID
 	GetGovernance() utils.Governance
-	GetRuler() uuid.UUID
+	GetRepresentatives() []uuid.UUID
 	GetKickedOutCount() int
 	ResetKickedOutCount()
 	GetCurrentPool() float64
 	UpdateCurrentPool(val float64)
 	ResetCurrentPool()
 	SetGovernance(governance utils.Governance)
-	SetRuler(ruler uuid.UUID)
+	SetRepresentatives(reps []uuid.UUID)
 	GetActiveRulesForAction(action Action) []*Rule
 	AddToRuleMap(rule *Rule)
 	ClearRuleMap()
@@ -31,13 +31,12 @@ type IMegaBike interface {
 	ActionCompliesWithLinearRuleset() bool
 }
 
-// MegaBike will have the following forces
 type MegaBike struct {
 	*PhysicsObject
-	agents              []IBaseBiker
+	agents              map[uuid.UUID]IBaseBiker
 	kickedOutCount      int
 	governance          utils.Governance
-	ruler               uuid.UUID
+	representatives     []uuid.UUID
 	globalRuleCacheView RuleCacheOperations
 	activeRuleMap       map[Action][]*Rule
 	linearRuleList      []*Rule
@@ -45,11 +44,12 @@ type MegaBike struct {
 }
 
 // GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
-func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
+func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *MegaBike {
 	return &MegaBike{
+		agents: make(map[uuid.UUID]IBaseBiker),
 		PhysicsObject:       GetPhysicsObject(utils.MassBike),
-		governance:          utils.Democracy,
-		ruler:               uuid.Nil,
+		governance:          governance,
+		representatives:     make([]uuid.UUID, 0),
 		globalRuleCacheView: ruleCache,
 		activeRuleMap:       make(map[Action][]*Rule),
 		linearRuleList:      make([]*Rule, 0),
@@ -57,39 +57,9 @@ func GetMegaBike(ruleCache RuleCacheOperations) *MegaBike {
 	}
 }
 
-// adds
-func (mb *MegaBike) AddAgent(biker IBaseBiker) {
-	mb.agents = append(mb.agents, biker)
-}
+// ----- Overriding some PhysicsObject stuff -----
 
-// Remove agent from bike, given its ID
-func (mb *MegaBike) RemoveAgent(bikerId uuid.UUID) {
-	// Create a new slice to store the updated agents
-	var updatedAgents []IBaseBiker
-
-	// Iterate through the agents and copy them to the updatedAgents slice
-	for _, agent := range mb.agents {
-		if agent.GetID() != bikerId {
-			updatedAgents = append(updatedAgents, agent)
-		}
-	}
-
-	// Replace the mb.agents slice with the updatedAgents slice
-	mb.agents = updatedAgents
-}
-
-func (mb *MegaBike) GetAgents() []IBaseBiker {
-	return mb.agents
-}
-
-// Calculate the mass of the bike with all it's agents
-func (mb *MegaBike) UpdateMass() {
-	mass := utils.MassBike
-	mass += float64(len(mb.agents))
-	mb.mass = mass
-}
-
-// Calculates and returns the total force of the Megabike based on the Biker's force
+// updates: the total force of the Megabike based on the biker's force
 func (mb *MegaBike) UpdateForce() {
 	if len(mb.agents) == 0 {
 		mb.force = 0.0
@@ -108,7 +78,7 @@ func (mb *MegaBike) UpdateForce() {
 	mb.force = (float64(totalPedal) - float64(totalBrake))
 }
 
-// Calculates the final orientation of the Megabike, between -1 and 1 (-180° to 180°), given the Biker's Turning forces
+// updates: the final orientation of the Megabike, between -1 and 1 (-180° to 180°), given the Biker's Turning forces
 func (mb *MegaBike) UpdateOrientation() {
 	var xSum, ySum float64
 	numOfSteeringAgents := 0
@@ -136,54 +106,61 @@ func (mb *MegaBike) UpdateOrientation() {
 	}
 }
 
-// gets the orientation of the megabike
-func (mb *MegaBike) GetOrientation() float64 {
-	return mb.orientation
+
+
+// ----- General -----
+
+// adds an agent to the bike
+func (mb *MegaBike) AddAgent(biker IBaseBiker) {
+	mb.agents[biker.GetID()] = biker
 }
 
-func (mb *MegaBike) GetCurrentPool() float64 {
-	return mb.currentPool
+// removes: an agent from the bike, given its ID
+func (mb *MegaBike) RemoveAgent(bikerId uuid.UUID) {
+	delete(mb.agents, bikerId)
 }
 
-func (mb *MegaBike) UpdateCurrentPool(val float64) {
-	mb.currentPool += val
+// returns: a slice containing the agents on the bike
+func (mb *MegaBike) GetAgents() map[uuid.UUID]IBaseBiker {
+	return mb.agents
 }
 
-func (mb *MegaBike) ResetCurrentPool() {
-	mb.currentPool = 0
+// updates: the mass of the bike accounting for all its agents
+func (mb *MegaBike) UpdateMass() {
+	mass := utils.MassBike
+	mass += float64(len(mb.agents))
+	mb.mass = mass
 }
 
-// get the count of kicked out agents
-func (mb *MegaBike) GetKickedOutCount() int {
-	return mb.kickedOutCount
-}
+// returns: a slice of agent ids to kick out
+func (mb *MegaBike) KickOutAgent() []uuid.UUID {
 
-func (mb *MegaBike) ResetKickedOutCount() {
-	mb.kickedOutCount = 0
-}
+	// a map of agent id -> number of votes
+	voteCount := make(map[uuid.UUID]int)
 
-// only called for level 0 and level 1
-func (mb *MegaBike) KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID {
-	voteCount := make(map[uuid.UUID]float64)
 	// Count votes for each agent
 	for _, agent := range mb.agents {
-		agentVotes := agent.VoteForKickout() // Assuming this now returns map[uuid.UUID]int
-		for agentID, votes := range agentVotes {
-			agentWeight := weights[agentID]
+		agentVotes := agent.VoteForKickout() // Assuming this now returns map[uuid.UUID]int, where each agent ID is mapped to 0 (no) or 1 (yes)
+		for agentID, vote := range agentVotes {
 			if val, ok := voteCount[agentID]; ok {
-				voteCount[agentID] = float64(val) + agentWeight*float64(votes)
+				voteCount[agentID] = val + vote
 			} else {
-				voteCount[agentID] = float64(votes) * agentWeight
+				voteCount[agentID] = vote
 			}
 		}
 	}
 
-	// Find all agents with votes > half the number of agents
 	agentsToKickOut := make([]uuid.UUID, 0)
-	for agentID, votes := range voteCount {
-		if votes > float64(len(mb.agents))/2.0 {
-			agentsToKickOut = append(agentsToKickOut, agentID)
-		}
+
+	if mb.governance == utils.Many {
+		// Find all agents where there is consensus, i.e. agents that have everyone voting for them but themselves
+		for agentID, votes := range voteCount {
+			if votes > (len(mb.agents))-1 {
+				agentsToKickOut = append(agentsToKickOut, agentID)
+			}
+		} 
+	} else {
+		panic("non-democratic bike performing an agent kickout")
 	}
 
 	mb.kickedOutCount += len(agentsToKickOut)
@@ -191,21 +168,53 @@ func (mb *MegaBike) KickOutAgent(weights map[uuid.UUID]float64) []uuid.UUID {
 	return agentsToKickOut
 }
 
+// returns: the governance style of the megabike
 func (mb *MegaBike) GetGovernance() utils.Governance {
 	return mb.governance
 }
 
-func (mb *MegaBike) GetRuler() uuid.UUID {
-	return mb.ruler
+// returns: a slice containing the UUIDs of the representatives
+func (mb *MegaBike) GetRepresentatives() []uuid.UUID {
+	return mb.representatives
 }
 
+// returns: the count of kicked out agents
+func (mb *MegaBike) GetKickedOutCount() int {
+	return mb.kickedOutCount
+}
+
+// resets: the kicked out count
+func (mb *MegaBike) ResetKickedOutCount() {
+	mb.kickedOutCount = 0
+}
+
+// returns: the megabike current pool
+func (mb *MegaBike) GetCurrentPool() float64 {
+	return mb.currentPool
+}
+
+// updates: the current pool given a value
+func (mb *MegaBike) UpdateCurrentPool(val float64) {
+	mb.currentPool += val
+}
+
+// resets: the current pool to 0
+func (mb *MegaBike) ResetCurrentPool() {
+	mb.currentPool = 0
+}
+
+// sets: the governance of the megabike
 func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 	mb.governance = governance
 }
 
-func (mb *MegaBike) SetRuler(ruler uuid.UUID) {
-	mb.ruler = ruler
+// sets: the representatives of the megabike
+func (mb *MegaBike) SetRepresentatives(reps []uuid.UUID) {
+	mb.representatives = reps
 }
+
+
+// ----- Rule Stuff -----
 
 func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
 	output := []*Rule{}
@@ -226,45 +235,8 @@ func (mb *MegaBike) ClearRuleMap() {
 	mb.activeRuleMap = make(map[Action][]*Rule)
 }
 
-func (mb *MegaBike) ActivateAllGlobalRules() {
-	globalRuleView := mb.globalRuleCacheView
-	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
-		mb.AddToRuleMap(rule)
-		mb.linearRuleList = append(mb.linearRuleList, rule)
-	}
-}
-
-func (mb *MegaBike) InitialiseRuleMap() {
-	dist := 100.0
-	mute := false
-
-	ruleInputs := RuleInputs{Energy}
-	ruleMat := RuleMatrix{{1, -dist}}
-	ruleComps := RuleComparators{LEQ}
-
-	rule := GenerateRule(Lootbox, "lootbox_dist", ruleInputs, ruleMat, ruleComps, mute)
-
-	mb.AddToRuleMap(rule)
-}
-
 func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
 	return mb.activeRuleMap
-}
-
-func (mb *MegaBike) ViewLinearRuleList() []*Rule {
-	return mb.linearRuleList
-}
-
-func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
-	for _, r := range mb.linearRuleList {
-		for _, agent := range mb.agents {
-			if !r.EvaluateAgentRule(agent) {
-				return false
-			}
-		}
-	}
-
-	return true
 }
 
 func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
@@ -279,4 +251,41 @@ func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
 	}
 
 	return true
+}
+
+func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
+	for _, r := range mb.linearRuleList {
+		for _, agent := range mb.agents {
+			if !r.EvaluateAgentRule(agent) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func (mb *MegaBike) ActivateAllGlobalRules() {
+	globalRuleView := mb.globalRuleCacheView
+	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
+		mb.AddToRuleMap(rule)
+		mb.linearRuleList = append(mb.linearRuleList, rule)
+	}
+}
+
+func (mb *MegaBike) InitialiseRuleMap() {
+	dist := 50.0
+	mute := false
+
+	ruleInputs := RuleInputs{Energy}
+	ruleMat := RuleMatrix{{1, -dist}}
+	ruleComps := RuleComparators{LEQ}
+
+	rule := GenerateRule(Lootbox, "lootbox_dist", ruleInputs, ruleMat, ruleComps, mute)
+
+	mb.AddToRuleMap(rule)
+}
+
+func (mb *MegaBike) ViewLinearRuleList() []*Rule {
+	return mb.linearRuleList
 }

@@ -3,6 +3,7 @@ package objects
 import (
 	"SOMAS2023/internal/common/physics"
 	"errors"
+	"math"
 
 	"github.com/google/uuid"
 	"gonum.org/v1/gonum/mat"
@@ -73,7 +74,7 @@ func (r *Rule) EvaluateTestLootboxRuleInputs(bike IMegaBike, lootbox ILootBox) [
 	dPos := physics.ComputeDistance(bPos, lPos)
 
 	return []float64{
-		dPos,
+		math.Sqrt(dPos),
 		1,
 	}
 }

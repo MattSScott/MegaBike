@@ -5,30 +5,24 @@ import (
 	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
-	"fmt"
 
+	"fmt"
 	baseserver "github.com/MattSScott/basePlatformSOMAS/BaseServer"
 	"github.com/google/uuid"
 )
 
 type AgentInitFunction func(baseBiker *objects.BaseBiker) objects.IBaseBiker
 
-// COHORT EXPERIMENTS
+// notice: replace teamSOSA.GetBiker with nil to run basebiker experiments
 var AgentInitFunctions = []AgentInitFunction{
 	teamSOSA.GetBiker, // Team SOSA
 }
 
-// BASEBIKER EXPERIMENTS (uncomment this and comment out the above to run base biker experiments)
-// var AgentInitFunctions = []AgentInitFunction{
-// 	nil,
-// }
-
+// returns: a slice of agent generator-count pairs, i.e. a slice in which each element is a 2-tuple of the form (agent generator function, number to spawn in)
 func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objects.IBaseBiker] {
 
 	bikersPerTeam := *globals.BikerAgentCount / (len(AgentInitFunctions))
 	extraBaseBikers := *globals.BikerAgentCount % (len(AgentInitFunctions))
-
-	fmt.Println(bikersPerTeam, extraBaseBikers)
 
 	agentGenerators := []baseserver.AgentGeneratorCountPair[objects.IBaseBiker]{
 		// Spawn base bikers
@@ -41,6 +35,7 @@ func (s *Server) GetAgentGenerators() []baseserver.AgentGeneratorCountPair[objec
 	return agentGenerators
 }
 
+// helper function to spawn in bikes
 func (s *Server) BikerAgentGenerator(initFunc func(baseBiker *objects.BaseBiker) objects.IBaseBiker) func() objects.IBaseBiker {
 	return func() objects.IBaseBiker {
 		baseBiker := objects.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), s)
@@ -52,12 +47,13 @@ func (s *Server) BikerAgentGenerator(initFunc func(baseBiker *objects.BaseBiker)
 	}
 }
 
+// ----- Lootboxes -----
+
 func (s *Server) spawnLootBox() {
 	lootBox := objects.GetLootBox()
 	s.lootBoxes[lootBox.GetID()] = lootBox
 }
 
-// replenishes lootboxes up to the externally set count
 func (s *Server) replenishLootBoxes() {
 	count := globals.LootBoxCount - len(s.lootBoxes)
 	for i := 0; i < count; i++ {
@@ -65,16 +61,46 @@ func (s *Server) replenishLootBoxes() {
 	}
 }
 
-func (s *Server) spawnMegaBike() {
-	megaBike := objects.GetMegaBike(s)
+// ----- Megabikes -----
+
+func (s *Server) spawnInitialMegaBikesAndRiders() {
+	for i := 0; i < globals.MegaBikeCount; i++ {
+		// increment i each time to spawn a megabike of each governance type
+		governance := utils.Governance(i)
+		s.spawnMegaBike(governance)
+		fmt.Println("Spawning Megabike with Governance", governance)
+	}
+
+	bikeArray := make([]objects.IMegaBike, 0)
+
+	for _, bike := range s.GetMegaBikes() {
+		bikeArray = append(bikeArray, bike)
+	}
+
+	bikeAssignIdx := 0
+
+	for _, agent := range s.GetAgentMap() {
+		bike := bikeArray[bikeAssignIdx]
+		if len(bike.GetAgents()) == 8 {
+			bikeAssignIdx += 1
+			bike = bikeArray[bikeAssignIdx]
+		}
+		s.AddAgentToBike(agent, bike)
+	}
+
+}
+
+func (s *Server) spawnMegaBike(governance utils.Governance) {
+	megaBike := objects.GetMegaBike(s, governance)
 	s.megaBikes[megaBike.GetID()] = megaBike
 	megaBike.InitialiseRuleMap()
-	// megaBike.ActivateAllGlobalRules()
 }
 
 func (s *Server) replenishMegaBikes() {
+	// currently not being called as awdi doesnt currently remove the megabike.
+	// if it does, this function needs changing to spawn new megabikes in with the correct governance
 	neededBikes := globals.MegaBikeCount - len(s.megaBikes)
 	for i := 0; i < neededBikes; i++ {
-		s.spawnMegaBike()
+		s.spawnMegaBike(utils.One)
 	}
 }

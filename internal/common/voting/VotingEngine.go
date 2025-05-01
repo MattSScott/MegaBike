@@ -2,7 +2,7 @@ package voting
 
 import (
 	"SOMAS2023/internal/common/utils"
-	"errors"
+	// "errors"
 	"sort"
 
 	"github.com/google/uuid"
@@ -31,22 +31,36 @@ func (ivm IdVoteMap) GetVotes() map[uuid.UUID]float64 {
 }
 
 // this function will take in a list of maps from ids to their corresponding vote (yes/ no in the case of acceptance)
-// and retunr a list of ids that can be accepted according to some metric (ie more than half voted yes)
+// and return a list of ids that can be accepted according to some metric (ie all voted yes / majority voted yes)
 // ranked according to a metric (ie overall number of yes's)
-func GetAcceptanceRanking(rankings map[uuid.UUID]map[uuid.UUID]bool, weights map[uuid.UUID]float64) []uuid.UUID {
+func GetAcceptanceRanking(decisionsByVoter map[uuid.UUID]map[uuid.UUID]bool, weights map[uuid.UUID]float64, governance utils.Governance) []uuid.UUID {
+
 	// sum the number of acceptance rankings for all the agents
 	cumulativeRank := make(map[uuid.UUID]float64)
-	quorum := float64(len(rankings)) / 2.0
-	for voter, ranking := range rankings {
-		for agent, outcome := range ranking {
+
+	var quorum float64
+
+	// if perfect dem need consensus, in degen need majority. for aristocracy no minimum
+	if governance == utils.Many {
+		quorum = float64(len(decisionsByVoter)) / 2.0
+	// } else if governance == utils.DegenerateDemocracy{
+	// 	quorum = float64(len(decisionsByVoter)) / 2.0
+	} else{
+		quorum = 0.0
+	}
+
+	for voter, decisions := range decisionsByVoter {
+		for agent, outcome := range decisions {
 			val, ok := cumulativeRank[agent]
 			if outcome && ok {
 				cumulativeRank[agent] = val + weights[voter]
 			} else if outcome {
-				cumulativeRank[agent] = 1.0
+				cumulativeRank[agent] = weights[voter]
 			}
 		}
 	}
+
+	// passed unsorted contains a map of pendingAgentIDs->ranking, with only those agents who have above the quorum level of support
 	passedUnsorted := make(map[uuid.UUID]float64)
 	for agent, val := range cumulativeRank {
 		if val > quorum {
@@ -56,16 +70,19 @@ func GetAcceptanceRanking(rankings map[uuid.UUID]map[uuid.UUID]bool, weights map
 
 	// sort according to ranking
 	unsortedAcceptedList := make([]uuid.UUID, len(passedUnsorted))
+
 	i := 0
 	for key := range passedUnsorted {
 		unsortedAcceptedList[i] = key
 		i += 1
 	}
+
 	sort.Slice(unsortedAcceptedList, func(i, j int) bool {
 		return passedUnsorted[unsortedAcceptedList[i]] > passedUnsorted[unsortedAcceptedList[j]]
 	})
+	
+	// now actually sorted
 	return unsortedAcceptedList
-	// return make([]uuid.UUID, 0)
 }
 
 func SumOfValues(voteMap IVoter) float64 {
@@ -115,8 +132,10 @@ func CumulativeDist(voters map[uuid.UUID]IVoter, weights map[uuid.UUID]float64) 
 
 // return the votesMap
 func GetVotesMap(voters map[uuid.UUID]IVoter) map[uuid.UUID]map[uuid.UUID]float64 {
+
 	if len(voters) == 0 {
 		panic("no votes provided")
+		// fmt.Println("empty bike in leadership mode")
 	}
 	// Vote checks for each voter
 	VotesOfAgents := make(map[uuid.UUID]map[uuid.UUID]float64)
@@ -157,67 +176,5 @@ func WinnerFromDist(voters map[uuid.UUID]IVoter, voteWeight map[uuid.UUID]float6
 	case utils.COPELANDSCORING:
 		winner = CopelandScoring(VotesOfAgents, voteWeight)
 	}
-	// TODO call group 8 voting function
 	return winner
-}
-
-func WinnerFromGovernance(voters []GovernanceVote) (utils.Governance, error) {
-	// check if length of votes is greater than one
-	if len(voters) == 0 {
-		return utils.Invalid, errors.New("no votes provided")
-	}
-
-	// Summing up the votes for each governance type
-	for _, vote := range voters {
-		sum := 0.0
-		for _, votes := range vote {
-			sum += votes
-		}
-		if sum > 1.0 {
-			return utils.Invalid, errors.New("distribution doesn't sum to 1")
-		}
-	}
-
-	var voteTotals = make(map[utils.Governance]float64)
-	var winner utils.Governance
-	var highestVotes float64
-
-	// Summing up the votes for each governance type
-	for _, vote := range voters {
-		for governance, votes := range vote {
-			voteTotals[governance] += votes
-		}
-	}
-	// Finding the governance type with the highest votes
-	for governance, votes := range voteTotals {
-		if votes > highestVotes {
-			highestVotes = votes
-			winner = governance
-		}
-	}
-
-	return winner, nil
-}
-
-// Need to check if the input param is expecting a vote that is just one governance type
-func TallyFoundingVotes(voters map[uuid.UUID]utils.Governance) (map[utils.Governance]int, error) {
-	// check if length of votes is greater than one
-	if len(voters) == 0 {
-		return nil, errors.New("no votes provided")
-	}
-
-	// Summing up the votes for each governance type
-	aggregateFoundingTotals := make(map[utils.Governance]int)
-
-	// Get the governance type for each agent
-	for _, vote := range voters {
-		// Add to the tally for each governance type
-		if val, ok := aggregateFoundingTotals[vote]; ok {
-			aggregateFoundingTotals[vote] = val + 1
-		} else {
-			aggregateFoundingTotals[vote] = 1
-		}
-	}
-
-	return aggregateFoundingTotals, nil
 }

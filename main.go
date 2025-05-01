@@ -16,21 +16,7 @@ func initialiseFlagConstants() {
 func main() {
 	flag.Parse()
 	initialiseFlagConstants()
-	s := server.GenerateServer()
-	s.Initialize(100)
+	s := server.GenerateServer() // returns a zero-valued server object
+	s.Initialize(100) //sets up the environment (parameter is number of iterations, usually = 100)
 	s.Start()
 }
-
-// func main() {
-// 	flag.Parse()
-// 	initialiseFlagConstants()
-
-// 	s := &server.Server{}
-// 	s.Initialize(1)
-// 	s.FoundingInstitutions()
-// 	iters := 10000
-// 	agents := len(s.GetAgentMap())
-// 	s.TimeRuleEval(true, iters, agents)
-// 	s.TimeRuleEval(false, iters, agents)
-// 	fmt.Printf("Run for %d rules for %d agents.\n", iters, agents)
-// }

@@ -4,44 +4,226 @@ import (
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
+	// "fmt"
+
+	"math/rand"
+	// "slices"
 
 	"github.com/google/uuid"
 )
 
-// obtain direction for current round from the dictator
-func (s *Server) RunRulerAction(bike objects.IMegaBike) uuid.UUID {
+// returns: slice of uuids of initially selected representatives
+func (s *Server) RepresentativeSelection(agentsOnBike []objects.IBaseBiker, governance utils.Governance) []uuid.UUID {
+
+	// select representatives for the bike. this is not a democratic process.
+	// each bike is fixed with a governance style and a representatives at the beginning of each iteration for the 'some' bike and 'one' bike.
+
+	if len(agentsOnBike) != 0 {
+		switch governance {
+		case utils.Some:
+			reps := make([]uuid.UUID, 0)
+			var chosenAgentIndices []int
+			if len(agentsOnBike) > 3 {
+				chosenAgentIndices = rand.Perm(len(agentsOnBike))[0:3]
+			} else {
+				chosenAgentIndices = rand.Perm(len(agentsOnBike))
+			}
+			for _, v := range chosenAgentIndices {
+				reps = append(reps, agentsOnBike[v].GetID())
+			}
+			return reps
+		case utils.One:
+			reps := make([]uuid.UUID, 0)
+			chosenAgentIndex := rand.Intn(len(agentsOnBike))
+			reps = append(reps, agentsOnBike[chosenAgentIndex].GetID())
+			return reps
+		default:
+			panic("trying to run a representative selection on a bike without incorrect governance style")
+		}
+	} else {
+		return []uuid.UUID{}
+	}
+
+}
+
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the "one" rep
+func (s *Server) RunOneDirectionDecision(bike objects.IMegaBike) uuid.UUID {
 	agents := s.GetAgentMap()
-	ruler := agents[bike.GetRuler()]
-	// get dictators direction choice
-	direction := ruler.DictateDirection()
+	reps := bike.GetRepresentatives()
+	var direction uuid.UUID
+
+	monarch := agents[reps[0]]
+	direction = monarch.DecideDirection()
+	monarch.SetRoundDirection(direction)
 	return direction
 }
 
-// elect ruler (happens during the foundation stage, or when a bike with ruler-lead
-// governance is left without ruler for any of various reasons)
-func (s *Server) RulerElection(agents []objects.IBaseBiker, governance utils.Governance) uuid.UUID {
-	votes := make(map[uuid.UUID]voting.IdVoteMap, len(agents))
-	voteWeight := make(map[uuid.UUID]float64)
-	for _, agent := range agents {
-		voteWeight[agent.GetID()] = 1
-		switch governance {
-		case utils.Dictatorship:
-			votes[agent.GetID()] = agent.VoteDictator()
-		case utils.Leadership:
-			votes[agent.GetID()] = agent.VoteLeader()
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the "some" reps
+func (s *Server) RunSomeDirectionDecision(bike objects.IMegaBike) uuid.UUID {
+	agents := s.GetAgentMap()
+	reps := bike.GetRepresentatives()
+	var direction uuid.UUID
+
+	var suggestedDirections []uuid.UUID
+	countsPerDirection := make(map[uuid.UUID]int)
+
+	// create a slice of their suggested directions
+	// fmt.Println("deciding direction...")
+	// fmt.Println("number of agents on some bike is", len(bike.GetAgents()))
+	// fmt.Println("size of reps slice is", len(reps))
+	for _, repID := range reps {
+		decidedDirection := agents[repID].DecideDirection()
+		suggestedDirections = append(suggestedDirections, decidedDirection)
+		agents[repID].SetRoundDirection(decidedDirection)
+	}
+
+	maxCounts := 0
+
+	// find the most voted for direction
+	for _, lootbox := range suggestedDirections {
+		countsPerDirection[lootbox] += 1
+		if countsPerDirection[lootbox] > maxCounts {
+			maxCounts = countsPerDirection[lootbox]
+			direction = lootbox
 		}
 	}
 
-	// required as a list of interfaces that implement IVoter is not percieved as a list of IVoters due to Go weirdness
-	IVotes := make(map[uuid.UUID]voting.IVoter, len(votes))
-	for i, vote := range votes {
-		IVotes[i] = vote
-	}
-
-	ruler := voting.WinnerFromDist(IVotes, voteWeight)
-	return ruler
+	return direction
 }
 
+// returns: uuid of lootbox to aim toward (i.e. direction) for current round from the agents
+func (s *Server) RunDemocraticDirectionDecision(bike objects.IMegaBike) uuid.UUID {
+
+	agents := bike.GetAgents()
+	governance := bike.GetGovernance()
+	proposedDirections := make(map[uuid.UUID]uuid.UUID) // maps agent id to their proposed lootbox id
+	validLootboxes := s.PruneLootboxes(bike)
+
+	// Fill in the proposed directions map by asking each agent to propose a direction.
+	for _, agent := range agents {
+		if agent.GetBikeStatus() {
+			proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
+			agent.SetRoundDirection(proposedDirection)
+
+			if proposedDirection == uuid.Nil {
+				continue
+			}
+			if _, ok := s.lootBoxes[proposedDirection]; !ok {
+				panic("agent proposed a non-existent lootbox")
+			}
+			proposedDirections[agent.GetID()] = proposedDirection
+		}
+	}
+
+	if len(proposedDirections) == 0 {
+		return uuid.Nil
+	}
+
+	if governance == utils.Many {
+
+		directions := []uuid.UUID{}
+		for _, direction := range proposedDirections {
+			directions = append(directions, direction)
+		}
+
+		// Use a map to count occurrences of each UUID
+		counts := make(map[uuid.UUID]int)
+
+		// Count each UUID
+		for _, lootbox := range directions {
+			counts[lootbox]++
+		}
+
+		// Option one: go for most voted lootbox
+		var mostVotedLootbox uuid.UUID
+		highestCount := 0
+
+		for lootbox, count := range counts {
+			if count > highestCount {
+				highestCount = count
+				mostVotedLootbox = lootbox
+			}
+		}
+
+		return mostVotedLootbox
+
+		// Legacy:   Check if any lootbox UUID is voted for by a majority. If so, then return this lootbox. Otherwise return nil
+		// threshold := len(directions) / 2
+		// for lootbox, count := range counts {
+		// 	if count > threshold {
+		// 		return lootbox
+		// 	}
+		// }
+
+		// return uuid.Nil
+	} else {
+		panic("tring to run a democratic action in a non-democracy")
+	}
+}
+
+// LEGACY handles: when a representative leaves / dies / exits a bike. replace rep if possible, otherwise we just remove them
+func (s *Server) HandleDepartingRepresentative(bike objects.IMegaBike, repIdxToReplace int) {
+
+	// fmt.Println("Dead rep found on bike", bike.GetGovernance(), " which has", len(bike.GetAgents()), "Attempting replacement")
+	// reps := bike.GetRepresentatives()
+
+	// repString := ""
+	// for _, repID := range reps {
+	// 	repString += utils.TranslateToName(repID) + " "
+	// }
+
+	// fmt.Println("Reps before removing dead one:", repString)
+	// reps = slices.Delete(reps, repIdxToReplace, repIdxToReplace+1)
+
+	// repStringAfter := ""
+	// for _, repID := range reps {
+	// 	repStringAfter += utils.TranslateToName(repID) + " "
+	// }
+	// fmt.Println("Reps after removing dead one:", repStringAfter)
+
+	// if there is at least 1 non-rep agent left (i.e. an eligible replacement), append them to the slice
+	// agentsOnBike := bike.GetAgents()
+	// for _, agent := range agentsOnBike {
+	// 	if !slices.Contains(reps, agent.GetID()) && len(reps) < 3 {
+	// 		reps = append(reps, agent.GetID())
+	// 		fmt.Println("Adding agent", utils.TranslateToName(agent.GetID()), "to reps slice")
+	// 		break // only append one eligible replacement
+	// 	}
+	// }
+	// bike.SetRepresentatives(reps)
+	
+	
+
+
+
+	// gov := bike.GetGovernance()
+
+	// // first attempt to replace them
+	// if ((gov == utils.Some) && len(bike.GetAgents()) >= 3) || (gov == utils.One && len(bike.GetAgents()) >= 1) {
+
+	// 	reps := bike.GetRepresentatives()
+	// 	agentsOnBike := bike.GetAgents()
+
+	// 	// randomly choose an agent to be a rep. if agent is already rep, choose another one.
+	// 	replacementRepID := agentsOnBike[rand.Intn(len(agentsOnBike))].GetID()
+	// 	for slices.Contains(reps, replacementRepID) {
+	// 		replacementRepID = agentsOnBike[rand.Intn(len(bike.GetAgents()))].GetID()
+	// 	}
+
+	// 	// replace the old rep with a new rep
+	// 	reps[repIdxToReplace] = replacementRepID
+	// 	bike.SetRepresentatives(reps)
+
+	// } else {
+	// 	// otherwise we just remove them from the rep list
+	// 	reps := bike.GetRepresentatives()
+	// 	reps = slices.Delete(reps, repIdxToReplace, repIdxToReplace+1)
+	// 	bike.SetRepresentatives(reps)
+
+	// }
+}
+
+// returns: reduced map of uuid->lootbox based on the rules of the given megabike
 func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.ILootBox {
 	relevantRules := bike.GetActiveRulesForAction(objects.Lootbox)
 
@@ -65,12 +247,15 @@ func (s *Server) PruneLootboxes(bike objects.IMegaBike) map[uuid.UUID]objects.IL
 	return validLootboxes
 }
 
+// updates: the bike rules
 func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 	tRad := 0.0
 	nAg := 0.0
 
 	rule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
 	pRad := rule.GetRuleMatrix()[0][1]
+
+	// fmt.Println(rule)
 
 	for _, agent := range bike.GetAgents() {
 		if agent.GetBikeStatus() {
@@ -87,52 +272,63 @@ func (s *Server) UpdateBikeRules(bike objects.IMegaBike) {
 
 	newRuleMatrix := [][]float64{{1, tRad}}
 	rule.UpdateRuleMatrix(newRuleMatrix)
+
 	// nRule := bike.GetActiveRulesForAction(objects.Lootbox)[0]
 	// fmt.Println(nRule.GetRuleMatrix())
 }
 
-// select this round's decision following a voting-based approach (with weights in the case of a leadership-led governance)
-func (s *Server) RunDemocraticAction(bike objects.IMegaBike, weights map[uuid.UUID]float64) uuid.UUID {
-	// map of the proposed lootboxes by bike (for each bike a list of lootbox proposals is made, with one lootbox proposed by each agent on the bike)
-	agents := bike.GetAgents()
-	proposedDirections := make(map[uuid.UUID]uuid.UUID)
-	validLootboxes := s.PruneLootboxes(bike)
+// ----- Currently unused -----
 
-	for _, agent := range agents {
-		// agents that have decided to stay on the bike (and that haven't been kicked off it)
-		// will participate in the voting for the directions
-		// ---------------------------VOTING ROUTINE - STEP 1 ---------------------
-		if agent.GetBikeStatus() {
-			// proposedDirection := agent.ProposeDirection()
-			proposedDirection := agent.ProposeDirectionFromSubset(validLootboxes)
-			if proposedDirection == uuid.Nil {
-				continue
-			}
-			if _, ok := s.lootBoxes[proposedDirection]; !ok {
-				panic("agent proposed a non-existent lootbox")
-			}
-			proposedDirections[agent.GetID()] = proposedDirection
-		}
+// returns: uuid of chosen lootbox from a set of votes and weights
+func (s *Server) GetWinningDirection(finalVotes map[uuid.UUID]voting.LootboxVoteMap, weights map[uuid.UUID]float64) uuid.UUID {
+	// this allows to get a slice of the interface from that of the specific type
+	// this way we can substitute agent.FInalDirectionVote with another function that returns
+	// another type of voting type which still implements INormaliseVoteMap
+	IfinalVotes := make(map[uuid.UUID]voting.IVoter)
+	for i, v := range finalVotes {
+		IfinalVotes[i] = v
 	}
 
-	s.UpdateBikeRules(bike)
-
-	if len(proposedDirections) == 0 {
-		return uuid.Nil
-	}
-
-	finalVotes := make(map[uuid.UUID]voting.LootboxVoteMap, len(agents))
-	for _, agent := range agents {
-		// ---------------------------VOTING ROUTINE - STEP 2 ---------------------
-		// pass the pitched directions of a bike to all agents on that bike and get their final vote
-		finalVotes[agent.GetID()] = agent.FinalDirectionVote(proposedDirections)
-	}
-
-	// ---------------------------VOTING ROUTINE - STEP 3 --------------
-	// get the winning direction from the final votes
-	direction := s.GetWinningDirection(finalVotes, weights)
-	if _, ok := s.lootBoxes[direction]; !ok {
-		panic("agents voted on a non-existent lootbox")
-	}
-	return direction
+	return voting.WinnerFromDist(IfinalVotes, weights)
 }
+
+// ----- Legacy code to keep -----
+
+// legacy: different behaviours  of rundemodratcidirectiondecision depending on the kind of democracy
+// if governance == utils.PerfectDemocracy {
+// 	// look for consensus
+// 	directions := []uuid.UUID{}
+// 	for _, direction := range proposedDirections {
+// 		directions = append(directions, direction)
+// 	}
+
+// 	consensusReached := true
+// 	for i := 1; i < len(directions); i++ {
+// 		if directions[i] != directions[0] {
+// 			consensusReached = false
+// 			break
+// 		}
+// 	}
+
+// 	if consensusReached {
+// 		return directions[0] // could be any element of the slice they are all the same
+// 	} else {
+// 		return uuid.Nil // assuming this means 'don't move'
+// 	}
+
+// old more complex voting system for aggregating all agents ranked preferences
+// kept here as may be useful for more complex additions later on
+
+// // Step 2: iterate through the agents, telling them the proposed directions and letting them rank order them based on preference.
+// finalVotes := make(map[uuid.UUID]voting.LootboxVoteMap, len(agents))
+// for _, agent := range agents {
+// 	finalVotes[agent.GetID()] = agent.FinalDirectionVote(proposedDirections)
+// }
+
+// // Step 3: get the winning direction from the final votes
+// direction := s.GetWinningDirection(finalVotes, weights)
+// if _, ok := s.lootBoxes[direction]; !ok {
+// 	panic("agents voted on a non-existent lootbox")
+// }
+
+// return direction
