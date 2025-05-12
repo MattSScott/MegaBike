@@ -254,6 +254,7 @@ func (s *Server) LootboxCheckAndDistributions() {
 
 						// Update agent energy level based on their share of the loot
 						agent.UpdateEnergyLevel(lootShare)
+						agent.UpdateIterationIncome(lootShare)
 						// Allocate points if the box is of the right colour
 						if agent.GetColour() == lootbox.GetColour() {
 							agent.UpdatePoints(utils.PointsFromSameColouredLootBox)

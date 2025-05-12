@@ -47,7 +47,8 @@ type Server struct {
 	awdi            objects.IAwdi
 	deadAgents      map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
 	globalRuleCache *objects.GlobalRuleCache
-	joiningBasedOnTrust int				// recording how many joining decisions prioritised agent trust over regime trust
+	joiningBasedOnTrust float64				// recording how many joining decisions prioritised agent trust over regime trust
+	totalJoiningDecisions float64 			// recording the total joining decisions made
 }
 
 func GenerateServer() IBaseBikerServer {
@@ -86,12 +87,27 @@ func (s *Server) Start() {
 		if len(s.GetAgentMap()) == 0 {
 			break
 		}
+	}
 
-		fmt.Println("number of decisions made based on trust so far = ", s.joiningBasedOnTrust)
+	percentOfDecisionsMadeBasedOnTrust := (s.joiningBasedOnTrust / s.totalJoiningDecisions) * 100
 
+	fmt.Println("Percent of decisions made based on trust:", percentOfDecisionsMadeBasedOnTrust, "%")
+
+
+	f, err := os.OpenFile("results.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer f.Close()
+
+	_, err = fmt.Fprintf(f, "%.6f\n", percentOfDecisionsMadeBasedOnTrust)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
 	}
 
 
+	// this stuff is experimental and possibly to remove but keeping it for now
 	adjacencyMatrix := createAdjacencyMatrix(reassocationMap)
 
 	file, err := os.Create("adjacency_matrix.json")

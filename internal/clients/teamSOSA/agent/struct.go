@@ -23,7 +23,7 @@ func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
 	return &AgentSOSA{
 		BaseBiker: baseBiker,
 		Modules: AgentModules{
-			Environment:     modules.GetEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
+			Environment:     modules.NewEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
 			AgentParameters: modules.NewAgentParameters(),
 			Utils:           modules.NewUtilsModule(),
 		},

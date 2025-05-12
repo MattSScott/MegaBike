@@ -15,7 +15,7 @@ type IDTrustPair struct {
 	Trust float64
 }
 
-// NewUtilsModule - Constructor for UtilsModule
+// Constructor
 func NewUtilsModule() *UtilsModule {
 	return &UtilsModule{}
 }
@@ -44,7 +44,6 @@ func (um *UtilsModule) GetForcesToTarget(agentPosition, targetPosition utils.Coo
 		Turning: turningDecision,
 	}
 }
-
 
 // GetForcesToTargetWithDirectionOffset calculates the forces to be applied on an agent to steer towards a target position,
 // taking into account a specified degree of angular offset.

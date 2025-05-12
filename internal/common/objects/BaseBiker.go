@@ -77,7 +77,10 @@ type IBaseBiker interface {
 	SetRoundDidConform(didConform bool)
 
 	// experimental
-	UpdateRegimeTrustValues(rankOrder []utils.Governance) // updates the agents regime trust
+	UpdateRegimeTrustValues(oneGini float64, someGini float64, manyGini float64) // updates the agents regime trust
+	GetIterationIncome() float64
+	UpdateIterationIncome(resources float64) 
+	ResetIterationIncome()
 }
 
 type BaseBiker struct {
@@ -90,6 +93,7 @@ type BaseBiker struct {
 	megaBikeId                       uuid.UUID  // if they are not on a bike it will be 0
 	gameState                        IGameState // updated by the server at every round
 	roundDecisions					 roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
+	iterationIncome				 	 float64 	// the agents' income this iteration
 }
 
 func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) *BaseBiker {
@@ -491,7 +495,7 @@ func (bb *BaseBiker) GetGameState() IGameState {
 }
 
 
-// ---- Experimental -----
+// ---- Experimental (to incorporate above) -----
 type roundDecisions struct {
 	Direction uuid.UUID
 	Forces utils.Forces
@@ -530,16 +534,18 @@ func (bb *BaseBiker) DecideBikePreferenceOrder() []utils.BikePreferenceData {
 
 }
 
-func (bb *BaseBiker) UpdateRegimeTrustValues(rankOrder []utils.Governance) {
-
-
+func (bb *BaseBiker) UpdateRegimeTrustValues(oneGini float64, someGini float64, manyGini float64) {
 
 }
 
-// func (bb *BaseBiker) GetDevelopedCohesion() bool {
-// 	return bb.developedCohesion
-// }
+func (bb *BaseBiker) GetIterationIncome() float64 {
+	return bb.iterationIncome
+}
 
-// func (bb *BaseBiker) SetDevelopedCohesion(answer bool) {
-// 	bb.developedCohesion = answer
-// }
+func (bb *BaseBiker) UpdateIterationIncome(resources float64) {
+	bb.iterationIncome += resources
+}
+
+func (bb *BaseBiker) ResetIterationIncome() {
+	bb.iterationIncome = 0.0
+}

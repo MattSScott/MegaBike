@@ -305,11 +305,8 @@ func (e *EnvironmentModule) GetDistance(pos1, pos2 utils.Coordinates) float64 {
 	return math.Sqrt(math.Pow(pos1.X-pos2.X, 2) + math.Pow(pos1.Y-pos2.Y, 2))
 }
 
-
-
-// getter
-
-func GetEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeId uuid.UUID) *EnvironmentModule {
+// Constructor
+func NewEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeId uuid.UUID) *EnvironmentModule {
 	return &EnvironmentModule{
 		AgentId:   agentId,
 		GameState: gameState,

@@ -1,18 +1,16 @@
 package modules
 
 import (
+	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/utils"
-	"math/rand"
-
 	"github.com/google/uuid"
 )
 
 type AgentParameters struct {
-	PlatonicTendency float64               // hardwired value between [0, 1] reflecting the agents personality, where a higher value signifies greater preference for equal and fair distribution.
-	TrustNetwork    map[uuid.UUID]float64 		// mapping of uuid -> trust score. trust score ranges from 0 to 1
-	RegimeTrust 	map[utils.Governance]float64 // mapping of trust in the regimes
+	PlatonicTendency float64                      // hardwired value between [0, 1] reflecting the agents personality. higher = more selfless
+	TrustNetwork     map[uuid.UUID]float64        // mapping of uuid -> trust score. trust score ranges from [0,1]
+	RegimeTrust      map[utils.Governance]float64 // mapping of trust in the regimes
 }
-
 
 // returns: uuid of agent with minimum trust in your *whole* network, along with their trust score
 func (ap *AgentParameters) GetMinimumTrust() IDTrustPair {
@@ -77,21 +75,29 @@ func (ap *AgentParameters) UpdateTrustValue(agentID uuid.UUID, eventValue float6
 }
 
 // updates: the agents regime trust values
-func (ap *AgentParameters) UpdateRegimeTrustValues(rankOrder []utils.Governance) {
-	for rank, governance := range rankOrder {
-		if _, ok := ap.RegimeTrust[governance]; !ok {
-			// if governance is not in our trust network,i.e. at the start, assign starting value of 0.5
-			ap.RegimeTrust[governance] = 0.5
-		} else {
-			if rank == 0 {
-				ap.RegimeTrust[governance] += 0.1
-				ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
-			} else if rank == 2 {
-				ap.RegimeTrust[governance] -= 0.1
-				ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
-			}
-		}
-	}
+func (ap *AgentParameters) UpdateRegimeTrustValues(oneGini float64, someGini float64, manyGini float64) {
+
+	// doing 1-G turns 0 being good and 1 being bad to 0 being bad and 1 being good, as we want
+	ap.RegimeTrust[utils.One] = 1 - oneGini
+	ap.RegimeTrust[utils.Some] = 1 - someGini
+	ap.RegimeTrust[utils.Many] = 1 - manyGini
+
+	// ----- old -----
+
+	// for rank, governance := range rankOrder {
+	// 	if _, ok := ap.RegimeTrust[governance]; !ok {
+	// 		// if governance is not in our trust network,i.e. at the start, assign starting value of 0.5
+	// 		ap.RegimeTrust[governance] = 0.5
+	// 	} else {
+	// 		if rank == 0 {
+	// 			ap.RegimeTrust[governance] += 0.1
+	// 			ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
+	// 		} else if rank == 2 {
+	// 			ap.RegimeTrust[governance] -= 0.1
+	// 			ap.RegimeTrust[governance] = clamp(ap.RegimeTrust[governance])
+	// 		}
+	// 	}
+	// }
 }
 
 // returns: float that is 1 if input > 1, and 0 if input < 0
@@ -105,11 +111,11 @@ func clamp(value float64) float64 {
 	return value
 }
 
-
+// constructor
 func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
-		PlatonicTendency: rand.Float64(),
-		TrustNetwork:    make(map[uuid.UUID]float64),
-		RegimeTrust: 	make(map[utils.Governance]float64),
+		PlatonicTendency: utils.GeneratePlatonicTendency(*globals.GoodPlatonicTendency, *globals.PercentOfGoodAgents),
+		TrustNetwork:     make(map[uuid.UUID]float64),
+		RegimeTrust:      make(map[utils.Governance]float64),
 	}
 }

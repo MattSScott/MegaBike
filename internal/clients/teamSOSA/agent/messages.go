@@ -9,7 +9,6 @@ import (
 
 // ----- Round -----
 
-// done
 func (a *AgentSOSA) HandleProposedLootboxMessage(msg obj.ProposedLootboxMessage) {
 	sender := msg.GetSender()
 
@@ -23,7 +22,6 @@ func (a *AgentSOSA) HandleProposedLootboxMessage(msg obj.ProposedLootboxMessage)
 	
 }
 
-// done
 func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	// simple for now. if they are pedalling less than 20%, lower trust. if greater than 80%, increase trust
 	sender := msg.GetSender()
@@ -48,7 +46,6 @@ func (a *AgentSOSA) HandleConformMessage(msg obj.ConformMessage) {
 	}
 }
 
-// done
 func (a *AgentSOSA) GetAllRoundMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
 	
 	// if we are on a bike, tell our teammates what lootbox / forces we aimed for this round. otherwise dont message people.
@@ -63,7 +60,6 @@ func (a *AgentSOSA) GetAllRoundMessages([]obj.IBaseBiker) []messaging.IMessage[o
 	}
 }
 
-// done
 func (a *AgentSOSA) CreateProposedLootboxMessage() obj.ProposedLootboxMessage {
 	// tell our fellow bikers what direction we chose this round
 	return obj.ProposedLootboxMessage{
@@ -72,7 +68,6 @@ func (a *AgentSOSA) CreateProposedLootboxMessage() obj.ProposedLootboxMessage {
 	}
 }
 
-// done
 func (a *AgentSOSA) CreateForcesMessage() obj.ForcesMessage {
 	// tell our fellow bikers what forces we chose this round
 	return obj.ForcesMessage{
@@ -92,7 +87,6 @@ func (a *AgentSOSA) CreateConformMessage() obj.ConformMessage {
 
 // ----- Iteration -----
 
-// Done
 func (a *AgentSOSA) HandleKickOutMessage(msg obj.KickoutAgentMessage) {
 
 	senderID := msg.GetSender().GetID()
@@ -108,7 +102,6 @@ func (a *AgentSOSA) HandleKickOutMessage(msg obj.KickoutAgentMessage) {
 	} 
 }
 
-// Done
 func (a *AgentSOSA) HandleChangeBikeMessage(msg obj.ChangeBikeMessage) {
 	sender := msg.GetSender()
 	
@@ -123,7 +116,6 @@ func (a *AgentSOSA) HandleChangeBikeMessage(msg obj.ChangeBikeMessage) {
 	} 
 }
 
-// Done
 func (a *AgentSOSA) GetAllIterationMessages([]obj.IBaseBiker) []messaging.IMessage[obj.IBaseBiker] {
 
 	wantToSendKickoutMessage := false
@@ -161,7 +153,6 @@ func (a *AgentSOSA) GetAllIterationMessages([]obj.IBaseBiker) []messaging.IMessa
 	}
 }
 
-// Done
 func (a *AgentSOSA) CreatekickoutMessage() obj.KickoutAgentMessage {
 	// this is only called when we decide we do want to kick someone out
 
@@ -173,7 +164,6 @@ func (a *AgentSOSA) CreatekickoutMessage() obj.KickoutAgentMessage {
 	}
 }
 
-// Done
 func (a *AgentSOSA) CreateChangeBikeMessage() obj.ChangeBikeMessage {
 	// only called when we have decided to change bikes
 

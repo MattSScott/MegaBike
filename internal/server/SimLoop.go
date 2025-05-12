@@ -6,6 +6,7 @@ import (
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
 	"fmt"
+	"math"
 	"math/rand"
 	"slices"
 	"sort"
@@ -16,11 +17,11 @@ import (
 // the simulation loop (i.e. an iteration) represents 100 rounds
 func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int, reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
 
-	// record each regimes total collected resources up until this point
-	currentPoolPerRegimeStart := make(map[utils.Governance]float64)
-	for _, bike := range s.GetMegaBikes() {
-		currentPoolPerRegimeStart[bike.GetGovernance()] += bike.GetCurrentPool()
-	}
+	// // record each regimes total collected resources up until this point
+	// currentPoolPerRegimeStart := make(map[utils.Governance]float64)
+	// for _, bike := range s.GetMegaBikes() {
+	// 	currentPoolPerRegimeStart[bike.GetGovernance()] += bike.GetCurrentPool()
+	// }
 
 	// ----- 0. Gossip Phase -----
 	s.RunAgentMessagingSession(true)
@@ -85,38 +86,35 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 		bike.ResetKickedOutCount()
 	}
 
-	// ----- Let agents adjust their regime trust values -----
+	// ----- Publish Gini Coefficients to update agents' regime trust values -----
 
-	// record each regimes total collected resources at the end of the regime
-	currentPoolPerRegimeEnd := make(map[utils.Governance]float64)
-	for _, bike := range s.GetMegaBikes() {
-		currentPoolPerRegimeEnd[bike.GetGovernance()] += bike.GetCurrentPool()
-	}
+	var oneIncomes, someIncomes, manyIncomes []float64
 
-	// calculated the amount of resources each regime has collected this iteration
-	// by doing total resources at end of iteration  - total resources at start of iteration
-	resourcesGainedPerRegime := make(map[utils.Governance]float64)
-
-	for regime, end := range currentPoolPerRegimeEnd {
-		start := currentPoolPerRegimeStart[regime]
-		resourcesGainedPerRegime[regime] = end - start
-	}
-
-	var regimeRankThisIteration []utils.Governance
-	for gov := range resourcesGainedPerRegime {
-		regimeRankThisIteration = append(regimeRankThisIteration, gov)
-	}
-	
-	// Sort them by descending resource gain
-	sort.Slice(regimeRankThisIteration, func(i, j int) bool {
-		return resourcesGainedPerRegime[regimeRankThisIteration[i]] > resourcesGainedPerRegime[regimeRankThisIteration[j]]
-	})
-
-	// let the agents update their regime trust values based on how the regimes performed this iteration
 	for _, agent := range s.GetAgentMap() {
-		agent.UpdateRegimeTrustValues(regimeRankThisIteration)
+		bike := agent.GetBike()
+		governance := s.GetMegaBikes()[bike].GetGovernance()
+		switch governance {
+		case utils.One:
+			oneIncomes = append(oneIncomes, agent.GetIterationIncome())
+		case utils.Some:
+			someIncomes = append(someIncomes, agent.GetIterationIncome())
+		case utils.Many:
+			manyIncomes = append(manyIncomes, agent.GetIterationIncome())
+		}
 	}
 
+	oneGini := giniCoefficient(oneIncomes)
+	someGini := giniCoefficient(someIncomes)
+	manyGini := giniCoefficient(manyIncomes)
+
+	fmt.Println("Gini Coefficients of one, some, many: ", oneGini, someGini, manyGini)
+	
+
+	// publish these to the agents so they can update their regime trust. also reset their iteration income.
+	for _, agent := range s.GetAgentMap() {
+		agent.UpdateRegimeTrustValues(oneGini, someGini, manyGini)
+		agent.ResetIterationIncome()
+	}
 
 }
 
@@ -567,6 +565,9 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 				s.AddAgentToBike(agentNextInLine, nextHighestBike)
 				delete(queuedAgents, agentNextInLineId)
 
+				// increment the number of joining decisions
+				s.totalJoiningDecisions += 1
+
 				// if they had bikeavgtrust > regime trust for the bike they are joining, incremement the joiningbasedontrust count
 				if bikePreferenceOrder[i].BikeTrustHigherThanRegimeTrust {
 					s.joiningBasedOnTrust += 1
@@ -654,6 +655,7 @@ func (s *Server) ResetGameState() {
 }
 
 // ----- EXPERIMENTAL -----
+
 func (s *Server) RecordAssociations(reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
 	for agentID, agent := range s.GetAgentMap() {
 		bikes := s.GetMegaBikes()
@@ -684,4 +686,41 @@ func (s *Server) RecordAssociations(reassocationMap map[uuid.UUID]map[uuid.UUID]
 		}
 
 	}
+}
+
+// returns: the gini coefficient given a slice of incomes
+func giniCoefficient(incomes []float64) float64 {
+
+	// this uses the discrete formula given on the wikipedia page for gini coefficient
+
+    n := float64(len(incomes))
+    if n == 0 {
+        return 0
+    }
+
+    // Sort incomes in ascending order
+    sort.Float64s(incomes)
+
+    // Calculate the mean income
+    var sum float64
+    for _, income := range incomes {
+        sum += income
+    }
+    mean := sum / n
+
+    if mean == 0 {
+        return 0 
+    }
+
+
+    var totalDiff float64
+    for i := 0; i < len(incomes); i++ {
+        for j := 0; j < len(incomes); j++ {
+            totalDiff += math.Abs(incomes[i] - incomes[j])
+        }
+    }
+
+    gini := totalDiff / (2 * n * n * mean)
+
+    return gini
 }
