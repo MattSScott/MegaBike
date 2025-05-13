@@ -18,7 +18,7 @@ type AgentModules struct {
 }
 
 
-// returns: a pointer to an AgentSOSA object
+// constructor
 func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
 	return &AgentSOSA{
 		BaseBiker: baseBiker,

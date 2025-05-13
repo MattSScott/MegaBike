@@ -1,9 +1,5 @@
 package objects
 
-/*
-The IPhysicsObject is an interface class that all moving objects (Biker and Awdi) must implement.
-*/
-
 import (
 	utils "SOMAS2023/internal/common/utils"
 
@@ -12,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// The IPhysicsObject is an interface class that all moving objects (Biker and Awdi) must implement.
 type IPhysicsObject interface {
 	
 	// ----- Core: Don't need to be overriden -----
@@ -40,7 +37,7 @@ type PhysicsObject struct {
 	force        float64
 }
 
-// Constructor
+// constructor
 func GetPhysicsObject(mass float64) *PhysicsObject {
 	return &PhysicsObject{
 		id:           uuid.New(),

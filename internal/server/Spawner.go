@@ -13,9 +13,9 @@ import (
 
 type AgentInitFunction func(baseBiker *objects.BaseBiker) objects.IBaseBiker
 
-// notice: replace teamSOSA.GetBiker with nil to run basebiker experiments
+// replace teamSOSA.GetBiker with nil to run basebiker experiments
 var AgentInitFunctions = []AgentInitFunction{
-	teamSOSA.GetBiker, // Team SOSA
+	teamSOSA.GetBiker, 
 }
 
 // returns: a slice of agent generator-count pairs, i.e. a slice in which each element is a 2-tuple of the form (agent generator function, number to spawn in)

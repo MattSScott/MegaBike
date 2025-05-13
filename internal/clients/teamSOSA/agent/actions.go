@@ -128,6 +128,7 @@ func (a *AgentSOSA) DecideBikePreferenceOrder() []utils.BikePreferenceData {
 		for _, agent := range bike.GetAgents() {
 			sum += a.Modules.AgentParameters.TrustNetwork[agent.GetID()]
 		}
+		
 		bikeAverageTrust := sum / float64(len(bike.GetAgents()))
 
 		// Regime trust
@@ -322,7 +323,7 @@ func (a *AgentSOSA) HandleAgentUnalive(id uuid.UUID) {
 
 
 
-// ----- do i keep? -----
+// ----- Legacy -----
 
 func (a *AgentSOSA) ProposeNewRadius(pRad float64) float64 {
 	energy := a.GetEnergyLevel()
@@ -345,6 +346,7 @@ func (a *AgentSOSA) ProposeDirection() uuid.UUID {
 	}
 	return optimalLootbox
 }
+
 
 func (a *AgentSOSA) GetTrustOfAgent(agent objects.IBaseBiker) float64 {
     return a.Modules.AgentParameters.TrustNetwork[agent.GetID()]

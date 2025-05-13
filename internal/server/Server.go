@@ -41,14 +41,14 @@ type IBaseBikerServer interface {
 
 type Server struct {
 	baseserver.BaseServer[objects.IBaseBiker]
-	lootBoxes       map[uuid.UUID]objects.ILootBox
-	megaBikes       map[uuid.UUID]objects.IMegaBike
-	megaBikeRiders  map[uuid.UUID]uuid.UUID // a mapping from Agent ID -> ID of the bike that they are riding
-	awdi            objects.IAwdi
-	deadAgents      map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
-	globalRuleCache *objects.GlobalRuleCache
-	joiningBasedOnTrust float64				// recording how many joining decisions prioritised agent trust over regime trust
-	totalJoiningDecisions float64 			// recording the total joining decisions made
+	lootBoxes             map[uuid.UUID]objects.ILootBox
+	megaBikes             map[uuid.UUID]objects.IMegaBike
+	megaBikeRiders        map[uuid.UUID]uuid.UUID // a mapping from Agent ID -> ID of the bike that they are riding
+	awdi                  objects.IAwdi
+	deadAgents            map[uuid.UUID]objects.IBaseBiker // map of dead agents (used for respawning at the end of a round )
+	globalRuleCache       *objects.GlobalRuleCache
+	joiningBasedOnTrust   float64 // recording how many joining decisions prioritised agent trust over regime trust
+	totalJoiningDecisions float64 // recording the total joining decisions made
 }
 
 func GenerateServer() IBaseBikerServer {
@@ -57,7 +57,7 @@ func GenerateServer() IBaseBikerServer {
 
 // spawns everything in
 func (s *Server) Initialize(iterations int) {
-	s.BaseServer = *baseserver.CreateServer[objects.IBaseBiker](s.GetAgentGenerators(), iterations)
+	s.BaseServer = *baseserver.CreateServer(s.GetAgentGenerators(), iterations)
 	s.lootBoxes = make(map[uuid.UUID]objects.ILootBox)
 	s.megaBikes = make(map[uuid.UUID]objects.IMegaBike)
 	s.megaBikeRiders = make(map[uuid.UUID]uuid.UUID)
@@ -93,7 +93,6 @@ func (s *Server) Start() {
 
 	fmt.Println("Percent of decisions made based on trust:", percentOfDecisionsMadeBasedOnTrust, "%")
 
-
 	f, err := os.OpenFile("results.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -105,7 +104,6 @@ func (s *Server) Start() {
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
 	}
-
 
 	// this stuff is experimental and possibly to remove but keeping it for now
 	adjacencyMatrix := createAdjacencyMatrix(reassocationMap)

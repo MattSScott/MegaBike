@@ -19,6 +19,15 @@ type EnvironmentModule struct {
 	BikeId    uuid.UUID
 }
 
+// Constructor
+func NewEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeId uuid.UUID) *EnvironmentModule {
+	return &EnvironmentModule{
+		AgentId:   agentId,
+		GameState: gameState,
+		BikeId:    bikeId,
+	}
+}
+
 // ----- Lootboxes -----
 
 // returns: the lootbox map for the agent to use
@@ -304,65 +313,3 @@ func (e *EnvironmentModule) GetDistance(pos1, pos2 utils.Coordinates) float64 {
 
 	return math.Sqrt(math.Pow(pos1.X-pos2.X, 2) + math.Pow(pos1.Y-pos2.Y, 2))
 }
-
-// Constructor
-func NewEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeId uuid.UUID) *EnvironmentModule {
-	return &EnvironmentModule{
-		AgentId:   agentId,
-		GameState: gameState,
-		BikeId:    bikeId,
-	}
-}
-
-
-// nonsense that has been removed for now
-
-// // returns: the biker on your bike with the minimum trust 
-// func (e *EnvironmentModule) GetBikerWithMinTrust(ap *AgentParameters) IDTrustPair {
-// 	fellowBikers := e.GetBikerAgents() // MATT- THIS LINE GETS ALL AGENTS ON BIKES. SO THE FUNCTION FINDS THE BIKER IN WHOLE GAME WITH LOWEST TRUST. BUT IT WAS USED IN DECIDEKICKOUT, SO IT COULD SUGGEST A BIKER NOT ON YOUR BIKE WHICH IS STUPID. 
-// 	minTrustAgentId := uuid.Nil
-// 	minTrust := math.MaxFloat64
-// 	for _, fellowBiker := range fellowBikers {
-// 		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
-// 			if trust < minTrust {
-// 				minTrustAgentId = fellowBiker.GetID()
-// 				minTrust = trust
-// 			}
-// 		}
-// 	}
-
-// 	if minTrustAgentId != uuid.Nil && minTrustAgentId != e.AgentId {
-// 		// If minSC is nil or !us, then return the culprit.
-// 		return IDTrustPair{ID: minTrustAgentId, Trust: minTrust}
-// 	}
-// 	// Otherwise, return a random agent.
-// 	if len(fellowBikers) > 1 {
-// 		i, targetI := 0, rand.Intn(len(fellowBikers))
-// 		for id := range fellowBikers {
-// 			if i == targetI {
-// 				return IDTrustPair{ID: id, Trust: minTrust}
-// 			}
-// 			i++
-// 		}
-// 	}
-// 	panic("No agents found to kick off.")
-
-// }
-
-// below is also buggy and unchanged. clear issues on e.agentid line and getbikeragents line...
-
-// // // returns: the biker in the whole game with the maximum trust (not called anywhere)
-// func (e *EnvironmentModule) GetBikerWithMaxTrust(ap *AgentParameters) IDTrustPair {
-// 	fellowBikers := e.GetBikerAgents()
-// 	maxTrustAgentId := uuid.Nil
-// 	maxTrust := -2.0
-// 	for _, fellowBiker := range fellowBikers {
-// 		if trust, ok := ap.TrustNetwork[e.AgentId]; ok {
-// 			if trust >= maxTrust {
-// 				maxTrustAgentId = fellowBiker.GetID()
-// 				maxTrust = trust
-// 			}
-// 		}
-// 	}
-// 	return IDTrustPair{ID: maxTrustAgentId, Trust: maxTrust}
-// }

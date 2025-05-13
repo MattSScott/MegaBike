@@ -12,6 +12,15 @@ type AgentParameters struct {
 	RegimeTrust      map[utils.Governance]float64 // mapping of trust in the regimes
 }
 
+// constructor
+func NewAgentParameters() *AgentParameters {
+	return &AgentParameters{
+		PlatonicTendency: utils.GeneratePlatonicTendency(*globals.GoodPlatonicTendency, *globals.PercentOfGoodAgents),
+		TrustNetwork:     make(map[uuid.UUID]float64),
+		RegimeTrust:      make(map[utils.Governance]float64),
+	}
+}
+
 // returns: uuid of agent with minimum trust in your *whole* network, along with their trust score
 func (ap *AgentParameters) GetMinimumTrust() IDTrustPair {
 	minTrust := 2.0
@@ -109,13 +118,4 @@ func clamp(value float64) float64 {
 		return 0.0
 	}
 	return value
-}
-
-// constructor
-func NewAgentParameters() *AgentParameters {
-	return &AgentParameters{
-		PlatonicTendency: utils.GeneratePlatonicTendency(*globals.GoodPlatonicTendency, *globals.PercentOfGoodAgents),
-		TrustNetwork:     make(map[uuid.UUID]float64),
-		RegimeTrust:      make(map[utils.Governance]float64),
-	}
 }
