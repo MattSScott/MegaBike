@@ -42,11 +42,11 @@ func TranslateToName(id uuid.UUID) string {
 }
 
 // returns: a value for the platonic tendency of an agent
-func GeneratePlatonicTendency(goodPlatonicTendency float64, percentOfGoodAgents float64) float64 {
+func GeneratePlatonicTendency(goodPlatonicTendency float64, proportionOfGoodAgents float64) float64 {
 
 	r := rand.Float64()
 
-	if r < percentOfGoodAgents {
+	if r < proportionOfGoodAgents {
 		// return the good value
 		return goodPlatonicTendency
 	} else {

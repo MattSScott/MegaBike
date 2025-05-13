@@ -15,7 +15,7 @@ type AgentParameters struct {
 // constructor
 func NewAgentParameters() *AgentParameters {
 	return &AgentParameters{
-		PlatonicTendency: utils.GeneratePlatonicTendency(*globals.GoodPlatonicTendency, *globals.PercentOfGoodAgents),
+		PlatonicTendency: utils.GeneratePlatonicTendency(*globals.GoodPlatonicTendency, *globals.ProportionOfGoodAgents),
 		TrustNetwork:     make(map[uuid.UUID]float64),
 		RegimeTrust:      make(map[utils.Governance]float64),
 	}

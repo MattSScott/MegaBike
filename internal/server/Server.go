@@ -91,8 +91,6 @@ func (s *Server) Start() {
 
 	percentOfDecisionsMadeBasedOnTrust := (s.joiningBasedOnTrust / s.totalJoiningDecisions) * 100
 
-	fmt.Println("Percent of decisions made based on trust:", percentOfDecisionsMadeBasedOnTrust, "%")
-
 	f, err := os.OpenFile("results.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -105,6 +103,9 @@ func (s *Server) Start() {
 		fmt.Println("Error writing to file:", err)
 	}
 
+
+
+	
 	// this stuff is experimental and possibly to remove but keeping it for now
 	adjacencyMatrix := createAdjacencyMatrix(reassocationMap)
 
