@@ -1,11 +1,10 @@
 package server
 
 import (
-	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"fmt"
+	// "fmt"
 	"math"
 	"math/rand"
 	"slices"
@@ -34,7 +33,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 			repString += utils.TranslateToName(repID) + " "
 		}
 
-		fmt.Println("Bike", bike.GetGovernance(), "has", len(bike.GetAgents()), "agents with the following reps:", repString)
+		// fmt.Println("Bike", bike.GetGovernance(), "has", len(bike.GetAgents()), "agents with the following reps:", repString)
 	}
 
 	s.ResetGameState()
@@ -86,7 +85,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	someGini := giniCoefficient(someIncomes)
 	manyGini := giniCoefficient(manyIncomes)
 
-	fmt.Println("Gini Coefficients of one, some, many: ", oneGini, someGini, manyGini)
+	// fmt.Println("Gini Coefficients of one, some, many: ", oneGini, someGini, manyGini)
 	
 	// publish these to the agents so they can update their regime trust. also reset their iteration income.
 	for _, agent := range s.GetAgentMap() {
@@ -212,7 +211,7 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 
 	// start off with i = 0, i.e. they choose the bike at the top of their preference order. 
 	// each time we cycle through the queue, try the next bike down in their preference order (e.g. i=1, i=2, ...) etc
-	for i := 0; i < globals.MegaBikeCount; i++ {
+	for i := 0; i < s.config.MegaBikeCount; i++ {
 		// go through the agents in the queue
 		for agentNextInLineId, agentNextInLine := range queuedAgents {
 			var accepted bool

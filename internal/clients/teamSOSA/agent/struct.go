@@ -19,12 +19,12 @@ type AgentModules struct {
 
 
 // constructor
-func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
+func NewAgentSOSA(baseBiker *objects.BaseBiker, tendency float64) *AgentSOSA {
 	return &AgentSOSA{
 		BaseBiker: baseBiker,
 		Modules: AgentModules{
 			Environment:     modules.NewEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
-			AgentParameters: modules.NewAgentParameters(),
+			AgentParameters: modules.NewAgentParameters(tendency),
 			Utils:           modules.NewUtilsModule(),
 		},
 	}

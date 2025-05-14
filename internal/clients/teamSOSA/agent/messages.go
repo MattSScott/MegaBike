@@ -3,7 +3,7 @@ package agent
 import (
 	obj "SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/clients/teamSOSA/modules"
-	"fmt"
+	// "fmt"
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
 )
 
@@ -27,10 +27,10 @@ func (a *AgentSOSA) HandleForcesMessage(msg obj.ForcesMessage) {
 	sender := msg.GetSender()
 	if msg.AgentForces.Pedal < 0.2 {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
-		fmt.Println("reducing agent trust who proposed pedalled low")
+		// fmt.Println("reducing agent trust who proposed pedalled low")
 	} else if msg.AgentForces.Pedal > 0.8 {
 		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
-		fmt.Println("promoting agent who proposed pedalled high")
+		// fmt.Println("promoting agent who proposed pedalled high")
 	}
 }
 

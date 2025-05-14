@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/utils"
+
 	"github.com/google/uuid"
 )
 
@@ -13,9 +13,9 @@ type AgentParameters struct {
 }
 
 // constructor
-func NewAgentParameters() *AgentParameters {
+func NewAgentParameters(tendency float64) *AgentParameters {
 	return &AgentParameters{
-		PlatonicTendency: utils.GeneratePlatonicTendency(*globals.GoodPlatonicTendency, *globals.ProportionOfGoodAgents),
+		PlatonicTendency: tendency,
 		TrustNetwork:     make(map[uuid.UUID]float64),
 		RegimeTrust:      make(map[utils.Governance]float64),
 	}

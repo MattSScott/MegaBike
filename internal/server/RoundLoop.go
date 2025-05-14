@@ -1,12 +1,11 @@
 package server
 
 import (
-	"SOMAS2023/internal/common/globals"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"fmt"
+	// "fmt"
 	"slices"
 
 	"github.com/google/uuid"
@@ -40,7 +39,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 	// ----- 4. Punish and Kill -----
 
 	// Punish bikeless agents
-	s.punishBikelessAgents()
+	// s.punishBikelessAgents()
 
 	// Check Awdi collision and kill agents if they collided
 	s.AwdiCollisionCheck()
@@ -76,7 +75,7 @@ func (s *Server) RunRoundLoop(iterationDump *SimplifiedIterationDump, round int)
 
 func (s *Server) runActionDeliberation(action objects.Action) {
 	for _, bike := range s.megaBikes {
-		if *globals.StratifyRules {
+		if s.config.StratifyRules {
 			bike.ActionIsValidForRuleset(action)
 		} else {
 			bike.ActionCompliesWithLinearRuleset()
@@ -303,7 +302,7 @@ func (s *Server) AwdiCollisionCheck() {
 func (s *Server) unaliveAgents() {
 	for _, agent := range s.GetAgentMap() {
 		if agent.GetEnergyLevel() <= 0 {
-			fmt.Printf("Agent %s ran out of energy \n", utils.TranslateToName(agent.GetID()))
+			// fmt.Printf("Agent %s ran out of energy \n", utils.TranslateToName(agent.GetID()))
 			s.RemoveAgent(agent)
 		}
 	}
@@ -342,7 +341,7 @@ func (s *Server) HandleDeadRepresentatives() {
 			for _, agent := range agentsOnBike {
 				if !slices.Contains(survivingReps, agent.GetID()) && len(survivingReps) < expectedNumReps {
 					survivingReps = append(survivingReps, agent.GetID())
-					fmt.Println("Adding agent", utils.TranslateToName(agent.GetID()), "to reps slice")
+					// fmt.Println("Adding agent", utils.TranslateToName(agent.GetID()), "to reps slice")
 				}
 			}
 			bike.SetRepresentatives(survivingReps)

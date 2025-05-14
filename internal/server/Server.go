@@ -1,7 +1,7 @@
 package server
 
 import (
-	"SOMAS2023/internal/common/globals"
+	"SOMAS2023/internal/common/config"
 	"SOMAS2023/internal/common/objects"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
@@ -41,6 +41,7 @@ type IBaseBikerServer interface {
 
 type Server struct {
 	baseserver.BaseServer[objects.IBaseBiker]
+	config 				  config.Config
 	lootBoxes             map[uuid.UUID]objects.ILootBox
 	megaBikes             map[uuid.UUID]objects.IMegaBike
 	megaBikeRiders        map[uuid.UUID]uuid.UUID // a mapping from Agent ID -> ID of the bike that they are riding
@@ -57,6 +58,7 @@ func GenerateServer() IBaseBikerServer {
 
 // spawns everything in
 func (s *Server) Initialize(iterations int) {
+	s.config = config.NewConfig()
 	s.BaseServer = *baseserver.CreateServer(s.GetAgentGenerators(), iterations)
 	s.lootBoxes = make(map[uuid.UUID]objects.ILootBox)
 	s.megaBikes = make(map[uuid.UUID]objects.IMegaBike)
@@ -72,7 +74,7 @@ func (s *Server) Initialize(iterations int) {
 
 // begins the game
 func (s *Server) Start() {
-	fmt.Printf("Server initialised with %d agents \n\n", len(s.GetAgentMap()))
+	// fmt.Printf("Server initialised with %d agents \n\n", len(s.GetAgentMap()))
 
 	gameState := NewSimplifiedGameStateDump()
 
@@ -80,10 +82,10 @@ func (s *Server) Start() {
 	reassocationMap := make(map[uuid.UUID]map[uuid.UUID]int)
 
 	for i := 0; i < s.GetIterations(); i++ {
-		fmt.Printf("Game Loop %d running... \n \n", i+1)
+		// fmt.Printf("Game Loop %d running... \n \n", i+1)
 		s.RunSimLoop(utils.Rounds, gameState, i, reassocationMap)
-		fmt.Printf("Game Loop %d completed.\n", i+1)
-		fmt.Println(len(s.GetAgentMap()))
+		// fmt.Printf("Game Loop %d completed.\n", i+1)
+		// fmt.Println(len(s.GetAgentMap()))
 		if len(s.GetAgentMap()) == 0 {
 			break
 		}
@@ -91,18 +93,7 @@ func (s *Server) Start() {
 
 	percentOfDecisionsMadeBasedOnTrust := (s.joiningBasedOnTrust / s.totalJoiningDecisions) * 100
 
-	f, err := os.OpenFile("results.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer f.Close()
-
-	_, err = fmt.Fprintf(f, "%.6f\n", percentOfDecisionsMadeBasedOnTrust)
-	if err != nil {
-		fmt.Println("Error writing to file:", err)
-	}
-
+	fmt.Print(percentOfDecisionsMadeBasedOnTrust)
 
 
 	
@@ -289,10 +280,10 @@ func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 	if err := encoder.Encode(dump); err != nil {
 		panic(err)
 	}
-	for id, span := range lifespan(dump) {
-		fmt.Println(id, span)
-	}
-	fmt.Println(gameDumpFile)
+	// for id, span := range lifespan(dump) {
+		// fmt.Println(id, span)
+	// }
+	// fmt.Println(gameDumpFile)
 }
 
 // ----- Rule Stuff (possibly to remove) -----
@@ -300,7 +291,7 @@ func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 func (s *Server) PopulateGlobalRuleCache() {
 	// generate 100 rules split across N actions
 	nActions := int(objects.MAX_ACTIONS)
-	rulesPerAction := int(*globals.GlobalRuleCount / nActions)
+	rulesPerAction := int(s.config.GlobalRuleCount / nActions)
 
 	for i := 0; i < nActions; i++ {
 		for j := 0; j < rulesPerAction; j++ {
