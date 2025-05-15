@@ -19,8 +19,8 @@ type IBaseBiker interface {
 	// Decision Making (all agents)
 
 	DecideAction() BikerAction                                   // returns: int reflecting what action the agent has decided to do this iteration, pedal the bike (0) or try to change bikes (1)
-	DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool   // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
-	DecideJoiningOneAgent(agentId uuid.UUID) bool 					// returns: bool if you think this single agent should be accepted
+	DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool  // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
+	DecideJoiningOneAgent(agentId uuid.UUID) bool                // returns: bool if you think this single agent should be accepted
 	DecideChangeBike() uuid.UUID                                 // returns: uuid of the target bike if they want to change, otherwise just return current bike id
 	ProposeDirection() uuid.UUID                                 // returns: lootbox uuid to aim towards (the direction)
 	ProposeDirectionFromSubset(map[uuid.UUID]ILootBox) uuid.UUID // returns: lootbox uuid to aim towards (the direction) from a subset of lootboxes
@@ -29,14 +29,14 @@ type IBaseBiker interface {
 	VoteForKickout() map[uuid.UUID]int                           // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
 	DecideForce(direction uuid.UUID)                             // decides: the force the biker is going to pedal with
 	HandleAgentUnalive(id uuid.UUID)                             // decides: how to handle a dead agent
-	DecideBikePreferenceOrder() []utils.BikePreferenceData					// decides: the order of the agents preferred bikes
+	DecideBikePreferenceOrder() []utils.BikePreferenceData       // decides: the order of the agents preferred bikes
 
 	// Decision Making (extra representative functions)
 
-	DecideDirection() uuid.UUID
-	DecideKickOut() []uuid.UUID                                                  // returns: slice of agents to kick out
+	DecideDirection() uuid.UUID // returns: lootbox uuid to aim towards (the direction) from a representative
+	DecideKickOut() []uuid.UUID // returns: slice of agents to kick out
 
-	// Messaging 
+	// Messaging
 
 	HandleProposedLootboxMessage(msg ProposedLootboxMessage)
 	HandleForcesMessage(msg ForcesMessage)
@@ -51,47 +51,50 @@ type IBaseBiker interface {
 
 	// Getters
 
-	GetForces() utils.Forces        // returns: forces for current round
-	GetColour() utils.Colour        // returns: the colour of the lootbox that the agent is currently seeking
-	GetLocation() utils.Coordinates // returns: the agent's location
-	GetBike() uuid.UUID             // returns: the uuid of the bike the agent is currently on
-	GetEnergyLevel() float64        // returns: energy level of the agent
-	GetPoints() int                 // returns: the points the agent currently has
-	GetBikeStatus() bool            // returns: whether the biker is on a bike or not
-	GetFellowBikers() map[uuid.UUID]IBaseBiker  // returns: map containing the bikers on our bike.
-	GetFellowBikersSlice() []IBaseBiker 	// returns: slice containing the bikers on our bike
-	GetRoundDirection() uuid.UUID
-	GetRoundForces() utils.Forces
-	GetRoundDidConform() bool 
+	GetForces() utils.Forces                   // returns: forces for current round
+	GetColour() utils.Colour                   // returns: the colour of the lootbox that the agent is currently seeking
+	GetLocation() utils.Coordinates            // returns: the agent's location
+	GetBike() uuid.UUID                        // returns: the uuid of the bike the agent is currently on
+	GetEnergyLevel() float64                   // returns: energy level of the agent
+	GetPoints() int                            // returns: the points the agent currently has
+	GetBikeStatus() bool                       // returns: whether the biker is on a bike or not
+	GetFellowBikers() map[uuid.UUID]IBaseBiker // returns: map containing the bikers on our bike.
+	GetFellowBikersSlice() []IBaseBiker        // returns: slice containing the bikers on our bike
+	GetRoundDirection() uuid.UUID              // returns: the lootbox the agent wanted to travel toward this round
+	GetRoundForces() utils.Forces              // returns: the forces the agent applied this round
+	GetRoundDidConform() bool                  // returns: whether the agent conformed to the group decision this round or not
+	GetIterationIncome() float64               // returns: the amount of resources this agent recieved this round
 
-	// Setters
+	// Setters and updaters
 
-	SetBike(uuid.UUID)                     // sets: the megaBikeID. (this is either the id of the bike that the agent is on or the one that it's trying to join)
-	SetForces(forces utils.Forces)         // sets: the force (called within DecideForce())
-	UpdatePoints(pointGained int)          // increases: the points of an agent by pointsGained
-	UpdateEnergyLevel(energyLevel float64) // increases: the energy level of the agent by the allocated lootbox share or decreases by expended energy
-	ToggleOnBike()                         // toggles: whether a user is on bike or not. called when removing or adding a biker on a bike
-	ResetPoints()                          // resets: agents points to 0
-	SetRoundDirection(direction uuid.UUID)
-	SetRoundForces(forces utils.Forces)
-	SetRoundDidConform(didConform bool)
-
-	// experimental
-	UpdateRegimeTrustValues(rankOrder []utils.Governance) // updates the agents regime trust
+	SetBike(uuid.UUID)                                                           // sets: the megaBikeID. (this is either the id of the bike that the agent is on or the one that it's trying to join)
+	SetForces(forces utils.Forces)                                               // sets: the force (called within DecideForce())
+	UpdatePoints(pointGained int)                                                // increases: the points of an agent by pointsGained
+	UpdateEnergyLevel(energyLevel float64)                                       // increases: the energy level of the agent by the allocated lootbox share or decreases by expended energy
+	ToggleOnBike()                                                               // toggles: whether a user is on bike or not. called when removing or adding a biker on a bike
+	ResetPoints()                                                                // resets: agents points to 0
+	SetRoundDirection(direction uuid.UUID)                                       // sets: the round direction attribute of the agent, i.e. which lootbox it wanted to travel toward
+	SetRoundForces(forces utils.Forces)                                          // sets: the round forces attribute of the agent, i.e. what forces it applied
+	SetRoundDidConform(didConform bool)                                          // sets: the round did conform attribute of the agent, i.e. whether it conformed to the group direction decision
+	UpdateRegimeTrustValues(oneGini float64, someGini float64, manyGini float64) // updates: the agents regime trust attribute
+	UpdateIterationIncome(resources float64)                                     // updates: the agent's resource income count
+	ResetIterationIncome()                                                       // resets: the agent's resource income
 }
 
 type BaseBiker struct {
-	*baseAgent.BaseAgent[IBaseBiker] // BaseBiker inherits functions from BaseAgent such as GetID(), GetAllMessages() and UpdateAgentInternalState()
-	soughtColour                     utils.Colour
-	onBike                           bool
-	energyLevel                      float64 // float between 0 and 1
-	points                           int
-	forces                           utils.Forces
-	megaBikeId                       uuid.UUID  // if they are not on a bike it will be 0
-	gameState                        IGameState // updated by the server at every round
-	roundDecisions					 roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
+	*baseAgent.BaseAgent[IBaseBiker]                // BaseBiker inherits functions from BaseAgent such as GetID(), GetAllMessages() and UpdateAgentInternalState()
+	soughtColour                     utils.Colour   // the lootbox colour this agent seeks
+	onBike                           bool           // "is this agent on a bike"
+	energyLevel                      float64        // float between 0 and 1 representing the agent's energy
+	points                           int            // the agents points total. reflects how many of their desired lootbox they have collected
+	forces                           utils.Forces   // the forces the agent it applying
+	megaBikeId                       uuid.UUID      // if they are not on a bike it will be 0
+	gameState                        IGameState     // updated by the server at every round
+	roundDecisions                   roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
+	iterationIncome                  float64        // the agents' income this iteration
 }
 
+// constructor
 func GetBaseBiker(totColours utils.Colour, bikeId uuid.UUID, gameState IGameState) *BaseBiker {
 	return &BaseBiker{
 		BaseAgent:    baseAgent.NewBaseAgent[IBaseBiker](),
@@ -109,6 +112,12 @@ const (
 	Pedal BikerAction = iota
 	ChangeBike
 )
+
+type roundDecisions struct {
+	Direction  uuid.UUID
+	Forces     utils.Forces
+	didConform bool
+}
 
 // ----- BASE IMPLEMENTATIONS -----
 
@@ -264,6 +273,12 @@ func (bb *BaseBiker) HandleAgentUnalive(id uuid.UUID) {
 
 }
 
+func (bb *BaseBiker) DecideBikePreferenceOrder() []utils.BikePreferenceData {
+
+	return []utils.BikePreferenceData{}
+
+}
+
 func (bb *BaseBiker) DecideDirection() uuid.UUID {
 	nearest := bb.nearestLoot()
 	return nearest
@@ -293,8 +308,8 @@ func (bb *BaseBiker) GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBas
 	proposedLootboxMessage := bb.CreateProposedLootboxMessage()
 	forcesMsg := bb.CreateForcesMessage()
 	conformMsg := bb.CreateConformMessage()
-	
-	return []messaging.IMessage[IBaseBiker]{forcesMsg, proposedLootboxMessage,conformMsg}
+
+	return []messaging.IMessage[IBaseBiker]{forcesMsg, proposedLootboxMessage, conformMsg}
 }
 
 func (bb *BaseBiker) CreateProposedLootboxMessage() ProposedLootboxMessage {
@@ -327,11 +342,11 @@ func (bb *BaseBiker) CreateConformMessage() ConformMessage {
 	// For team's agent, add your own logic to communicate with other agents
 	return ConformMessage{
 		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
-		DidConform:     false,
+		DidConform:  false,
 	}
 }
 
-// Messaging - Iteration 
+// Messaging - Iteration
 
 func (bb *BaseBiker) HandleKickoutMessage(msg KickoutAgentMessage) {
 	// Team's agent should implement logic for handling other biker messages that were sent to them.
@@ -349,7 +364,7 @@ func (bb *BaseBiker) GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[
 	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
 	kickoutMsg := bb.CreatekickoutMessage()
 	changeBikeMessage := bb.CreateChangeBikeMessage()
-	
+
 	return []messaging.IMessage[IBaseBiker]{kickoutMsg, changeBikeMessage}
 }
 
@@ -371,7 +386,10 @@ func (bb *BaseBiker) CreateChangeBikeMessage() ChangeBikeMessage {
 		BikeId:      uuid.Nil,
 	}
 }
+
 // ----- 2. Core Functions (do not need to override these, can inherit basebiker's) -----
+
+// Getters
 
 func (bb *BaseBiker) GetForces() utils.Forces {
 	return bb.forces
@@ -409,8 +427,8 @@ func (bb *BaseBiker) GetBikeStatus() bool {
 	return bb.onBike
 }
 
-// for use in adding / removal
 func (bb *BaseBiker) GetFellowBikers() map[uuid.UUID]IBaseBiker {
+	// for use in adding / removal
 	bikes := bb.gameState.GetMegaBikes()
 	if _, ok := bikes[bb.GetBike()]; !ok {
 		panic("agents bike not found")
@@ -420,8 +438,8 @@ func (bb *BaseBiker) GetFellowBikers() map[uuid.UUID]IBaseBiker {
 	return fellowBikers
 }
 
-// for use in messaging
 func (bb *BaseBiker) GetFellowBikersSlice() []IBaseBiker {
+	// for use in messaging
 	bikes := bb.gameState.GetMegaBikes()
 	if _, ok := bikes[bb.GetBike()]; !ok {
 		panic("agents bike not found")
@@ -435,6 +453,24 @@ func (bb *BaseBiker) GetFellowBikersSlice() []IBaseBiker {
 
 	return fellowBikerSlice
 }
+
+func (bb *BaseBiker) GetRoundDirection() uuid.UUID {
+	return bb.roundDecisions.Direction
+}
+
+func (bb *BaseBiker) GetRoundForces() utils.Forces {
+	return bb.roundDecisions.Forces
+}
+
+func (bb *BaseBiker) GetRoundDidConform() bool {
+	return bb.roundDecisions.didConform
+}
+
+func (bb *BaseBiker) GetIterationIncome() float64 {
+	return bb.iterationIncome
+}
+
+// Setters
 
 func (bb *BaseBiker) SetBike(bikeId uuid.UUID) {
 	bb.megaBikeId = bikeId
@@ -463,6 +499,30 @@ func (bb *BaseBiker) ResetPoints() {
 	bb.points = 0
 }
 
+func (bb *BaseBiker) SetRoundDirection(direction uuid.UUID) {
+	bb.roundDecisions.Direction = direction
+}
+
+func (bb *BaseBiker) SetRoundForces(forces utils.Forces) {
+	bb.roundDecisions.Forces = forces
+}
+
+func (bb *BaseBiker) SetRoundDidConform(didConform bool) {
+	bb.roundDecisions.didConform = didConform
+}
+
+func (bb *BaseBiker) UpdateRegimeTrustValues(oneGini float64, someGini float64, manyGini float64) {
+
+}
+
+func (bb *BaseBiker) UpdateIterationIncome(resources float64) {
+	bb.iterationIncome += resources
+}
+
+func (bb *BaseBiker) ResetIterationIncome() {
+	bb.iterationIncome = 0.0
+}
+
 // ----- Helper Functions for the above -----
 
 func (bb *BaseBiker) nearestLoot() uuid.UUID {
@@ -489,57 +549,3 @@ func (bb *BaseBiker) nearestLoot() uuid.UUID {
 func (bb *BaseBiker) GetGameState() IGameState {
 	return bb.gameState
 }
-
-
-// ---- Experimental -----
-type roundDecisions struct {
-	Direction uuid.UUID
-	Forces utils.Forces
-	didConform bool
-}
-
-func (bb *BaseBiker) SetRoundDirection(direction uuid.UUID) {
-	bb.roundDecisions.Direction = direction
-}
-
-func (bb *BaseBiker) SetRoundForces(forces utils.Forces) {
-	bb.roundDecisions.Forces = forces
-}
-
-func (bb *BaseBiker) SetRoundDidConform(didConform bool) {
-	bb.roundDecisions.didConform = didConform
-}
-
-func (bb *BaseBiker) GetRoundDirection() uuid.UUID {
-	return bb.roundDecisions.Direction
-}
-
-func (bb *BaseBiker) GetRoundForces() utils.Forces {
-	return bb.roundDecisions.Forces
-}
-
-func (bb *BaseBiker) GetRoundDidConform() bool {
-	return bb.roundDecisions.didConform
-}
-
-
-func (bb *BaseBiker) DecideBikePreferenceOrder() []utils.BikePreferenceData {
-
-
-	return []utils.BikePreferenceData{}
-
-}
-
-func (bb *BaseBiker) UpdateRegimeTrustValues(rankOrder []utils.Governance) {
-
-
-
-}
-
-// func (bb *BaseBiker) GetDevelopedCohesion() bool {
-// 	return bb.developedCohesion
-// }
-
-// func (bb *BaseBiker) SetDevelopedCohesion(answer bool) {
-// 	bb.developedCohesion = answer
-// }

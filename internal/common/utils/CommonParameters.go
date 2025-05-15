@@ -15,10 +15,12 @@ const RespawnEveryIteration = false
 const Rounds = 100 // usually 100 
 
 // ----- Server Parameters -----
+
 const ReplenishLootBoxes bool = true
 const ReplenishMegaBikes bool = true
 
 // ----- Physics Parameters -----
+
 const MassBike float64 = 1.0
 const MassBiker float64 = 1.0
 const MassAwdi float64 = 7.0
@@ -28,6 +30,7 @@ const DragCoefficient float64 = 0.5 // Drag coefficient can be optimised in expe
 
 
 // ----- Resources - Points and Energy -----
+
 const PointsFromSameColouredLootBox = 500.0
 const MovingDepletion float64 = 0.01 // proportionality of energy loss
 const LimboEnergyPenalty float64 = 0.01 // amount of energy lost per round when off a bike
@@ -36,11 +39,13 @@ const RepDecisionPenalty float64 = 0.02
 
 
 // ----- Awdi Behavior -----
+
 const AwdiTargetsEmptyMegaBike bool = false
 const AwdiOnlyTargetsStationaryMegaBike bool = false // if false, targeting slowest
 const AwdiRemovesMegaBike bool = false
 
 // ----- Voting Method Choice ------
+
 type voteMethods int
 
 const (

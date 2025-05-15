@@ -16,7 +16,7 @@ type LootBox struct {
 	totalLoot float64				
 }
 
-// GetLootBox is a constructor for LootBox that initializes it with a new UUID and default position.
+// constructor
 func GetLootBox() *LootBox {
 	return &LootBox{
 		PhysicsObject: GetPhysicsObject(0),

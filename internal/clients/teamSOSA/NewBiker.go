@@ -5,7 +5,7 @@ import (
 	"SOMAS2023/internal/common/objects"
 )
 
-// SOSA agent init function
-func GetBiker(baseBiker *objects.BaseBiker) objects.IBaseBiker {
-	return agent.NewAgentSOSA(baseBiker)
+// init function for the SOSA agent
+func GetBiker(baseBiker *objects.BaseBiker, tendency float64) objects.IBaseBiker {
+	return agent.NewAgentSOSA(baseBiker, tendency)
 }

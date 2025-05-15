@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// UtilsModule - Module for handling various Utils
 type UtilsModule struct{}
 
 type IDTrustPair struct {
@@ -15,16 +14,9 @@ type IDTrustPair struct {
 	Trust float64
 }
 
-// NewUtilsModule - Constructor for UtilsModule
+// constructor
 func NewUtilsModule() *UtilsModule {
 	return &UtilsModule{}
-}
-
-
-func (um *UtilsModule) ProjectForce(actual, expected utils.Forces) float64 {
-	actualVec := GetForceVector(actual)
-	expectVec := GetForceVector(expected)
-	return actualVec.CosineSimilarity(*expectVec) * actual.Pedal
 }
 
 // returns: the forces to a target coordinate
@@ -44,7 +36,6 @@ func (um *UtilsModule) GetForcesToTarget(agentPosition, targetPosition utils.Coo
 		Turning: turningDecision,
 	}
 }
-
 
 // GetForcesToTargetWithDirectionOffset calculates the forces to be applied on an agent to steer towards a target position,
 // taking into account a specified degree of angular offset.
@@ -69,3 +60,16 @@ func (um *UtilsModule) GetForcesToTargetWithDirectionOffset(force, degree float6
 		Turning: turningDecision,
 	}
 }
+
+
+
+
+
+
+// legacy
+
+// func (um *UtilsModule) ProjectForce(actual, expected utils.Forces) float64 {
+// 	actualVec := GetForceVector(actual)
+// 	expectVec := GetForceVector(expected)
+// 	return actualVec.CosineSimilarity(*expectVec) * actual.Pedal
+// }

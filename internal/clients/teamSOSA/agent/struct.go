@@ -18,13 +18,13 @@ type AgentModules struct {
 }
 
 
-// returns: a pointer to an AgentSOSA object
-func NewAgentSOSA(baseBiker *objects.BaseBiker) *AgentSOSA {
+// constructor
+func NewAgentSOSA(baseBiker *objects.BaseBiker, tendency float64) *AgentSOSA {
 	return &AgentSOSA{
 		BaseBiker: baseBiker,
 		Modules: AgentModules{
-			Environment:     modules.GetEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
-			AgentParameters: modules.NewAgentParameters(),
+			Environment:     modules.NewEnvironmentModule(baseBiker.GetID(), baseBiker.GetGameState(), baseBiker.GetBike()),
+			AgentParameters: modules.NewAgentParameters(tendency),
 			Utils:           modules.NewUtilsModule(),
 		},
 	}

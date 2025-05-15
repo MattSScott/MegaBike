@@ -43,7 +43,7 @@ type MegaBike struct {
 	currentPool         float64
 }
 
-// GetMegaBike is a constructor for MegaBike that initializes it with a new UUID and default position.
+// constructor
 func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *MegaBike {
 	return &MegaBike{
 		agents: make(map[uuid.UUID]IBaseBiker),
@@ -105,7 +105,6 @@ func (mb *MegaBike) UpdateOrientation() {
 		mb.orientation += math.Atan2(avgY, avgX) / math.Pi // Converts back to -1 to 1 range
 	}
 }
-
 
 
 // ----- General -----
