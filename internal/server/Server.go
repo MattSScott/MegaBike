@@ -93,7 +93,7 @@ func (s *Server) Start() {
 
 	percentOfDecisionsMadeBasedOnTrust := (s.joiningBasedOnTrust / s.totalJoiningDecisions) * 100
 
-	fmt.Print(percentOfDecisionsMadeBasedOnTrust)
+	fmt.Println(percentOfDecisionsMadeBasedOnTrust)
 
 
 	
@@ -265,7 +265,8 @@ func lifespan(dump SimplifiedGameStateDump) map[uuid.UUID]int {
 func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 
 	relativePath, _ := os.Getwd()
-	gameDumpPath := "\\gameDumps\\heterogenous\\" //change to homo/heterogenous depending on colour composition
+	percentageGoodAgents := s.config.ProportionOfGoodAgents * 100
+	gameDumpPath := "\\gameDumps\\" + fmt.Sprint(percentageGoodAgents) + "\\"
 	gameDumpHash := uuid.New().String()
 
 	gameDumpFile := relativePath + gameDumpPath + gameDumpHash + ".json"

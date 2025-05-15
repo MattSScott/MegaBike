@@ -15,6 +15,7 @@ type SimplifiedIterationDump struct {
 	Rounds          []*SimplifiedRoundDump `json:"round"`
 	KickOffs        map[uuid.UUID]int      `json:"kickOffs"`
 	AverageKickOffs float64                `json:"avgKickOffs"`
+	JoiningDecisions map[uuid.UUID]bool 	`json:"joiningDecisions"` 		// agent -> flag indicating whether their joining decision had b>r
 }
 
 type SimplifiedRoundDump struct {
@@ -70,6 +71,7 @@ func (s *Server) GenerateIterationDump() *SimplifiedIterationDump {
 		Rounds:          make([]*SimplifiedRoundDump, 0),
 		KickOffs:        make(map[uuid.UUID]int),
 		AverageKickOffs: 0.0,
+		JoiningDecisions: make(map[uuid.UUID]bool),
 	}
 }
 

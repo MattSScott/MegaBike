@@ -16,12 +16,15 @@ import (
 // the simulation loop (i.e. an iteration) represents 100 rounds
 func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iteration int, reassocationMap map[uuid.UUID]map[uuid.UUID]int) {
 
+	// generate a zero-valued iteration dump ready to be filled in
+	iterationDump := s.GenerateIterationDump()
+
 	// ----- 0. Gossip Phase -----
 	s.RunAgentMessagingSession(true)
 
 	// ----- 1. Self-Selection Phase -----
 
-	s.RunVoluntaryReassociation()
+	s.RunVoluntaryReassociation(iterationDump)
 	s.RecordAssociations(reassocationMap)
 
 
@@ -37,7 +40,6 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 	}
 
 	s.ResetGameState()
-	iterationDump := s.GenerateIterationDump()
 
 	// ----- 2. Operation Phase: Run the n rounds within this iteration. Megabikes move around the world. -----
 	for i := 0; i < rounds; i++ {
@@ -99,7 +101,7 @@ func (s *Server) RunSimLoop(rounds int, gameState *SimplifiedGameStateDump, iter
 // ----- NEW SELF SELECTION PHASE DESIGN: QUEUEING SYSTEM -----
 
 // runs the voluntary association process
-func (s *Server) RunVoluntaryReassociation() {
+func (s *Server) RunVoluntaryReassociation(iterationDump *SimplifiedIterationDump) {
 
 	// Step 1: Take all agents off their bikes if they are on one
 	s.RemoveAllAgentsFromBikes()
@@ -108,7 +110,7 @@ func (s *Server) RunVoluntaryReassociation() {
 	queuedAgents := s.RandomlyAssignRepresentatives()
 
 	// Step 3: Go through the queued agents, asking them their top bike, then prompting that bike to make an acceptance decision.
-	s.ProcessAgentQueue(queuedAgents)
+	s.ProcessAgentQueue(queuedAgents, iterationDump)
 }
 
 // removes all agents from their bikes
@@ -207,7 +209,7 @@ func (s *Server) RandomlyAssignRepresentatives() map[uuid.UUID]objects.IBaseBike
 }
 
 // takes the queued agents and lets them apply to bikes to be accepted / rejected
-func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker) {
+func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker, iterationDump *SimplifiedIterationDump) {
 
 	// start off with i = 0, i.e. they choose the bike at the top of their preference order. 
 	// each time we cycle through the queue, try the next bike down in their preference order (e.g. i=1, i=2, ...) etc
@@ -241,6 +243,9 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 				// if they had bikeavgtrust > regime trust for the bike they are joining, incremement the joiningbasedontrust count
 				if bikePreferenceOrder[i].BikeTrustHigherThanRegimeTrust {
 					s.joiningBasedOnTrust += 1
+					iterationDump.JoiningDecisions[agentNextInLineId] = true	// b > r
+				} else {
+					iterationDump.JoiningDecisions[agentNextInLineId] = false // b < r
 				}
 			}
 		}
