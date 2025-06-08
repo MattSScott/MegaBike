@@ -2,41 +2,31 @@ package utils
 
 import "github.com/google/uuid"
 
-// ----- Environment Parameters -----
+// ----- Physical Parameters -----
 
 const GridHeight float64 = 250.0
 const GridWidth float64 = 250.0
-const CollisionThreshold float64 = 7.0
-const Epsilon float64 = 0.01 // tolerance for FP rounding and checking if == 1.0
+const CollisionThreshold float64 = 7.0 // how close two objects have to be for a collision to be detected
 const BikersOnBike = 8
-const ReplenishEnergyEveryIteration = true
-const ResetPointsEveryIteration = true
-const RespawnEveryIteration = false
-const Rounds = 100 // usually 100 
-
-// ----- Server Parameters -----
-
-const ReplenishLootBoxes bool = true
-const ReplenishMegaBikes bool = true
-
-// ----- Physics Parameters -----
-
 const MassBike float64 = 1.0
 const MassBiker float64 = 1.0
 const MassAwdi float64 = 7.0
-const BikerMaxForce float64 = 0.8 // The max force a biker can pedal
-const AwdiMaxForce float64 = 0.7  // The awdi's force is equivalent to that of one biker agent going at maximum speed [NOTE: MAYBE NEEDS CHANGING, WAS 1.0]
-const DragCoefficient float64 = 0.5 // Drag coefficient can be optimised in experimentation
-
-
-// ----- Resources - Points and Energy -----
-
+const BikerMaxForce float64 = 0.8
+const AwdiMaxForce float64 = 1.0
+const DragCoefficient float64 = 0.5
+const MovingDepletion float64 = 0.01              // constant of proportionality for energy loss when pedalling
+const LimboEnergyPenalty float64 = 0.05           // energy lost per round when off a bike
+const DecisionPenalty float64 = 0.01			  // energy lost when an agent makes a decision
 const PointsFromSameColouredLootBox = 500.0
-const MovingDepletion float64 = 0.01 // proportionality of energy loss
-const LimboEnergyPenalty float64 = 0.01 // amount of energy lost per round when off a bike
-const DeliberativeDemocracyPenalty float64 = 0.01 // amount of energy lost per vote in a deliberative democracy
-const RepDecisionPenalty float64 = 0.02
 
+// ----- Round and Iteration Parameters -----
+
+const Rounds = 100
+const ReplenishEnergyEveryIteration = true
+const ResetPointsEveryIteration = true
+const RespawnEveryIteration = false
+const ReplenishLootBoxes bool = true
+const ReplenishMegaBikes bool = true
 
 // ----- Awdi Behavior -----
 
@@ -44,20 +34,9 @@ const AwdiTargetsEmptyMegaBike bool = false
 const AwdiOnlyTargetsStationaryMegaBike bool = false // if false, targeting slowest
 const AwdiRemovesMegaBike bool = false
 
-// ----- Voting Method Choice ------
+// ----- Misc ------
 
-type voteMethods int
-
-const (
-	PLURALITY voteMethods = iota
-	RUNOFF
-	BORDACOUNT
-	INSTANTRUNOFF
-	APPROVAL
-	COPELANDSCORING
-)
-
-const VoteAction voteMethods = PLURALITY
+const Epsilon float64 = 0.01 // tolerance for FP rounding and checking if == 1.0
 
 // ----- Agent Names -----
 
@@ -70,6 +49,6 @@ var (
 		"Gina", "Harry", "Ivy", "Jacob", "Kylie", "Liam", "Mia", "Noah",
 		"Olivia", "Peter", "Quincy", "Rita", "Samuel", "Tara", "Ursula", "Vincent",
 	}
-	nameMap  = make(map[uuid.UUID]string)
+	nameMap   = make(map[uuid.UUID]string)
 	nameIndex = 0
 )

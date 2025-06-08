@@ -1,7 +1,7 @@
 package objects
 
 import (
-	utils "SOMAS2023/internal/common/utils"
+	utils "MegabikeFYPVersion/internal/common/utils"
 )
 
 type ILootBox interface {
@@ -13,15 +13,15 @@ type ILootBox interface {
 type LootBox struct {
 	*PhysicsObject
 	colour    utils.Colour
-	totalLoot float64				
+	totalLoot float64
 }
 
 // constructor
 func GetLootBox() *LootBox {
 	return &LootBox{
 		PhysicsObject: GetPhysicsObject(0),
-		colour:        utils.GenerateRandomColour(),    
-		totalLoot:     utils.GenerateRandomFloat(2, 4), 
+		colour:        utils.GenerateRandomColour(),
+		totalLoot:     utils.GenerateRandomFloat(2, 4),
 	}
 }
 

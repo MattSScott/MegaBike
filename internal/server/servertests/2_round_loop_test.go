@@ -1,9 +1,9 @@
-package server_test
+package ServerTests
 
 import (
-	"SOMAS2023/internal/common/objects"
-	"SOMAS2023/internal/common/utils"
-	"SOMAS2023/internal/server"
+	"MegabikeFYPVersion/internal/common/objects"
+	"MegabikeFYPVersion/internal/common/utils"
+	"MegabikeFYPVersion/internal/server"
 	"fmt"
 	"testing"
 
@@ -11,18 +11,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Direction Decision 
+// ----- Direction Decisions -----
 
 func TestRunOneDirectionDecision(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	// perform role assignment, then get them to decide on a direction. if nil, something wrong. otherwise pass!
-	for _, bike := range s.GetMegaBikes(){
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
+
+	for _, bike := range s.GetMegaBikes() {
 		governance := bike.GetGovernance()
-		if governance == utils.Some || governance == utils.One {
-			s.PerformRoleAssignment(bike)
+		if governance == utils.One {
 			lootbox := s.RunOneDirectionDecision(bike)
 			fmt.Printf("\n bike targetting lootbox with id %v", lootbox)
 			if lootbox == uuid.Nil {
@@ -31,20 +33,46 @@ func TestRunOneDirectionDecision(t *testing.T) {
 		}
 	}
 
-	fmt.Println("Representative direction decision process runs successfully")
+	fmt.Println("One direction decision process runs successfully")
 }
 
-func TestRunDemocraticDirectionDecision(t *testing.T) {
+func TestRunSomeDirectionDecision(t *testing.T) {
 	iterations := 3
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
 
-	for _, bike := range s.GetMegaBikes(){
+	for _, bike := range s.GetMegaBikes() {
+		governance := bike.GetGovernance()
+		if governance == utils.Some {
+			lootbox := s.RunSomeDirectionDecision(bike)
+			fmt.Printf("\n bike targetting lootbox with id %v", lootbox)
+			if lootbox == uuid.Nil {
+				t.Error("targetting nil lootbox")
+			}
+		}
+	}
+
+	fmt.Println("Some direction decision process runs successfully")
+}
+
+func TestRunManyDirectionDecision(t *testing.T) {
+	iterations := 3
+	s := server.GenerateServer()
+	s.Initialize(iterations)
+
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
+
+	for _, bike := range s.GetMegaBikes() {
 		governance := bike.GetGovernance()
 		if governance == utils.Many {
-			lootbox := s.RunDemocraticDirectionDecision(bike)
-			fmt.Printf("\n bike targetting lootbox with id %v", lootbox) 
+			lootbox := s.RunManyDirectionDecision(bike)
+			fmt.Printf("\n bike targetting lootbox with id %v", lootbox)
 			if lootbox == uuid.Nil {
 				t.Error("targetting nil lootbox")
 			}
@@ -54,150 +82,156 @@ func TestRunDemocraticDirectionDecision(t *testing.T) {
 	fmt.Println("Democratic direction decision process runs successfully")
 }
 
-// Lootbox Stuff
+// ----- Lootbox Collecting -----
 func TestLootboxCheckAndDistributionOne(t *testing.T) {
 	iterations := 1
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	for _, bike := range s.GetMegaBikes() {
-		s.PerformRoleAssignment(bike)
-	}
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
 
-	// Get the One bike
+	// Get a One bike for testing
 	foundOne := false
-	var bike objects.IMegaBike
+	var oneBike objects.IMegaBike
 	for !foundOne {
-		bike = s.GetMegaBikes()[s.GetRandomBikeId()]
-		if bike.GetGovernance() == utils.One {
+		oneBike = s.GetMegaBikes()[s.GetRandomBikeId()]
+		if oneBike.GetGovernance() == utils.One {
 			foundOne = true
 		}
 	}
 
-	// Perform role assignment
-	s.PerformRoleAssignment(bike)
+	fmt.Println("Bike has id", oneBike.GetID(), "with governance", oneBike.GetGovernance(), "and ", len(oneBike.GetAgents()), "agents")
 
-	fmt.Println("Bike has id", bike.GetID(), "with governance", bike.GetGovernance(), "and ", len(bike.GetAgents()), "agents")
 	// Set all agent energys to 0.5 to ensure they are able to get lootbox energy, as they start at 1 and can't go higher
-	// without doing this they cant actually get any energy
-	for _, agent := range bike.GetAgents() {
+	// without doing this they can't actually get any energy
+	for _, agent := range oneBike.GetAgents() {
 		agent.UpdateEnergyLevel(-0.5)
 	}
 
 	// find the sum of agent energys before collecting the box
 	sumOfAgentEnergyBeforeCollision := 0.0
-	for _, agent := range bike.GetAgents() {
+	for _, agent := range oneBike.GetAgents() {
 		sumOfAgentEnergyBeforeCollision += agent.GetEnergyLevel()
 	}
 
 	fmt.Println("sum of agent energy pre collision:", sumOfAgentEnergyBeforeCollision)
 
-	// getting a random lootbox's position 
+	// getting a random lootbox's position
 	var lootbox objects.ILootBox
 	for _, lootbox = range s.GetLootBoxes() {
 		break
 	}
 	pos := lootbox.GetPosition()
 
-	// change the bikes position to this lootboxes position 
-	ps := bike.GetPhysicalState()
+	fmt.Println("lootbox has energy: ", lootbox.GetTotalResources())
+
+	// change the bikes position to this lootboxes position
+	ps := oneBike.GetPhysicalState()
 	newPhysicalState := utils.PhysicalState{
 		Position:     pos,
 		Velocity:     ps.Velocity,
 		Mass:         ps.Mass,
 		Acceleration: ps.Acceleration,
 	}
-	bike.SetPhysicalState(newPhysicalState)
+	oneBike.SetPhysicalState(newPhysicalState)
 
 	// run lootbox check and distribution
 	s.LootboxCheckAndDistributions()
 
 	// find the sum of agent energys AFTER collecting the box
 	sumOfAgentEnergyAfterCollision := 0.0
-	for _, agent := range bike.GetAgents() {
+	for _, agent := range oneBike.GetAgents() {
 		sumOfAgentEnergyAfterCollision += agent.GetEnergyLevel()
 	}
 
 	fmt.Println("sum of agent energy post collision:", sumOfAgentEnergyAfterCollision)
 
 	// Check the following:
-	assert.True(t, sumOfAgentEnergyAfterCollision > sumOfAgentEnergyBeforeCollision, "lootbox energy has not been distributed ")
-	
+	assert.True(t, sumOfAgentEnergyAfterCollision > sumOfAgentEnergyBeforeCollision, "lootbox energy has not been distributed")
+
 	if _, exists := s.GetLootBoxes()[lootbox.GetID()]; exists {
 		t.Error("The collected lootbox hasn't been deleted from the lootbox map")
 	}
 
+	fmt.Println("One bike lootbox check and distribution process runs successfully")
 }
 
 func TestLootboxCheckAndDistributionSome(t *testing.T) {
+
 	iterations := 1
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	for _, bike := range s.GetMegaBikes() {
-		s.PerformRoleAssignment(bike)
-	}
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
 
-	// Get the Some bike
+	// Get a Some bike for testing
 	foundSome := false
-	var bike objects.IMegaBike
+	var someBike objects.IMegaBike
 	for !foundSome {
-		bike = s.GetMegaBikes()[s.GetRandomBikeId()]
-		if bike.GetGovernance() == utils.Some {
+		someBike = s.GetMegaBikes()[s.GetRandomBikeId()]
+		if someBike.GetGovernance() == utils.Some {
 			foundSome = true
 		}
 	}
 
-	fmt.Println("Bike has id", bike.GetID(), "with governance", bike.GetGovernance(), "and ", len(bike.GetAgents()), "agents")
+	fmt.Println("Bike has id", someBike.GetID(), "with governance", someBike.GetGovernance(), "and ", len(someBike.GetAgents()), "agents")
+
 	// Set all agent energys to 0.5 to ensure they are able to get lootbox energy, as they start at 1 and can't go higher
-	// without doing this they cant actually get any energy
-	for _, agent := range bike.GetAgents() {
+	// without doing this they can't actually get any energy
+	for _, agent := range someBike.GetAgents() {
 		agent.UpdateEnergyLevel(-0.5)
 	}
 
 	// find the sum of agent energys before collecting the box
 	sumOfAgentEnergyBeforeCollision := 0.0
-	for _, agent := range bike.GetAgents() {
+	for _, agent := range someBike.GetAgents() {
 		sumOfAgentEnergyBeforeCollision += agent.GetEnergyLevel()
 	}
 
 	fmt.Println("sum of agent energy pre collision:", sumOfAgentEnergyBeforeCollision)
 
-	// getting a random lootbox's position 
+	// getting a random lootbox's position
 	var lootbox objects.ILootBox
 	for _, lootbox = range s.GetLootBoxes() {
 		break
 	}
 	pos := lootbox.GetPosition()
 
-	// change the bikes position to this lootboxes position 
-	ps := bike.GetPhysicalState()
+	fmt.Println("lootbox has energy: ", lootbox.GetTotalResources())
+
+	// change the bikes position to this lootboxes position
+	ps := someBike.GetPhysicalState()
 	newPhysicalState := utils.PhysicalState{
 		Position:     pos,
 		Velocity:     ps.Velocity,
 		Mass:         ps.Mass,
 		Acceleration: ps.Acceleration,
 	}
-	bike.SetPhysicalState(newPhysicalState)
+	someBike.SetPhysicalState(newPhysicalState)
 
 	// run lootbox check and distribution
 	s.LootboxCheckAndDistributions()
 
 	// find the sum of agent energys AFTER collecting the box
 	sumOfAgentEnergyAfterCollision := 0.0
-	for _, agent := range bike.GetAgents() {
+	for _, agent := range someBike.GetAgents() {
 		sumOfAgentEnergyAfterCollision += agent.GetEnergyLevel()
 	}
 
 	fmt.Println("sum of agent energy post collision:", sumOfAgentEnergyAfterCollision)
 
 	// Check the following:
-	assert.True(t, sumOfAgentEnergyAfterCollision > sumOfAgentEnergyBeforeCollision, "lootbox energy has not been distributed ")
-	
+	assert.True(t, sumOfAgentEnergyAfterCollision > sumOfAgentEnergyBeforeCollision, "lootbox energy has not been distributed")
+
 	if _, exists := s.GetLootBoxes()[lootbox.GetID()]; exists {
 		t.Error("The collected lootbox hasn't been deleted from the lootbox map")
 	}
 
+	fmt.Println("Some bike lootbox check and distribution process runs successfully")
 }
 
 func TestLootboxCheckAndDistributionMany(t *testing.T) {
@@ -205,123 +239,136 @@ func TestLootboxCheckAndDistributionMany(t *testing.T) {
 	s := server.GenerateServer()
 	s.Initialize(iterations)
 
-	for _, bike := range s.GetMegaBikes() {
-		s.PerformRoleAssignment(bike)
-	}
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
 
-
-	// Get the Many bike
+	// Get a Many bike for testing
 	foundMany := false
-	var bike objects.IMegaBike
+	var manyBike objects.IMegaBike
 	for !foundMany {
-		bike = s.GetMegaBikes()[s.GetRandomBikeId()]
-		if bike.GetGovernance() == utils.Many {
+		manyBike = s.GetMegaBikes()[s.GetRandomBikeId()]
+		if manyBike.GetGovernance() == utils.Many {
 			foundMany = true
 		}
 	}
 
-	fmt.Println("Bike has id", bike.GetID(), "with governance", bike.GetGovernance(), "and ", len(bike.GetAgents()), "agents")
+	fmt.Println("Bike has id", manyBike.GetID(), "with governance", manyBike.GetGovernance(), "and ", len(manyBike.GetAgents()), "agents")
+
 	// Set all agent energys to 0.5 to ensure they are able to get lootbox energy, as they start at 1 and can't go higher
-	// without doing this they cant actually get any energy
-	for _, agent := range bike.GetAgents() {
+	// without doing this they can't actually get any energy
+	for _, agent := range manyBike.GetAgents() {
 		agent.UpdateEnergyLevel(-0.5)
 	}
 
 	// find the sum of agent energys before collecting the box
 	sumOfAgentEnergyBeforeCollision := 0.0
-	for _, agent := range bike.GetAgents() {
+	for _, agent := range manyBike.GetAgents() {
 		sumOfAgentEnergyBeforeCollision += agent.GetEnergyLevel()
 	}
 
 	fmt.Println("sum of agent energy pre collision:", sumOfAgentEnergyBeforeCollision)
 
-	// getting a random lootbox's position 
+	// getting a random lootbox's position
 	var lootbox objects.ILootBox
 	for _, lootbox = range s.GetLootBoxes() {
 		break
 	}
 	pos := lootbox.GetPosition()
 
-	// change the bikes position to this lootboxes position 
-	ps := bike.GetPhysicalState()
+	fmt.Println("lootbox has energy: ", lootbox.GetTotalResources())
+
+	// change the bikes position to this lootboxes position
+	ps := manyBike.GetPhysicalState()
 	newPhysicalState := utils.PhysicalState{
 		Position:     pos,
 		Velocity:     ps.Velocity,
 		Mass:         ps.Mass,
 		Acceleration: ps.Acceleration,
 	}
-	bike.SetPhysicalState(newPhysicalState)
+	manyBike.SetPhysicalState(newPhysicalState)
 
 	// run lootbox check and distribution
 	s.LootboxCheckAndDistributions()
 
 	// find the sum of agent energys AFTER collecting the box
 	sumOfAgentEnergyAfterCollision := 0.0
-	for _, agent := range bike.GetAgents() {
+	for _, agent := range manyBike.GetAgents() {
 		sumOfAgentEnergyAfterCollision += agent.GetEnergyLevel()
 	}
 
 	fmt.Println("sum of agent energy post collision:", sumOfAgentEnergyAfterCollision)
 
 	// Check the following:
-	assert.True(t, sumOfAgentEnergyAfterCollision > sumOfAgentEnergyBeforeCollision, "lootbox energy has not been distributed ")
-	
+	assert.True(t, sumOfAgentEnergyAfterCollision > sumOfAgentEnergyBeforeCollision, "lootbox energy has not been distributed")
+
 	if _, exists := s.GetLootBoxes()[lootbox.GetID()]; exists {
 		t.Error("The collected lootbox hasn't been deleted from the lootbox map")
 	}
 
+	fmt.Println("Many bike lootbox check and distribution process runs successfully")
 }
 
-// Awdi Collision Stuff
+// ----- Awdi Targeting and Collision -----
 func TestAwdiCollisionProcess(t *testing.T) {
 	iterations := 2
 	s := server.GenerateServer()
 	s.Initialize(iterations)
-	nAgentToDelete := 0
+
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
+
+	numAgentsToDelete := 0
 	for _, anyBike := range s.GetMegaBikes() {
 		agentsOnBike := anyBike.GetAgents()
-		nAgentToDelete = len(agentsOnBike)
-		if agentsOnBike == nil {
-			continue
-		}
 		// find any non-empty bike
 		if len(agentsOnBike) > 0 {
+			// record how many agents should be deleted
+			numAgentsToDelete = len(agentsOnBike)
 			// send awdi to it
 			s.GetAwdi().SetPhysicalState(utils.PhysicalState{Position: anyBike.GetPosition()})
+			break
 		}
 	}
-	nAgentsBefore := len(s.GetAgentMap())
-	nMegaBikesBefore := len(s.GetMegaBikes())
-	s.AwdiCollisionCheck()
-	nAgentsAfter := len(s.GetAgentMap())
-	nMegaBikesAfter := len(s.GetMegaBikes())
 
-	// check if remove agents correctly
-	if nAgentsBefore-nAgentsAfter != nAgentToDelete {
-		fmt.Printf("Before awdi collision, number of agents = %d \n", nAgentsBefore)
-		fmt.Printf("After awdi collision, number of agents = %d \n", nAgentsAfter)
-		fmt.Printf("On bike collide with awdi, number of agents = %d \n", nAgentToDelete)
+	numAgentsBefore := len(s.GetAgentMap())
+	numMegaBikesBefore := len(s.GetMegaBikes())
+	s.AwdiCollisionCheck()
+	numAgentsAfter := len(s.GetAgentMap())
+	numMegaBikesAfter := len(s.GetMegaBikes())
+
+	// check if agents are removed correctly
+	if numAgentsBefore-numAgentsAfter != numAgentsToDelete {
+		fmt.Printf("Before awdi collision, number of agents = %d \n", numAgentsBefore)
+		fmt.Printf("After awdi collision, number of agents = %d \n", numAgentsAfter)
+		fmt.Printf("Number of agents on bike that collided with awdi: %d \n", numAgentsToDelete)
 		t.Error("Awdi didnt remove agents correctly")
 	}
 
+	// check if megabike is removed correctly (if the AwdiRemovesMegabike flag is set to true)
 	if utils.AwdiRemovesMegaBike {
-		// check if remove megaBike correctly
-		if nMegaBikesBefore-nMegaBikesAfter != 1 {
-			fmt.Printf("Before awdi collision, number of megaBikes = %d \n", nMegaBikesBefore)
-			fmt.Printf("After awdi collision, number of megaBikes = %d \n", nMegaBikesAfter)
+		if numMegaBikesBefore-numMegaBikesAfter != 1 {
+			fmt.Printf("Before awdi collision, number of megaBikes = %d \n", numMegaBikesBefore)
+			fmt.Printf("After awdi collision, number of megaBikes = %d \n", numMegaBikesAfter)
 			t.Error("Awdi didnt remove megaBike correctly")
 		}
 	}
-	fmt.Printf("\nRun action process passed \n")
+	fmt.Printf("\n Awdi collision process runs correctly \n")
 }
 
 func TestAwdiTargeting(t *testing.T) {
 	iterations := 1
 	s := server.GenerateServer()
 	s.Initialize(iterations)
+
+	// setup
+	iterationDump := s.GenerateIterationDump()
+	s.RunVoluntaryReassociation(iterationDump)
+
 	i := 0
-	emptyBikeId := uuid.UUID{}
-	slowBikeId := uuid.UUID{}
+	var emptyBikeId uuid.UUID
+	var slowBikeId uuid.UUID
 	for id, bike := range s.GetMegaBikes() {
 		if i == 0 {
 			// remove agents on it
@@ -362,41 +409,14 @@ func TestAwdiTargeting(t *testing.T) {
 			t.Error("Awdi didnt ignore moving megaBike!")
 		}
 	}
-	fmt.Printf("\nRun action process passed \n")
+	fmt.Printf("\n Awdi targeting runs correctly \n")
 }
-
-// this test needs writing
-func TestHandleDepartingRepresentative(t *testing.T) {
-	iterations := 3
-	s := server.GenerateServer()
-	s.Initialize(iterations)
-
-
-	
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // func TestHandleKickout(t *testing.T) {
 // 	iterations := 6
 // 	s := server.GenerateServer()
 // 	s.Initialize(iterations)
-	
+
 // 	s.HandleKickoutProcess()
 
 // 	for _, agent := range s.GetAgentMap() {
@@ -413,8 +433,6 @@ func TestHandleDepartingRepresentative(t *testing.T) {
 // 	}
 // 	fmt.Printf("\nHandle kickout passed \n")
 // }
-
-
 
 // func TestRunActionProcess(t *testing.T) {
 
@@ -671,20 +689,6 @@ func TestHandleDepartingRepresentative(t *testing.T) {
 // 	fmt.Printf("\nProcess joining request passed \n")
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // func TestGetWinningDirection1(t *testing.T) {
 // 	iterations := 1
 // 	s := server.GenerateServer()
@@ -779,8 +783,6 @@ func TestHandleDepartingRepresentative(t *testing.T) {
 
 // 	assert.Equal(t, reducedPowerProposal, s.GetWinningDirection(proposals, weights), "reduced power proposal should win")
 // }
-
-
 
 // func TestProcessJoiningRequests(t *testing.T) {
 // 	globals.MegaBikeCount += 2 // accomodate two spare bikes

@@ -24,7 +24,7 @@ func NewConfig() Config {
 	flag.Float64Var(&cfg.LootBoxRatio, "loot", 2.5, "ratio of lootboxes to agents")
 	flag.IntVar(&cfg.GlobalRuleCount, "rules", 0, "number of initial rules in global rule cache")
 	flag.BoolVar(&cfg.StratifyRules, "s", true, "stratify rules by action")
-	flag.Float64Var(&cfg.GoodPlatonicTendency, "goodpt", 1, "platonic tendency for the good agents")
+	flag.Float64Var(&cfg.GoodPlatonicTendency, "goodpt", 0.75, "platonic tendency for the good agents")
 	flag.Float64Var(&cfg.ProportionOfGoodAgents, "goodagproportion", 0.5, "proportion of agents with the good platonic tendency")
 
 	flag.Parse()

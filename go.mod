@@ -1,4 +1,4 @@
-module SOMAS2023
+module MegabikeFYPVersion
 
 go 1.21
 

@@ -1,9 +1,5 @@
 # Rules and Implementation Details
 
-## Agent Goal / Winning Condition
-The winning agent must be alive and have the highest points (obtained via lootboxes) at the end of the game.
-
-
 ## Bikers and MultiBike Forces
 
 1. **Agent Parameters:**
@@ -32,21 +28,3 @@ The winning agent must be alive and have the highest points (obtained via lootbo
    - There is a drag force that is propotional to Velocity squared.
 
 <img src="../docs/Images/MultibikeForceOrientation.png" alt="MultiBike Force and Orientation Diagram" width="500"/> 
-
-## Lootbox Collision
-When a Megabike collides with a lootbox:
-   1. All agents on the bike receive the same eneregy, irrespective of the lootbox colour.
-   2. Agents of the same colour as the lootbox will receive a set number of points each.
-   3. If more than one bike colides with a lootbox during one epoch, the energy will be split between the bikes equally.
-
-## Awdi Collision
-An Awdi targets the slowest bike. When an Awdi collides with a lootbox:
-   1. All agents on the bike die.
-
-## Physics Boundaries
-There is no physical boundary, however lootboxes only spawn in a set area of the map. 
-Therefore there is no incentive to go further off the map, but if you do you want to you will not be penalized.
-
-## Resource Allocation Voting
-- Each agent votes by passing in an array which contains the distribution of your vote for each agent (including themselves),
- normalized to one. This function takes in this array from each agent, sums up the votes for each agent and normalises the array to one. 
