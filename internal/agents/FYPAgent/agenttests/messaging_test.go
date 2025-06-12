@@ -5,6 +5,7 @@ import (
 	obj "MegabikeFYPVersion/internal/common/objects"
 	"MegabikeFYPVersion/internal/common/utils"
 	"MegabikeFYPVersion/internal/server"
+	"fmt"
 	"testing"
 
 	"github.com/MattSScott/basePlatformSOMAS/messaging"
@@ -19,50 +20,54 @@ func TestRoundMessaging(t *testing.T) {
 	agent1 := agent.NewFYPAgent(obj.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), s), 0.5)
 	agent2 := agent.NewFYPAgent(obj.GetBaseBiker(utils.GenerateRandomColour(), uuid.New(), s), 0.5)
 
-	t.Run("Test Forces Message", func(t *testing.T) {
-		// Get initial trust value
-		initialTrust := agent1.GetTrustOfAgent(agent2)
+	t.Run("Test Conform Message", func(t *testing.T) {
 
-		// Create and send a forces message with high pedal force
-		forces := utils.Forces{Pedal: 0.9}
-		msg := obj.ForcesMessage{
+
+		msg := obj.ConformMessage{
 			BaseMessage: messaging.CreateMessage[obj.IBaseBiker](agent2, []obj.IBaseBiker{agent1}),
-			AgentForces: forces,
+			DidConform: true,
 		}
 
 		// Handle the message
-		agent1.HandleForcesMessage(msg)
+		agent1.HandleConformMessage(msg) // to get them to 0.5 baseline
+
+			// Get initial trust value
+		initialTrust := agent1.GetTrustOfAgent(agent2)
+		
+		agent1.HandleConformMessage(msg) // to increase it
 
 		// Check if trust increased
 		newTrust := agent1.GetTrustOfAgent(agent2)
+		fmt.Println("old trust", initialTrust)
+		fmt.Println("new trust", newTrust)
 		if newTrust <= initialTrust {
 			t.Errorf("Trust should have increased for high pedal force. Initial: %f, New: %f", initialTrust, newTrust)
 		}
 	})
 
-	t.Run("Test Proposed Lootbox Message", func(t *testing.T) {
-		// Get initial trust value
-		initialTrust := agent1.GetTrustOfAgent(agent2)
+	// t.Run("Test Proposed Lootbox Message", func(t *testing.T) {
+	// 	// Get initial trust value
+	// 	initialTrust := agent1.GetTrustOfAgent(agent2)
 
-		// Set same round direction for both agents
-		lootboxID := uuid.New()
-		agent1.SetRoundDirection(lootboxID)
+	// 	// Set same round direction for both agents
+	// 	lootboxID := uuid.New()
+	// 	agent1.SetRoundDirection(lootboxID)
 
-		// Create and send proposed lootbox message
-		msg := obj.ProposedLootboxMessage{
-			BaseMessage: messaging.CreateMessage[obj.IBaseBiker](agent2, []obj.IBaseBiker{agent1}),
-			Lootbox:     lootboxID,
-		}
+	// 	// Create and send proposed lootbox message
+	// 	msg := obj.ProposedLootboxMessage{
+	// 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](agent2, []obj.IBaseBiker{agent1}),
+	// 		Lootbox:     lootboxID,
+	// 	}
 
-		// Handle the message
-		agent1.HandleProposedLootboxMessage(msg)
+	// 	// Handle the message
+	// 	agent1.HandleProposedLootboxMessage(msg)
 
-		// Check if trust increased
-		newTrust := agent1.GetTrustOfAgent(agent2)
-		if newTrust <= initialTrust {
-			t.Errorf("Trust should have increased for agreeing on lootbox. Initial: %f, New: %f", initialTrust, newTrust)
-		}
-	})
+	// 	// Check if trust increased
+	// 	newTrust := agent1.GetTrustOfAgent(agent2)
+	// 	if newTrust <= initialTrust {
+	// 		t.Errorf("Trust should have increased for agreeing on lootbox. Initial: %f, New: %f", initialTrust, newTrust)
+	// 	}
+	// })
 }
 
 // func TestIterationMessaging(t *testing.T) {

@@ -7,7 +7,6 @@ import "github.com/google/uuid"
 const GridHeight float64 = 250.0
 const GridWidth float64 = 250.0
 const CollisionThreshold float64 = 7.0 // how close two objects have to be for a collision to be detected
-const BikersOnBike = 8
 const MassBike float64 = 1.0
 const MassBiker float64 = 1.0
 const MassAwdi float64 = 7.0
@@ -16,7 +15,7 @@ const AwdiMaxForce float64 = 1.0
 const DragCoefficient float64 = 0.5
 const MovingDepletion float64 = 0.01              // constant of proportionality for energy loss when pedalling
 const LimboEnergyPenalty float64 = 0.05           // energy lost per round when off a bike
-const DecisionPenalty float64 = 0.01			  // energy lost when an agent makes a decision
+const DecisionPenalty float64 = 0.01		  // energy lost when an agent makes a decision
 const PointsFromSameColouredLootBox = 500.0
 
 // ----- Round and Iteration Parameters -----

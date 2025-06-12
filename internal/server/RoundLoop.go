@@ -398,7 +398,7 @@ func (s *Server) HandleDeadRepresentatives() {
 		} else if bike.GetGovernance() == utils.Some {
 			expectedNumReps = 3
 		}
-
+		
 		agentsOnBike := bike.GetAgents()
 		for _, agent := range agentsOnBike {
 			if !slices.Contains(survivingReps, agent.GetID()) && len(survivingReps) < expectedNumReps {

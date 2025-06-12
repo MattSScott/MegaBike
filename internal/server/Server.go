@@ -159,7 +159,7 @@ func (s *Server) AddAgentToBike(agent objects.IBaseBiker, bike objects.IMegaBike
 	}
 
 	// if bike is full, panic (shouldn't happen)
-	if len(bike.GetAgents()) == utils.BikersOnBike {
+	if len(bike.GetAgents()) == s.config.BikeCapacity {
 		panic("trying to add agent to full bike")
 	}
 
@@ -257,9 +257,27 @@ func (s *Server) GetLootboxCount() int {
 func (s *Server) outputSimulationResult(dump SimplifiedGameStateDump) {
 
 	relativePath, _ := os.Getwd()
-	percentageGoodAgents := s.config.ProportionOfGoodAgents * 100
-	gameDumpPath := "\\gameDumps\\brexperiments\\" + fmt.Sprint(percentageGoodAgents) + "\\"
-	// gameDumpPath := "\\gameDumps\\miexperiments\\"
+
+
+	// Experiment 1:
+	// gameDumpPath := "\\gameDumps\\voluntaryvsrandom\\voluntary\\"
+	// gameDumpPath := "\\gameDumps\\voluntaryvsrandom\\random\\"
+
+	// Experiment 2:
+	// gameDumpPath := "\\gamedumps\\scaleanalysis\\"
+
+	// Experiment 3:
+	// percentageGoodAgents := s.config.ProportionOfGoodAgents * 100
+	// gameDumpPath := "\\gameDumps\\platonictendency\\" + fmt.Sprint(percentageGoodAgents) + "\\"
+
+	// Experiment 4:
+	// numOfBikes := len(s.GetMegaBikes())
+	// gameDumpPath := "\\gameDumps\\numofbikes\\" + fmt.Sprint(numOfBikes) + "\\"
+
+	// Experiment 5: 
+	bikeCapacity := s.config.BikeCapacity
+	gameDumpPath := "\\gameDumps\\bikecapacity\\"+ fmt.Sprint(bikeCapacity) + "\\"
+
 	gameDumpHash := uuid.New().String()
 
 	gameDumpFile := relativePath + gameDumpPath + gameDumpHash + ".json"

@@ -52,7 +52,7 @@ func (a *FYPAgent) DecideBikePreferenceOrder() []utils.BikePreferenceData {
 		regimeTrust := a.Modules.AgentParameters.RegimeTrust[bike.GetGovernance()]
 
 		// Score the bike (weighted average) and add it to bike data
-		score := 0.5*bikeAverageTrust + 0.5*regimeTrust
+		score := 0.9*bikeAverageTrust + 0.1*regimeTrust
 		bikeData.Score = score
 
 		// Save the trust comparison flag to the bike data

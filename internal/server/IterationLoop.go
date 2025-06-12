@@ -28,8 +28,21 @@ func (s *Server) RunIterationLoop(rounds int, gameStateDump *SimplifiedGameState
 	}
 
 	// ----- 1. Self-Selection Phase -----
+	rand := false
+	
+	if rand {
+		s.RunRandomReassociation(iterationDump)
+	} else {
+		s.RunVoluntaryReassociation(iterationDump)
+	}
 
-	s.RunVoluntaryReassociation(iterationDump)
+
+	// temp experiment
+	// if iteration == 0 {
+	// 	s.RunRandomReassociation(iterationDump)
+	// }
+
+
 	// s.RecordAssociations(reassocationMap)
 	s.DisplayAssociations()
 
@@ -87,12 +100,51 @@ func (s *Server) RunVoluntaryReassociation(iterationDump *SimplifiedIterationDum
 	queuedAgents := s.RandomlyAssignRepresentatives()
 
 	// Step 3: Go through the queued agents, asking them their top bike, then prompting that bike to make an acceptance decision.
+	s.ProcessAgentQueue(queuedAgents, iterationDump)
+}
 
-	rand := false
-	if rand {
-		s.ProcessAgentQueueRandomly(queuedAgents, iterationDump)
-	} else {
-		s.ProcessAgentQueue(queuedAgents, iterationDump)
+func (s *Server) RunRandomReassociation(iterationDump *SimplifiedIterationDump) {
+    // step 1: remove all agents from bikes
+    s.RemoveAllAgentsFromBikes()
+
+    // step 2: randomly assign all agents to bikes
+    allAgents := s.GetAgentMap()
+    s.RandomAgentAssociation(allAgents, iterationDump)
+
+	// step 3: set the reps
+    for _, bike := range s.GetMegaBikes() {
+		agents := bike.GetAgents()
+		agentIDs := make([]uuid.UUID, 0, len(agents))
+		for id := range agents {
+			agentIDs = append(agentIDs, id)
+		}
+
+		switch bike.GetGovernance() {
+		case utils.One:
+			if len(agentIDs) > 0 {
+				// Always assign exactly one representative
+				rand.Shuffle(len(agentIDs), func(i, j int) {
+					agentIDs[i], agentIDs[j] = agentIDs[j], agentIDs[i]
+				})
+				bike.SetRepresentatives([]uuid.UUID{agentIDs[0]})
+			} else {
+				bike.SetRepresentatives([]uuid.UUID{})
+			}
+		case utils.Some:
+			if len(agentIDs) > 0 {
+				// Assign up to 3 representatives, but not more than the number of agents
+				rand.Shuffle(len(agentIDs), func(i, j int) {
+					agentIDs[i], agentIDs[j] = agentIDs[j], agentIDs[i]
+				})
+				numReps := min(3, len(agentIDs))
+				bike.SetRepresentatives(agentIDs[:numReps])
+			} else {
+				bike.SetRepresentatives([]uuid.UUID{})
+			}
+		default:
+			// For Many, always clear reps
+			bike.SetRepresentatives([]uuid.UUID{})
+		}
 	}
 }
 
@@ -217,7 +269,7 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 			}
 
 			totalSeatsFilled := len(nextHighestBike.GetAgents())
-			emptySpaces := utils.BikersOnBike - totalSeatsFilled
+			emptySpaces := s.config.BikeCapacity - totalSeatsFilled
 
 			// if we can assign them (i.e. they are accepted and there is space left), add them to the bike and remove them from the queue
 			if accepted && emptySpaces > 0 {
@@ -240,35 +292,27 @@ func (s *Server) ProcessAgentQueue(queuedAgents map[uuid.UUID]objects.IBaseBiker
 
 	// --- New code: randomly assign any agents that never got a bike ---
     for agentID, agent := range queuedAgents {
-        attempts := 0
         assigned := false
-        // Try up to 100 times to find a bike with available capacity.
         for !assigned {
             randomBikeID := s.GetRandomBikeId()
             randomBike := s.GetMegaBikes()[randomBikeID]
-            if len(randomBike.GetAgents()) < utils.BikersOnBike {
+            if len(randomBike.GetAgents()) < s.config.BikeCapacity {
                 s.AddAgentToBike(agent, randomBike)
                 assigned = true
             }
-            attempts++
         }
-        // if !assigned {
-            // fmt.Printf("Warning: Agent %v could not be assigned to a bike randomly after %d attempts\n", agentID, attempts)
-        // }
-        // Remove the agent from the queue regardless.
         delete(queuedAgents, agentID)
     }
 }
 
 // test function to assign agents randomly to bikes
-func (s *Server) ProcessAgentQueueRandomly(queuedAgents map[uuid.UUID]objects.IBaseBiker, iterationDump *SimplifiedIterationDump) {
-	for agentID, agent := range queuedAgents {
+func (s *Server) RandomAgentAssociation(agentMap map[uuid.UUID]objects.IBaseBiker, iterationDump *SimplifiedIterationDump) {
+	for _, agent := range agentMap {
 		randomBike := s.GetMegaBikes()[s.GetRandomBikeId()]
-		for len(randomBike.GetAgents()) == 8 {
+		for len(randomBike.GetAgents()) == s.config.BikeCapacity {
 			randomBike = s.GetMegaBikes()[s.GetRandomBikeId()]
 		}
 		s.AddAgentToBike(agent, randomBike)
-		delete(queuedAgents, agentID)
 	}
 }
 
