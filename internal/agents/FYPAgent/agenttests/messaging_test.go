@@ -45,29 +45,29 @@ func TestRoundMessaging(t *testing.T) {
 		}
 	})
 
-	// t.Run("Test Proposed Lootbox Message", func(t *testing.T) {
-	// 	// Get initial trust value
-	// 	initialTrust := agent1.GetTrustOfAgent(agent2)
+	t.Run("Test Proposed Lootbox Message", func(t *testing.T) {
+		// Get initial trust value
+		initialTrust := agent1.GetTrustOfAgent(agent2)
 
-	// 	// Set same round direction for both agents
-	// 	lootboxID := uuid.New()
-	// 	agent1.SetRoundDirection(lootboxID)
+		// Set same round direction for both agents
+		lootboxID := uuid.New()
+		agent1.SetRoundDirection(lootboxID)
 
-	// 	// Create and send proposed lootbox message
-	// 	msg := obj.ProposedLootboxMessage{
-	// 		BaseMessage: messaging.CreateMessage[obj.IBaseBiker](agent2, []obj.IBaseBiker{agent1}),
-	// 		Lootbox:     lootboxID,
-	// 	}
+		// Create and send proposed lootbox message
+		msg := obj.ProposedLootboxMessage{
+			BaseMessage: messaging.CreateMessage[obj.IBaseBiker](agent2, []obj.IBaseBiker{agent1}),
+			Lootbox:     lootboxID,
+		}
 
-	// 	// Handle the message
-	// 	agent1.HandleProposedLootboxMessage(msg)
+		// Handle the message
+		agent1.HandleProposedLootboxMessage(msg)
 
-	// 	// Check if trust increased
-	// 	newTrust := agent1.GetTrustOfAgent(agent2)
-	// 	if newTrust <= initialTrust {
-	// 		t.Errorf("Trust should have increased for agreeing on lootbox. Initial: %f, New: %f", initialTrust, newTrust)
-	// 	}
-	// })
+		// Check if trust increased
+		newTrust := agent1.GetTrustOfAgent(agent2)
+		if newTrust <= initialTrust {
+			t.Errorf("Trust should have increased for agreeing on lootbox. Initial: %f, New: %f", initialTrust, newTrust)
+		}
+	})
 }
 
 // func TestIterationMessaging(t *testing.T) {

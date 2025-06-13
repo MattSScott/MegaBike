@@ -10,23 +10,23 @@ import (
 // ----- Round -----
 
 func (a *FYPAgent) HandleProposedLootboxMessage(msg obj.ProposedLootboxMessage) {
-	// sender := msg.GetSender()
+	sender := msg.GetSender()
 
-	// // if they proposed the same lootbox as us during this round, give them a SMALL boost in trust
-	// if msg.Lootbox == a.GetRoundDirection() {
-	// 	a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), 0.05*modules.PositiveMessage)
-	// }
+	// if they proposed the same lootbox as us during this round, give them a SMALL boost in trust
+	if msg.Lootbox == a.GetRoundDirection() {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), 0.05*modules.PositiveMessage)
+	}
 }
 
 func (a *FYPAgent) HandleForcesMessage(msg obj.ForcesMessage) {
 
 	// if they are pedalling less than 20%, lower trust. if greater than 80%, increase trust
-	// sender := msg.GetSender()
-	// if msg.AgentForces.Pedal < 0.2 {
-	// 	a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
-	// } else if msg.AgentForces.Pedal > 0.8 {
-	// 	a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
-	// }
+	sender := msg.GetSender()
+	if msg.AgentForces.Pedal < 0.2 {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.NegativeMessage)
+	} else if msg.AgentForces.Pedal > 0.8 {
+		a.Modules.AgentParameters.UpdateTrustValue(sender.GetID(), modules.PositiveMessage)
+	}
 }
 
 func (a *FYPAgent) HandleConformMessage(msg obj.ConformMessage) {
