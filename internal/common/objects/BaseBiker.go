@@ -1,8 +1,8 @@
 package objects
 
 import (
-	utils "SOMAS2023/internal/common/utils"
-	voting "SOMAS2023/internal/common/voting"
+	utils "MegabikeFYPVersion/internal/common/utils"
+	voting "MegabikeFYPVersion/internal/common/voting"
 	"math"
 	"math/rand"
 
@@ -16,25 +16,18 @@ type IBaseBiker interface {
 
 	// ----- 1. Strategy Functions (to be overridden by a specific agent implementation) -----
 
-	// Decision Making (all agents)
+	// Decision Making
 
-	DecideAction() BikerAction                                   // returns: int reflecting what action the agent has decided to do this iteration, pedal the bike (0) or try to change bikes (1)
-	DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool  // returns: map of pending agents uuid -> {true, false} where true means accept and false means dont accept
-	DecideJoiningOneAgent(agentId uuid.UUID) bool                // returns: bool if you think this single agent should be accepted
-	DecideChangeBike() uuid.UUID                                 // returns: uuid of the target bike if they want to change, otherwise just return current bike id
-	ProposeDirection() uuid.UUID                                 // returns: lootbox uuid to aim towards (the direction)
-	ProposeDirectionFromSubset(map[uuid.UUID]ILootBox) uuid.UUID // returns: lootbox uuid to aim towards (the direction) from a subset of lootboxes
-	ProposeNewRadius(float64) float64                            // returns: TODO
-	DecideAllocation() voting.IdVoteMap                          // returns: map containing bikerID -> distribution (i.e. share of resources)
-	VoteForKickout() map[uuid.UUID]int                           // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
-	DecideForce(direction uuid.UUID)                             // decides: the force the biker is going to pedal with
-	HandleAgentUnalive(id uuid.UUID)                             // decides: how to handle a dead agent
-	DecideBikePreferenceOrder() []utils.BikePreferenceData       // decides: the order of the agents preferred bikes
+	DecideJoiningOneAgent(agentId uuid.UUID) bool          // returns: bool if you think this single agent should be accepted
+	DecideBikePreferenceOrder() []utils.BikePreferenceData // decides: the order of the agents preferred bikes
+	DecideDirection() uuid.UUID                            // returns: lootbox uuid we want to aim towards (the direction)
+	DecideForce(direction uuid.UUID)                       // decides: the force the biker is going to pedal with
+	DecideAllocation() voting.Allocation                   // returns: map containing bikerID -> distribution (i.e. share of resources)
+	HandleAgentUnalive(id uuid.UUID)                       // decides: how to handle a dead agent
 
-	// Decision Making (extra representative functions)
-
-	DecideDirection() uuid.UUID // returns: lootbox uuid to aim towards (the direction) from a representative
-	DecideKickOut() []uuid.UUID // returns: slice of agents to kick out
+	// (not currently used)
+	VoteForKickout() map[uuid.UUID]int // returns: map of UUID -> {0,1} for an agent where 0 means 'don't kick' and 1 means 'do kick'
+	DecideKickOut() []uuid.UUID        // returns: slice of agents to kick out
 
 	// Messaging
 
@@ -43,9 +36,9 @@ type IBaseBiker interface {
 	HandleConformMessage(msg ConformMessage)
 	GetAllRoundMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
-	HandleKickoutMessage(msg KickoutAgentMessage)
-	HandleChangeBikeMessage(msg ChangeBikeMessage)
-	GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
+	// HandleKickoutMessage(msg KickoutAgentMessage)
+	// HandleChangeBikeMessage(msg ChangeBikeMessage)
+	// GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker]
 
 	// ----- 2. Core Functions (do not need to override these, can inherit basebiker's) -----
 
@@ -82,15 +75,15 @@ type IBaseBiker interface {
 }
 
 type BaseBiker struct {
-	*baseAgent.BaseAgent[IBaseBiker]                // BaseBiker inherits functions from BaseAgent such as GetID(), GetAllMessages() and UpdateAgentInternalState()
+	*baseAgent.BaseAgent[IBaseBiker]                // embedding BaseAgent
 	soughtColour                     utils.Colour   // the lootbox colour this agent seeks
 	onBike                           bool           // "is this agent on a bike"
-	energyLevel                      float64        // float between 0 and 1 representing the agent's energy
-	points                           int            // the agents points total. reflects how many of their desired lootbox they have collected
-	forces                           utils.Forces   // the forces the agent it applying
-	megaBikeId                       uuid.UUID      // if they are not on a bike it will be 0
-	gameState                        IGameState     // updated by the server at every round
-	roundDecisions                   roundDecisions // agent keeps a track of the decisions it makes each round to message other agents at the end of the round
+	energyLevel                      float64        // float between [0,1] 
+	points                           int            // increases when lootbox matches colour
+	forces                           utils.Forces   // the forces the agent is applying
+	megaBikeId                       uuid.UUID      // nil if not on bike
+	gameState                        IGameState     // for accessing game state info
+	roundDecisions                   roundDecisions // to tell other agents at end of round
 	iterationIncome                  float64        // the agents' income this iteration
 }
 
@@ -123,86 +116,19 @@ type roundDecisions struct {
 
 // ----- 1. Strategy Functions (to be overridden by a specific agent implementation) -----
 
-func (bb *BaseBiker) DecideAction() BikerAction {
-	return Pedal
-}
-
-func (bb *BaseBiker) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]bool {
-	decision := make(map[uuid.UUID]bool)
-	for _, agent := range pendingAgents {
-		decision[agent] = true
-	}
-	return decision
-}
-
 func (bb *BaseBiker) DecideJoiningOneAgent(agentId uuid.UUID) bool {
 	return true
 }
-func (bb *BaseBiker) DecideChangeBike() uuid.UUID {
-	megaBikes := bb.gameState.GetMegaBikes()
-	i, targetI := 0, rand.Intn(len(megaBikes))
-	// Go doesn't have a sensible way to do this...
-	for id := range megaBikes {
-		if i == targetI {
-			return id
-		}
-		i++
-	}
-	panic("no bikes")
+
+func (bb *BaseBiker) DecideBikePreferenceOrder() []utils.BikePreferenceData {
+
+	return []utils.BikePreferenceData{}
+
 }
 
-func (bb *BaseBiker) ProposeDirection() uuid.UUID {
-	return bb.nearestLoot()
-}
-
-func (bb *BaseBiker) ProposeDirectionFromSubset(subset map[uuid.UUID]ILootBox) uuid.UUID {
-	currLocation := bb.GetLocation()
-	shortestDist := math.MaxFloat64
-	var nearestBox uuid.UUID
-	var currDist float64
-	for _, loot := range subset {
-		x, y := loot.GetPosition().X, loot.GetPosition().Y
-		currDist = math.Sqrt(math.Pow(currLocation.X-x, 2) + math.Pow(currLocation.Y-y, 2))
-		if currDist < shortestDist {
-			nearestBox = loot.GetID()
-			shortestDist = currDist
-		}
-	}
-	return nearestBox
-}
-
-func (bb *BaseBiker) ProposeNewRadius(pRad float64) float64 {
-	return pRad * 1.1
-}
-
-func (bb *BaseBiker) DecideAllocation() voting.IdVoteMap {
-	bikeID := bb.GetBike()
-	fellowBikers := bb.gameState.GetMegaBikes()[bikeID].GetAgents()
-	distribution := make(voting.IdVoteMap)
-	for _, agent := range fellowBikers {
-		if agent.GetID() == bb.GetID() {
-			distribution[agent.GetID()] = 1.0
-		} else {
-			distribution[agent.GetID()] = 0.0
-		}
-	}
-	return distribution
-}
-
-func (bb *BaseBiker) VoteForKickout() map[uuid.UUID]int {
-	voteResults := make(map[uuid.UUID]int)
-	bikeID := bb.GetBike()
-
-	fellowBikers := bb.gameState.GetMegaBikes()[bikeID].GetAgents()
-	for _, agent := range fellowBikers {
-		agentID := agent.GetID()
-		if agentID != bb.GetID() {
-			// random votes to other agents
-			voteResults[agentID] = rand.Intn(2) // randomly assigns 0 or 1 vote
-		}
-	}
-
-	return voteResults
+func (bb *BaseBiker) DecideDirection() uuid.UUID {
+	nearest := bb.nearestLoot()
+	return nearest
 }
 
 func (bb *BaseBiker) DecideForce(direction uuid.UUID) {
@@ -269,19 +195,38 @@ func (bb *BaseBiker) DecideForce(direction uuid.UUID) {
 	}
 }
 
+func (bb *BaseBiker) DecideAllocation() voting.Allocation {
+	bikeID := bb.GetBike()
+	fellowBikers := bb.gameState.GetMegaBikes()[bikeID].GetAgents()
+	distribution := make(voting.Allocation)
+	for _, agent := range fellowBikers {
+		if agent.GetID() == bb.GetID() {
+			distribution[agent.GetID()] = 1.0
+		} else {
+			distribution[agent.GetID()] = 0.0
+		}
+	}
+	return distribution
+}
+
 func (bb *BaseBiker) HandleAgentUnalive(id uuid.UUID) {
 
 }
 
-func (bb *BaseBiker) DecideBikePreferenceOrder() []utils.BikePreferenceData {
+func (bb *BaseBiker) VoteForKickout() map[uuid.UUID]int {
+	voteResults := make(map[uuid.UUID]int)
+	bikeID := bb.GetBike()
 
-	return []utils.BikePreferenceData{}
+	fellowBikers := bb.gameState.GetMegaBikes()[bikeID].GetAgents()
+	for _, agent := range fellowBikers {
+		agentID := agent.GetID()
+		if agentID != bb.GetID() {
+			// random votes to other agents
+			voteResults[agentID] = rand.Intn(2) // randomly assigns 0 or 1 vote
+		}
+	}
 
-}
-
-func (bb *BaseBiker) DecideDirection() uuid.UUID {
-	nearest := bb.nearestLoot()
-	return nearest
+	return voteResults
 }
 
 func (bb *BaseBiker) DecideKickOut() []uuid.UUID {
@@ -348,44 +293,44 @@ func (bb *BaseBiker) CreateConformMessage() ConformMessage {
 
 // Messaging - Iteration
 
-func (bb *BaseBiker) HandleKickoutMessage(msg KickoutAgentMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
+// func (bb *BaseBiker) HandleKickoutMessage(msg KickoutAgentMessage) {
+// 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 
-	// agentId := msg.AgentId
-	// kickout := msg.Kickout
-}
+// 	// agentId := msg.AgentId
+// 	// kickout := msg.Kickout
+// }
 
-func (bb *BaseBiker) HandleChangeBikeMessage(msg ChangeBikeMessage) {
-	// Team's agent should implement logic for handling other biker messages that were sent to them.
+// func (bb *BaseBiker) HandleChangeBikeMessage(msg ChangeBikeMessage) {
+// 	// Team's agent should implement logic for handling other biker messages that were sent to them.
 
-}
+// }
 
-func (bb *BaseBiker) GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
-	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
-	kickoutMsg := bb.CreatekickoutMessage()
-	changeBikeMessage := bb.CreateChangeBikeMessage()
+// func (bb *BaseBiker) GetAllIterationMessages([]IBaseBiker) []messaging.IMessage[IBaseBiker] {
+// 	// For team's agent add your own logic on chosing when your biker should send messages and which ones to send (return)
+// 	kickoutMsg := bb.CreatekickoutMessage()
+// 	changeBikeMessage := bb.CreateChangeBikeMessage()
 
-	return []messaging.IMessage[IBaseBiker]{kickoutMsg, changeBikeMessage}
-}
+// 	return []messaging.IMessage[IBaseBiker]{kickoutMsg, changeBikeMessage}
+// }
 
-func (bb *BaseBiker) CreatekickoutMessage() KickoutAgentMessage {
+// func (bb *BaseBiker) CreatekickoutMessage() KickoutAgentMessage {
 
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
-	// For team's agent, add your own logic to communicate with other agents
-	return KickoutAgentMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
-		AgentId:     uuid.Nil,
-	}
-}
+// 	// Currently this returns a default message which sends to all bikers on the biker agent's bike
+// 	// For team's agent, add your own logic to communicate with other agents
+// 	return KickoutAgentMessage{
+// 		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
+// 		AgentId:     uuid.Nil,
+// 	}
+// }
 
-func (bb *BaseBiker) CreateChangeBikeMessage() ChangeBikeMessage {
-	// Currently this returns a default message which sends to all bikers on the biker agent's bike
-	// For team's agent, add your own logic to communicate with other agents
-	return ChangeBikeMessage{
-		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
-		BikeId:      uuid.Nil,
-	}
-}
+// func (bb *BaseBiker) CreateChangeBikeMessage() ChangeBikeMessage {
+// 	// Currently this returns a default message which sends to all bikers on the biker agent's bike
+// 	// For team's agent, add your own logic to communicate with other agents
+// 	return ChangeBikeMessage{
+// 		BaseMessage: messaging.CreateMessage[IBaseBiker](bb, bb.GetFellowBikersSlice()),
+// 		BikeId:      uuid.Nil,
+// 	}
+// }
 
 // ----- 2. Core Functions (do not need to override these, can inherit basebiker's) -----
 

@@ -1,25 +1,20 @@
 package modules
 
 import (
-	objects "SOMAS2023/internal/common/objects"
-	"SOMAS2023/internal/common/utils"
+	objects "MegabikeFYPVersion/internal/common/objects"
+	"MegabikeFYPVersion/internal/common/utils"
 	"math"
-	"math/rand"
 
 	"github.com/google/uuid"
 )
 
-const (
-	AwdiRange = 10
-)
-
 type EnvironmentModule struct {
-	AgentId   uuid.UUID
-	GameState objects.IGameState
-	BikeId    uuid.UUID
+	AgentId   uuid.UUID          // our agent id
+	GameState objects.IGameState // the game state
+	BikeId    uuid.UUID          // our bike id
 }
 
-// Constructor
+// constructor
 func NewEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeId uuid.UUID) *EnvironmentModule {
 	return &EnvironmentModule{
 		AgentId:   agentId,
@@ -30,14 +25,14 @@ func NewEnvironmentModule(agentId uuid.UUID, gameState objects.IGameState, bikeI
 
 // ----- Lootboxes -----
 
-// returns: the lootbox map for the agent to use
-func (e *EnvironmentModule) GetLootBoxes() map[uuid.UUID]objects.ILootBox {
-	return e.GameState.GetLootBoxes()
-}
-
 // returns: a lootbox object given an id
 func (e *EnvironmentModule) GetLootBoxById(lootboxId uuid.UUID) objects.ILootBox {
 	return e.GetLootBoxes()[lootboxId]
+}
+
+// returns: the lootbox map for the agent to use
+func (e *EnvironmentModule) GetLootBoxes() map[uuid.UUID]objects.ILootBox {
+	return e.GameState.GetLootBoxes()
 }
 
 // returns: the coordinates of a lootbox given its id
@@ -90,22 +85,6 @@ func (e *EnvironmentModule) GetNearestLootbox() uuid.UUID {
 	return nearestLootbox
 }
 
-// returns: uuid of the nearest lootbox chosen from a subset of lootboxes
-func (e *EnvironmentModule) GetNearestLootboxFromSubset(subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
-	nearest := uuid.Nil
-	nDist := math.MaxFloat64
-
-	for id := range subset {
-		dist := e.GetDistanceToLootbox(id)
-		if dist < nDist {
-			nDist = dist
-			nearest = id
-		}
-	}
-
-	return nearest
-}
-
 // returns: uuid of the nearest lootbox of a given colour. e.g. nearest blue lootbox
 func (e *EnvironmentModule) GetNearestLootboxByColour(colour utils.Colour) uuid.UUID {
 
@@ -124,27 +103,6 @@ func (e *EnvironmentModule) GetNearestLootboxByColour(colour utils.Colour) uuid.
 
 	if nearestLootbox == uuid.Nil {
 		nearestLootbox = e.GetRandomLootbox()
-	}
-	return nearestLootbox
-}
-
-// returns: uuid of the nearest lootbox of a given colour, from a subset of the total lootboxes.
-func (e *EnvironmentModule) GetNearestLootboxByColourFromSubset(color utils.Colour, subset map[uuid.UUID]objects.ILootBox) uuid.UUID {
-	nearestLootbox := e.GetNearestLootboxFromSubset(subset) // Defaults to nearest lootbox
-	minDist := math.MaxFloat64
-	for id := range e.GetLootBoxesByColour(color) {
-		if _, ok := subset[id]; !ok {
-			continue
-		} 
-		if e.IsLootboxNearAwdi(id) {
-			continue
-		}
-		dist := e.GetDistanceToLootbox(id)
-		if dist < minDist {
-			minDist = dist
-			nearestLootbox = id
-		}
-
 	}
 	return nearestLootbox
 }
@@ -222,57 +180,9 @@ func (e *EnvironmentModule) GetBikeById(bikeId uuid.UUID) objects.IMegaBike {
 	return e.GetBikes()[bikeId]
 }
 
-// returns: your own bike object
-func (e *EnvironmentModule) GetBike() objects.IMegaBike {
-	return e.GetBikeById(e.BikeId)
-}
-
 // returns: the orientation of the bike
 func (e *EnvironmentModule) GetBikeOrientation() float64 {
 	return e.GetBikeById(e.BikeId).GetOrientation()
-}
-
-// returns: uuid of the bike with the maximum trust
-func (e *EnvironmentModule) GetBikeWithMaximumTrust(ap *AgentParameters) uuid.UUID {
-	maxAverage := float64(0)
-	maxBikeId := uuid.Nil
-
-	bikes := e.GetBikes()
-	for bikeId, bike := range bikes {
-		totalTrust := 0.0
-		agentCount := float64(len(bike.GetAgents()))
-
-		// Sum up the trust of all agents on this bike
-		for _, agent := range bike.GetAgents() {
-			agentId := agent.GetID()
-			totalTrust += ap.TrustNetwork[agentId]
-		}
-
-		// Calculate average trust for this bike, Assume we don't switch to a bike with 0 agents
-		if agentCount > 0 {
-			averageTrust := totalTrust / agentCount
-			if averageTrust > maxAverage {
-				maxAverage = averageTrust
-				maxBikeId = bikeId
-			}
-		}
-	}
-
-	if maxBikeId != uuid.Nil || maxBikeId == e.BikeId {
-		// If found, change to that bike.
-		return maxBikeId
-	}
-
-	// Otherwise, change to a random bike.
-	i, targetI := 0, rand.Intn(len(bikes))
-	for id := range bikes {
-		if i == targetI {
-			return id
-		}
-		i++
-	}
-	panic("No bikes found to change to.")
-
 }
 
 // returns: bool reflecting whether a given lootbox is / isn't 'near' to the awdi
@@ -312,4 +222,46 @@ func (e *EnvironmentModule) GetBikerAgents() map[uuid.UUID]objects.IBaseBiker {
 func (e *EnvironmentModule) GetDistance(pos1, pos2 utils.Coordinates) float64 {
 
 	return math.Sqrt(math.Pow(pos1.X-pos2.X, 2) + math.Pow(pos1.Y-pos2.Y, 2))
+}
+
+// returns: the forces to a target coordinate
+func (e *EnvironmentModule) GetForcesToTarget(agentPosition, targetPosition utils.Coordinates) utils.Forces {
+
+	deltaX := targetPosition.X - agentPosition.X
+	deltaY := targetPosition.Y - agentPosition.Y
+	angle := math.Atan2(deltaY, deltaX)
+	normalisedAngle := angle / math.Pi
+	turningDecision := utils.TurningDecision{
+		SteerBike:     true,
+		SteeringForce: normalisedAngle,
+	}
+	return utils.Forces{
+		Pedal:   utils.BikerMaxForce,
+		Brake:   0.0,
+		Turning: turningDecision,
+	}
+}
+
+// GetForcesToTargetWithDirectionOffset calculates the forces to be applied on an agent to steer towards a target position,
+// taking into account a specified degree of angular offset.
+func (e *EnvironmentModule) GetForcesToTargetWithDirectionOffset(force, degree float64, currPos, targetPos utils.Coordinates) utils.Forces {
+	deltaX := targetPos.X - currPos.X
+	deltaY := targetPos.Y - currPos.Y
+	angle := math.Atan2(deltaY, deltaX)
+	normalisedAngle := angle/math.Pi + math.Remainder(degree, 2)
+
+	if normalisedAngle < -1 {
+		normalisedAngle = normalisedAngle + 2
+	} else if normalisedAngle > 1 {
+		normalisedAngle = normalisedAngle - 2
+	}
+	turningDecision := utils.TurningDecision{
+		SteerBike:     true,
+		SteeringForce: normalisedAngle,
+	}
+	return utils.Forces{
+		Pedal:   force,
+		Brake:   0.0,
+		Turning: turningDecision,
+	}
 }

@@ -1,8 +1,8 @@
 package objects
 
 import (
-	phy "SOMAS2023/internal/common/physics"
-	"SOMAS2023/internal/common/utils"
+	phy "MegabikeFYPVersion/internal/common/physics"
+	"MegabikeFYPVersion/internal/common/utils"
 	"math"
 
 	"github.com/google/uuid"
@@ -20,15 +20,14 @@ type Awdi struct {
 	gameState IGameState
 }
 
-// ----- Constructors -----
-
-// GetAwdi is a constructor for Awdi that initializes it with a new UUID and default position.
+// constructor
 func GetAwdi() *Awdi {
 	return &Awdi{
 		PhysicsObject: GetPhysicsObject(utils.MassAwdi),
 	}
 }
 
+// constructor
 func GetIAwdi() IAwdi {
 	return &Awdi{
 		PhysicsObject: GetPhysicsObject(utils.MassAwdi),
@@ -39,7 +38,7 @@ func GetIAwdi() IAwdi {
 
 // updates: the force of the awdi, which is dependent on whether it has a target bike or not.
 func (awdi *Awdi) UpdateForce() {
-	// Compute the target Megabike, which will update awdi.target
+	// Compute the target Megabike, which will update target field
 	awdi.ComputeTarget()
 
 	if awdi.target == nil {

@@ -1,15 +1,15 @@
 package modules
 
 import (
-	"SOMAS2023/internal/common/utils"
+	"MegabikeFYPVersion/internal/common/utils"
 
 	"github.com/google/uuid"
 )
 
 type AgentParameters struct {
-	PlatonicTendency float64                      // hardwired value between [0, 1] reflecting the agents personality. higher = more selfless
-	TrustNetwork     map[uuid.UUID]float64        // mapping of uuid -> trust score. trust score ranges from [0,1]
-	RegimeTrust      map[utils.Governance]float64 // mapping of trust in the regimes
+	PlatonicTendency float64                      // personality, higher = more selfless
+	TrustNetwork     map[uuid.UUID]float64        // trust score for each agent
+	RegimeTrust      map[utils.Governance]float64 // trust score for each regime
 }
 
 // constructor
@@ -19,6 +19,11 @@ func NewAgentParameters(tendency float64) *AgentParameters {
 		TrustNetwork:     make(map[uuid.UUID]float64),
 		RegimeTrust:      make(map[utils.Governance]float64),
 	}
+}
+
+type IDTrustPair struct {
+	ID    uuid.UUID
+	Trust float64
 }
 
 // returns: uuid of agent with minimum trust in your *whole* network, along with their trust score

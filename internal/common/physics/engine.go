@@ -1,7 +1,7 @@
 package physics
 
 import (
-	utils "SOMAS2023/internal/common/utils"
+	utils "MegabikeFYPVersion/internal/common/utils"
 	"math"
 )
 

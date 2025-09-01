@@ -1,7 +1,7 @@
 package objects
 
 import (
-	utils "SOMAS2023/internal/common/utils"
+	utils "MegabikeFYPVersion/internal/common/utils"
 
 	"math"
 
@@ -10,10 +10,10 @@ import (
 
 // The IPhysicsObject is an interface class that all moving objects (Biker and Awdi) must implement.
 type IPhysicsObject interface {
-	
+
 	// ----- Core: Don't need to be overriden -----
-	GetID() uuid.UUID				
-	GetPosition() utils.Coordinates	
+	GetID() uuid.UUID
+	GetPosition() utils.Coordinates
 	GetVelocity() float64
 	GetOrientation() float64
 	GetForce() float64
@@ -24,7 +24,6 @@ type IPhysicsObject interface {
 	// ----- Customisable: Need to be overridden for each physics object -----
 	UpdateForce()
 	UpdateOrientation()
-
 }
 
 type PhysicsObject struct {
@@ -48,7 +47,6 @@ func GetPhysicsObject(mass float64) *PhysicsObject {
 		orientation:  0.0,
 	}
 }
-
 
 // ----- Core -----
 
@@ -120,5 +118,3 @@ func (po *PhysicsObject) UpdateOrientation() {
 	// for MegaBike, orientation will be calculated from the bikers
 	// For the awdi, orientation will be calculated from the target MegaBike
 }
-
-

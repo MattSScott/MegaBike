@@ -1,7 +1,7 @@
 package objects
 
 import (
-	utils "SOMAS2023/internal/common/utils"
+	utils "MegabikeFYPVersion/internal/common/utils"
 	"math"
 
 	"github.com/google/uuid"
@@ -18,42 +18,25 @@ type IMegaBike interface {
 	GetRepresentatives() []uuid.UUID
 	GetKickedOutCount() int
 	ResetKickedOutCount()
-	GetCurrentPool() float64
-	UpdateCurrentPool(val float64)
-	ResetCurrentPool()
 	SetGovernance(governance utils.Governance)
 	SetRepresentatives(reps []uuid.UUID)
-	GetActiveRulesForAction(action Action) []*Rule
-	AddToRuleMap(rule *Rule)
-	ClearRuleMap()
-	ViewLocalRuleMap() map[Action][]*Rule
-	ActionIsValidForRuleset(action Action) bool
-	ActionCompliesWithLinearRuleset() bool
 }
 
 type MegaBike struct {
 	*PhysicsObject
-	agents              map[uuid.UUID]IBaseBiker
-	kickedOutCount      int
-	governance          utils.Governance
-	representatives     []uuid.UUID
-	globalRuleCacheView RuleCacheOperations
-	activeRuleMap       map[Action][]*Rule
-	linearRuleList      []*Rule
-	currentPool         float64
+	agents          map[uuid.UUID]IBaseBiker // agents on the bike
+	kickedOutCount  int					
+	governance      utils.Governance // type of regime this bike is under
+	representatives []uuid.UUID      // slice of the representatives for this bike
 }
 
 // constructor
-func GetMegaBike(ruleCache RuleCacheOperations, governance utils.Governance) *MegaBike {
+func GetMegaBike(governance utils.Governance) *MegaBike {
 	return &MegaBike{
-		agents: make(map[uuid.UUID]IBaseBiker),
-		PhysicsObject:       GetPhysicsObject(utils.MassBike),
-		governance:          governance,
-		representatives:     make([]uuid.UUID, 0),
-		globalRuleCacheView: ruleCache,
-		activeRuleMap:       make(map[Action][]*Rule),
-		linearRuleList:      make([]*Rule, 0),
-		currentPool:         0,
+		agents:          make(map[uuid.UUID]IBaseBiker),
+		PhysicsObject:   GetPhysicsObject(utils.MassBike),
+		governance:      governance,
+		representatives: make([]uuid.UUID, 0),
 	}
 }
 
@@ -106,7 +89,6 @@ func (mb *MegaBike) UpdateOrientation() {
 	}
 }
 
-
 // ----- General -----
 
 // adds an agent to the bike
@@ -157,7 +139,7 @@ func (mb *MegaBike) KickOutAgent() []uuid.UUID {
 			if votes > (len(mb.agents))-1 {
 				agentsToKickOut = append(agentsToKickOut, agentID)
 			}
-		} 
+		}
 	} else {
 		panic("non-democratic bike performing an agent kickout")
 	}
@@ -187,21 +169,6 @@ func (mb *MegaBike) ResetKickedOutCount() {
 	mb.kickedOutCount = 0
 }
 
-// returns: the megabike current pool
-func (mb *MegaBike) GetCurrentPool() float64 {
-	return mb.currentPool
-}
-
-// updates: the current pool given a value
-func (mb *MegaBike) UpdateCurrentPool(val float64) {
-	mb.currentPool += val
-}
-
-// resets: the current pool to 0
-func (mb *MegaBike) ResetCurrentPool() {
-	mb.currentPool = 0
-}
-
 // sets: the governance of the megabike
 func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 	mb.governance = governance
@@ -210,81 +177,4 @@ func (mb *MegaBike) SetGovernance(governance utils.Governance) {
 // sets: the representatives of the megabike
 func (mb *MegaBike) SetRepresentatives(reps []uuid.UUID) {
 	mb.representatives = reps
-}
-
-
-// ----- Rule Stuff -----
-
-func (mb *MegaBike) GetActiveRulesForAction(action Action) []*Rule {
-	output := []*Rule{}
-	if action != AppliesAll {
-		output = append(output, mb.activeRuleMap[AppliesAll]...)
-	}
-
-	output = append(output, mb.activeRuleMap[action]...)
-	return output
-}
-
-func (mb *MegaBike) AddToRuleMap(rule *Rule) {
-	category := rule.GetRuleAction()
-	mb.activeRuleMap[category] = append(mb.activeRuleMap[category], rule)
-}
-
-func (mb *MegaBike) ClearRuleMap() {
-	mb.activeRuleMap = make(map[Action][]*Rule)
-}
-
-func (mb *MegaBike) ViewLocalRuleMap() map[Action][]*Rule {
-	return mb.activeRuleMap
-}
-
-func (mb *MegaBike) ActionIsValidForRuleset(action Action) bool {
-	rulesToTest := mb.activeRuleMap[action]
-
-	for _, r := range rulesToTest {
-		for _, agent := range mb.agents {
-			if !r.EvaluateAgentRule(agent) {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-func (mb *MegaBike) ActionCompliesWithLinearRuleset() bool {
-	for _, r := range mb.linearRuleList {
-		for _, agent := range mb.agents {
-			if !r.EvaluateAgentRule(agent) {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-func (mb *MegaBike) ActivateAllGlobalRules() {
-	globalRuleView := mb.globalRuleCacheView
-	for _, rule := range globalRuleView.ViewGlobalRuleCache() {
-		mb.AddToRuleMap(rule)
-		mb.linearRuleList = append(mb.linearRuleList, rule)
-	}
-}
-
-func (mb *MegaBike) InitialiseRuleMap() {
-	dist := 50.0
-	mute := false
-
-	ruleInputs := RuleInputs{Energy}
-	ruleMat := RuleMatrix{{1, -dist}}
-	ruleComps := RuleComparators{LEQ}
-
-	rule := GenerateRule(Lootbox, "lootbox_dist", ruleInputs, ruleMat, ruleComps, mute)
-
-	mb.AddToRuleMap(rule)
-}
-
-func (mb *MegaBike) ViewLinearRuleList() []*Rule {
-	return mb.linearRuleList
 }
